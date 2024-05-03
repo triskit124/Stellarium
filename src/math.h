@@ -16,11 +16,12 @@ class Vector3
     public:
         Vector3();
         Vector3(double x, double y, double z) : _x(x), _y(y), _z(z) {};
+        Vector3(const Vector3& v) : _x(v[0]), _y(v[1]), _z(v[2]) {};
         ~Vector3() {};
 
-        double x() const { return _x; };
-        double y() const { return _y; };
-        double z() const { return _z; };
+        double* x() { return &_x; };
+        double* y() { return &_y; };
+        double* z() { return &_z; };
 
         double operator[](int idx) const {
             if (idx == 0)
@@ -42,6 +43,10 @@ class Vector3
         Vector3 operator+(double c) { return Vector3(_x+c, _y+c, _z+c); };
         Vector3 operator+(Vector3 v) { return Vector3(_x+v[0], _y+v[1], _z+v[2]); };
         Vector3 operator/(Vector3 v) { return Vector3(_x/v[0], _y/v[1], _z/v[2]); };
+        void operator=(Vector3 v) { _x = v[0]; _y = v[1]; _z = v[2]; };
+        void operator+=(Vector3 v) { _x += v[0]; _y += v[1]; _z += v[2]; };
+        void operator-=(Vector3 v) { _x -= v[0]; _y -= v[1]; _z -= v[2]; };
+        bool operator==(Vector3 v) { return _x == v[0] && _y == v[1] && _z == v[2]; };
 
         double dot(const Vector3& v) { return _x*v[0] + _y*v[1] + _z*v[2]; };
 
@@ -53,7 +58,7 @@ class Vector3
             );
         };
 
-        double norm() { return std::sqrt(pow(_x, 2) + pow(_y, 2) + pow(_z, 2)); };
+        double norm() const { return std::sqrt(pow(_x, 2) + pow(_y, 2) + pow(_z, 2)); };
 
         void normalize() { 
             double n = norm();
@@ -77,57 +82,60 @@ class Quaternion
 {    
     public:
         Quaternion();
-        Quaternion(double x, double y, double z, double w) : _x(x), _y(y), _z(z), _w(w) {};
+        Quaternion(double w, double x, double y, double z) : _w(w), _x(x), _y(y), _z(z) {};
         ~Quaternion() {};
 
-        double x() const { return _x; };
-        double y() const { return _y; };
-        double z() const { return _z; };
-        double w() const { return _w; };
+        double* w() { return &_w; };
+        double* x() { return &_x; };
+        double* y() { return &_y; };
+        double* z() { return &_z; };
 
         double operator[](int idx) const {
             if (idx == 0)
             {
-                return _x;
+                return _w;
             }
             if (idx == 1)
             {
-                return _y;
+                return _x;
             }
             if (idx == 2)
             {
-                return _z;
+                return _y;
             }
             if (idx == 3)
             {
-                return _w;
+                return _z;
             }
             throw std::invalid_argument("invalid index"); 
         }
 
-        Quaternion operator*(Quaternion q) {
+        Quaternion operator*(double c) const { return Quaternion(_x*c, _y*c, _z*c, _w*c); };
+
+        Quaternion operator*(const Quaternion& q) const {
             return Quaternion(
-                _x*q[0] - _y*q[1] - _z*q[2] - _w*q[3],
-                _x*q[1] + _y*q[0] - _z*q[3] + _w*q[2],
-                _x*q[2] + _y*q[3] + _z*q[0] - _w*q[1],
-                _x*q[3] - _y*q[2] + _z*q[1] + _w*q[0]
+                // TODO check this
+                _w*q[0] - _x*q[1] - _y*q[2] - _z*q[3],
+                _w*q[1] + _x*q[0] - _y*q[3] + _z*q[2],
+                _w*q[2] + _x*q[3] + _y*q[0] - _z*q[1],
+                _w*q[3] - _x*q[2] + _y*q[1] + _z*q[0]
             );
         }
 
-        Vector3 operator*(Vector3 v) { 
+        Vector3 operator*(const Vector3& v) const { 
             // passive rotation
-            Quaternion p = Quaternion(v[0], v[1], v[2], 0.0);
+            Quaternion p = Quaternion(0.0, v[0], v[1], v[2]);
             Quaternion pp = *this * p * this->inverse();
-            return Vector3(pp[0], pp[1], pp[2]);
+            return Vector3(pp[1], pp[2], pp[3]);
         };
 
-        Quaternion inverse() { return Quaternion(-_x, -_y, -_z, _w); };
+        Quaternion inverse() const { return Quaternion(_w, -_x, -_y, -_z); };
 
     protected:
+        double _w = 1.0;
         double _x = 0.0;
         double _y = 0.0;
         double _z = 0.0;
-        double _w = 1.0;
 
     private:
 };
@@ -138,6 +146,7 @@ class Matrix33
     public:
         Matrix33();
         Matrix33(Vector3 x, Vector3 y, Vector3 z) : _x(x), _y(y), _z(z) {};
+        Matrix33(double x1, double x2, double x3, double y1, double y2, double y3, double z1, double z2, double z3) : _x(x1, x2, x3), _y(y1, y2, y3), _z(z1, z2, z3) {};
         ~Matrix33() {};
 
         Vector3 operator[](int idx) const {
