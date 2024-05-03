@@ -52,6 +52,11 @@ SRCDIRS = src\
 		  src/render\
 
 
+
+# Define key files
+DOXY_FILE = doxygen
+
+
 # define any directories containing header files other than /usr/include
 #
 INCLUDES = -I./$(INCDIR)
@@ -115,6 +120,10 @@ valgrind: $(BUILDDIR)/$(TARGET)
 
 clean:
 	rm -rf $(BUILDDIR)
+
+
+docs:
+	doxygen $(DOXY_FILE)
 
 
 run:
