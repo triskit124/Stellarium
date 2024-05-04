@@ -4,17 +4,35 @@
 #include "body.h"
 #include "math.h"
 
+using namespace Stellarium;
+
 int main()
 {
 
+
+
     // create the simulation object
-    Stellarium::StellariumSimulation sim = Stellarium::StellariumSimulation();
+    StellariumSimulation sim = StellariumSimulation();
 
-    // add a vehicle with mass 1000 kg, center of mass at (0, 0, 0), and inertia matrix [100, 0, 0; 0, 100, 0; 0, 0, 100]
-    sim.addBody("vehicle1", 1000, Stellarium::Vector3(0, 0, 0), Stellarium::Matrix33(100, 0, 0, 0, 100, 0, 0, 0, 100));
+    sim.addIntegrator("rk4");
 
-    // add a vehicle with mass 250 kg, center of mass at (1, 2, 3), and inertia matrix [100, 0, 0; 0, 100, 0; 0, 0, 100]
-    sim.addBody("vehicle2", 250, Stellarium::Vector3(1, 2, 3), Stellarium::Matrix33(100, 0, 0, 0, 100, 0, 0, 0, 100));
+    // add a vehicle
+    Body* vehicle = sim.addBody(
+        "vehicle1", 
+        1, Vector3(0, 0, 0), 
+        Matrix33(100, 0, 0, 0, 100, 0, 0, 0, 100),
+        Vector3(0, 0, 0),
+        Vector3(0, 0, 0),
+        Quaternion(1, 0, 0, 0),
+        Vector3(0, 0, 0)
+    );
+
+
+    vehicle->addForce(Vector3(1, 0, 1));
+
+    sim.run(10);
+    
 
     return 0;
+
 }

@@ -1,5 +1,6 @@
 #include "body.h"
 #include "math.h"
+#include "constants.h"
 
 #include <array>
 #include <string>
@@ -8,9 +9,9 @@ namespace Stellarium
 {
 
 
-std::array<double*, 13> Body::getState()
+std::array<double*, STELL_BODY_STATE_SIZE> Body::getState()
 {
-    std::array<double*, 13> state {
+    std::array<double*, STELL_BODY_STATE_SIZE> state {
         _pos.x(),
         _pos.y(),
         _pos.z(),
@@ -28,11 +29,11 @@ std::array<double*, 13> Body::getState()
     return state;
 }
 
-std::array<double, 13> Body::getStateDot() const
+std::array<double, STELL_BODY_STATE_SIZE> Body::getStateDot() const
 {
     Quaternion q_dot = _att * Quaternion(0.0, _ang_vel[0], _ang_vel[1], _ang_vel[2]) * 0.5;
 
-    std::array<double, 13> state_dot {
+    std::array<double, STELL_BODY_STATE_SIZE> state_dot {
         _vel[0],
         _vel[1],
         _vel[2],
@@ -51,7 +52,7 @@ std::array<double, 13> Body::getStateDot() const
     return state_dot;
 }
 
-void Body::setState(const std::array<double, 13>& state)
+void Body::setState(const std::array<double, STELL_BODY_STATE_SIZE>& state)
 {
     _pos = {state[0], state[1], state[2]};
     _att = {state[3], state[4], state[5], state[6]};

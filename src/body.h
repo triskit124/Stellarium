@@ -119,6 +119,23 @@ class Body
         */
         void setState(const std::array<double, 13>& state);
 
+
+        void setPosition(const Vector3& pos) { _pos = pos; };
+        
+        void setVelocity(const Vector3& vel) { _vel = vel; };
+        
+        void setAttitude(const Quaternion& att) { _att = att; };
+        
+        void setAngularVelocity(const Vector3& ang_vel) { _ang_vel = ang_vel; };
+
+        Vector3 getPosition() const { return _pos; };
+
+        Vector3 getVelocity() const { return _vel; };
+
+        Quaternion getAttitude() const { return _att; };
+
+        Vector3 getAngularVelocity() const { return _ang_vel; };
+
     protected:
         std::string _name; /**< The name of the body. */
         double _mass = 1.0; /**< The mass of the body. */
