@@ -38,19 +38,20 @@ class Vector3
             }
             throw std::invalid_argument("invalid index"); 
         }
-        Vector3 operator*(double c) { return Vector3(_x*c, _y*c, _z*c); };
-        Vector3 operator/(double c) { return Vector3(_x/c, _y/c,_z/c); };
-        Vector3 operator+(double c) { return Vector3(_x+c, _y+c, _z+c); };
-        Vector3 operator+(Vector3 v) { return Vector3(_x+v[0], _y+v[1], _z+v[2]); };
-        Vector3 operator/(Vector3 v) { return Vector3(_x/v[0], _y/v[1], _z/v[2]); };
+        Vector3 operator*(double c) const { return Vector3(_x*c, _y*c, _z*c); };
+        Vector3 operator/(double c) const { return Vector3(_x/c, _y/c,_z/c); };
+        Vector3 operator+(double c) const { return Vector3(_x+c, _y+c, _z+c); };
+        Vector3 operator-(double c) const { return Vector3(_x-c, _y-c, _z-c); };
+        Vector3 operator+(Vector3 v) const { return Vector3(_x+v[0], _y+v[1], _z+v[2]); };
+        Vector3 operator-(Vector3 v) const { return Vector3(_x-v[0], _y-v[1], _z-v[2]); };
         void operator=(Vector3 v) { _x = v[0]; _y = v[1]; _z = v[2]; };
         void operator+=(Vector3 v) { _x += v[0]; _y += v[1]; _z += v[2]; };
         void operator-=(Vector3 v) { _x -= v[0]; _y -= v[1]; _z -= v[2]; };
-        bool operator==(Vector3 v) { return _x == v[0] && _y == v[1] && _z == v[2]; };
+        bool operator==(Vector3 v) const { return _x == v[0] && _y == v[1] && _z == v[2]; };
 
-        double dot(const Vector3& v) { return _x*v[0] + _y*v[1] + _z*v[2]; };
+        double dot(const Vector3& v) const { return _x*v[0] + _y*v[1] + _z*v[2]; };
 
-        Vector3 cross(const Vector3& v) {
+        Vector3 cross(const Vector3& v) const {
             return Vector3(
                 _y*v[2] - _z*v[1],
                 _z*v[0] - _x*v[2],
@@ -111,6 +112,8 @@ class Quaternion
         }
 
         Quaternion operator*(double c) const { return Quaternion(_x*c, _y*c, _z*c, _w*c); };
+        Quaternion operator/(double c) const { return Quaternion(_x/c, _y/c, _z/c, _w/c); };
+        bool operator==(Quaternion q) const { return _w == q[0] && _x == q[1] && _y == q[2] && _z == q[3]; };
 
         Quaternion operator*(const Quaternion& q) const {
             return Quaternion(
@@ -124,12 +127,15 @@ class Quaternion
 
         Vector3 operator*(const Vector3& v) const { 
             // passive rotation
+            // TODO check this
             Quaternion p = Quaternion(0.0, v[0], v[1], v[2]);
             Quaternion pp = *this * p * this->inverse();
             return Vector3(pp[1], pp[2], pp[3]);
         };
 
         Quaternion inverse() const { return Quaternion(_w, -_x, -_y, -_z); };
+
+        double norm() const { return std::sqrt(pow(_w, 2) + pow(_x, 2) + pow(_y, 2) + pow(_z, 2)); };
 
     protected:
         double _w = 1.0;
@@ -165,12 +171,60 @@ class Matrix33
             throw std::invalid_argument("invalid index"); 
         }
 
-        Vector3 operator*(Vector3 v) { 
+        Vector3 operator*(Vector3 v) const { 
             return Vector3(
                 _x.dot(v),
                 _y.dot(v),
                 _z.dot(v)
             );
+        };
+
+        Matrix33 operator*(double c) const {
+            return Matrix33(
+                _x * c,
+                _y * c,
+                _z * c
+            );
+        };
+
+        Matrix33 operator/(double c) const {
+            return Matrix33(
+                _x / c,
+                _y / c,
+                _z / c
+            );
+        };
+
+        double det() const { 
+            return _x[0]*(_y[1]*_z[2] - _y[2]*_z[1]) 
+                   - _x[1]*(_y[0]*_z[2] - _y[2]*_z[0]) 
+                   + _x[2]*(_y[0]*_z[1] - _y[1]*_z[0]); 
+        };
+
+        Matrix33 transpose() const {
+            return Matrix33(
+                _x[0], _y[0], _z[0],
+                _x[1], _y[1], _z[1],
+                _x[2], _y[2], _z[2]
+            );
+        };
+
+        Matrix33 adjoint() const {
+            return Matrix33(
+                _y[1]*_z[2] - _y[2]*_z[1],
+                _x[2]*_z[1] - _x[1]*_z[2],
+                _x[1]*_y[2] - _x[2]*_y[1],
+                _y[2]*_z[0] - _y[0]*_z[2],
+                _x[0]*_z[2] - _x[2]*_z[0],
+                _x[2]*_y[0] - _x[0]*_y[2],
+                _y[0]*_z[1] - _y[1]*_z[0],
+                _x[1]*_z[0] - _x[0]*_z[1],
+                _x[0]*_y[1] - _x[1]*_y[0]
+            );
+        };
+
+        Matrix33 inverse() const {
+            return adjoint().transpose() / det();
         };
 
 

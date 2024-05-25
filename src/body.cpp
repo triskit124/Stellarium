@@ -31,7 +31,10 @@ std::array<double*, STELL_BODY_STATE_SIZE> Body::getState()
 
 std::array<double, STELL_BODY_STATE_SIZE> Body::getStateDot() const
 {
+    // rigid body 6DOF equations of motion
     Quaternion q_dot = _att * Quaternion(0.0, _ang_vel[0], _ang_vel[1], _ang_vel[2]) * 0.5;
+    Vector3 accel = (_force / _mass) - (_ang_vel.cross(_vel));
+    Vector3 ang_accel = _inertia.inverse() * (_torque - _ang_vel.cross(_inertia * _ang_vel));
 
     std::array<double, STELL_BODY_STATE_SIZE> state_dot {
         _vel[0],
@@ -41,13 +44,12 @@ std::array<double, STELL_BODY_STATE_SIZE> Body::getStateDot() const
         q_dot[1],
         q_dot[2],
         q_dot[3],
-        _force[0]/_mass,
-        _force[1]/_mass,
-        _force[2]/_mass,
-        // euler equations, TODO: figure out non principal axis case:
-        (_torque[0] - _ang_vel[1]*_ang_vel[2]*(_inertia[2][2] - _inertia[1][1]))/_inertia[0][0],
-        (_torque[1] - _ang_vel[2]*_ang_vel[0]*(_inertia[0][0] - _inertia[2][2]))/_inertia[1][1],
-        (_torque[2] - _ang_vel[0]*_ang_vel[1]*(_inertia[1][1] - _inertia[0][0]))/_inertia[2][2],
+        accel[0],
+        accel[1],
+        accel[2],
+        ang_accel[0],
+        ang_accel[1],
+        ang_accel[2],
     };
     return state_dot;
 }

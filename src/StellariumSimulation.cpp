@@ -8,7 +8,7 @@
 #include <memory>
 #include <cassert>
 
-#include "yaml-cpp/yaml.h"
+// #include "yaml-cpp/yaml.h"
 
 
 namespace Stellarium 
@@ -17,7 +17,7 @@ namespace Stellarium
 void StellariumSimulation::loadScenario(const std::string& filename)
 
 {
-    YAML::Node config = YAML::LoadFile(filename);
+    // YAML::Node config = YAML::LoadFile(filename);
 
     std::cout << "Loaded scenario file:  " << filename << std::endl;
 }
@@ -59,13 +59,14 @@ void StellariumSimulation::addIntegrator(const std::string& type)
 
 void StellariumSimulation::_step()
 {
-    if (_integrator == nullptr)
+    if (!_integrator)
     {
         throw std::invalid_argument("Cannot step: no integrator has been set");
     }
 
     _state_dot.clear();
 
+    // get the state derivatives for all bodies
     for (auto& body : _bodies)
     {
         std::array<double, STELL_BODY_STATE_SIZE> state_dot = body->getStateDot();
@@ -77,8 +78,10 @@ void StellariumSimulation::_step()
 
     assert(_state_dot.size() == _bodies.size() * STELL_BODY_STATE_SIZE);
 
+    // integrate the state
     _integrator->integrate(_state, _state_dot, _dt);
 
+    // push the new state back to into the bodies
     for (size_t i = 0; i < _bodies.size(); ++i)
     {
         std::array<double, STELL_BODY_STATE_SIZE> state; 
@@ -91,6 +94,7 @@ void StellariumSimulation::_step()
         std::cout << "Body " << _bodies[i]->name() << " position: " << _bodies[i]->getPosition()[0] << ", " << _bodies[i]->getPosition()[1] << ", " << _bodies[i]->getPosition()[2] << "\tVelocity:" << _bodies[i]->getVelocity()[0] << ", " << _bodies[i]->getVelocity()[1] << ", " << _bodies[i]->getVelocity()[2] << std::endl;
     }
 
+    // advance the time
     _t += _dt;
 
 }
