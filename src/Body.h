@@ -4,7 +4,7 @@
 #include <array>
 #include <string>
 
-#include "math.h"
+#include "Math.h"
 
 namespace Stellarium 
 {

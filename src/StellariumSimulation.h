@@ -1,10 +1,10 @@
 #ifndef STELL_SIM
 #define STELL_SIM
 
-#include "constants.h"
-#include "body.h"
-#include "math.h"
-#include "integrators.h"
+#include "Constants.h"
+#include "Body.h"
+#include "Math.h"
+#include "Integrators.h"
 
 #include <memory>
 #include <vector>

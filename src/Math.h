@@ -3,7 +3,6 @@
 
 #include <array>
 #include <cmath>
-#include <math.h>
 #include <stdexcept>
 #include <string>
 

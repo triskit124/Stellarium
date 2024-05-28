@@ -1,6 +1,6 @@
-#include "body.h"
-#include "math.h"
-#include "constants.h"
+#include "Body.h"
+#include "Math.h"
+#include "Constants.h"
 
 #include <array>
 #include <string>

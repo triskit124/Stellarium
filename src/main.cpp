@@ -1,8 +1,8 @@
 #include <iostream>
 
 #include "StellariumSimulation.h"
-#include "body.h"
-#include "math.h"
+#include "Body.h"
+#include "Math.h"
 
 using namespace Stellarium;
 

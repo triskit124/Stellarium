@@ -1,6 +1,6 @@
 #include "StellariumSimulation.h"
-#include "body.h"
-#include "integrators.h"
+#include "Body.h"
+#include "Integrators.h"
 
 #include <cstddef>
 #include <iostream>

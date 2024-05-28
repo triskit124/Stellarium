@@ -1,5 +1,5 @@
-#include "../src/TestHarness.h"
-#include "../src/math.h"
+#include "../../src/TestHarness.h"
+#include "../../src/Math.h"
 
 using namespace Stellarium;
 

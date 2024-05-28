@@ -1,4 +1,4 @@
-#include "integrators.h"
+#include "Integrators.h"
 
 namespace Stellarium 
 {

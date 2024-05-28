@@ -3,7 +3,7 @@
 
 #include <vector>
 
-#include "math.h"
+#include "Math.h"
 
 namespace Stellarium 
 {
