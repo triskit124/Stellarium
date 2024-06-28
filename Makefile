@@ -1,5 +1,7 @@
 TARGET = Stellarium
 BUILDDIR = build
+DOCSDIR = doc
+DOXY_FILE = doxygen
 
 .PHONY: clean docs run test
 
@@ -7,15 +9,18 @@ BUILDDIR = build
 $(BUILDDIR):
 	mkdir -p $(BUILDDIR)
 
+$(DOCSDIR):
+	mkdir -p $(DOCSDIR)
+
 all: $(BUILDDIR)
 	cd $(BUILDDIR); \
 	cmake ..; \
 	cmake --build .
 
 clean:
-	rm -rf $(BUILDDIR)
+	rm -rf $(BUILDDIR) $(DOCSDIR)
 
-docs:
+docs: $(DOCSDIR)
 	doxygen $(DOXY_FILE)
 
 run:

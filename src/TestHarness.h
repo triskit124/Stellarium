@@ -7,6 +7,9 @@
 namespace Stellarium
 {
 
+/**
+ * @brief A simple unit test class.
+ */
 class Test
 {
     public:

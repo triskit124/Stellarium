@@ -16,6 +16,13 @@ class Body
 {    
 
     public:
+
+        /* 
+        ===================================
+             Constructors/Desctructors 
+        ===================================
+        */
+
         /**
         * @brief Constructs a Body object with the given name.
         * @param name The name of the body.
@@ -35,6 +42,12 @@ class Body
         * @brief Destructor for the Body object.
         */
         ~Body() {};
+
+        /* 
+        ==============
+            Methods
+        ==============
+        */
 
         /**
         * @brief Gets the name of the body.
@@ -108,7 +121,7 @@ class Body
         std::array<double*, 13> getState();
 
         /**
-        * @brief Gets the derivative of the state of the body.
+        * @brief Gets the derivative of the state of the body via rigid-body equations of motion.
         * @return The derivative of the state of the body as an array of doubles.
         */
         std::array<double, 13> getStateDot() const;
@@ -119,37 +132,114 @@ class Body
         */
         void setState(const std::array<double, 13>& state);
 
-
+        /**
+        * @brief Sets the position state of the body.
+        * @param pos The new position of the body.
+        */
         void setPosition(const Vector3& pos) { _pos = pos; };
         
+        /**
+        * @brief Sets the velocity state of the body.
+        * @param vel The new velocity of the body.
+        */
         void setVelocity(const Vector3& vel) { _vel = vel; };
         
+        /**
+        * @brief Sets the attitude state of the body.
+        * @param att The new attitude of the body.
+        */
         void setAttitude(const Quaternion& att) { _att = att; };
         
+        /**
+        * @brief Sets the angular velocity state of the body.
+        * @param ang_vel The new angular velocity of the body.
+        */
         void setAngularVelocity(const Vector3& ang_vel) { _ang_vel = ang_vel; };
 
+        /**
+        * @brief Gets the position of the body.
+        * @return The position of the body.
+        */
         Vector3 getPosition() const { return _pos; };
 
+        /**
+        * @brief Gets the velocity of the body.
+        * @return The velocity of the body.
+        */
         Vector3 getVelocity() const { return _vel; };
 
+        /**
+        * @brief Gets the attitude of the body.
+        * @return The attitude of the body.
+        */
         Quaternion getAttitude() const { return _att; };
 
+        /**
+        * @brief Gets the angular velocity of the body.
+        * @return The angular velocity of the body.
+        */
         Vector3 getAngularVelocity() const { return _ang_vel; };
 
     protected:
-        std::string _name; /**< The name of the body. */
-        double _mass = 1.0; /**< The mass of the body. */
-        Vector3 _cm {0.0, 0.0, 0.0}; /**< The center of mass of the body. */
-        Matrix33 _inertia = {{1.0, 0.0, 0.0} ,{0.0, 1.0, 0.0}, {0.0, 0.0, 1.0}}; /**< The inertia matrix of the body. */
-        Vector3 _pos {0.0, 0.0, 0.0}; /**< The position of the body. */
-        Vector3 _vel {0.0, 0.0, 0.0}; /**< The velocity of the body. */
-        Vector3 _acc {0.0, 0.0, 0.0}; /**< The acceleration of the body. */
-        Quaternion _att {0.0, 0.0, 0.0, 1.0}; /**< The attitude (orientation) of the body. */
-        Vector3 _ang_vel {0.0, 0.0, 0.0}; /**< The angular velocity of the body. */
-        Vector3 _ang_acc {0.0, 0.0, 0.0}; /**< The angular acceleration of the body. */
+        /**
+        * @brief The name of the body.
+        */
+        std::string _name;
+        
+        /**
+        * @brief The mass of the body
+        */
+        double _mass = 1.0;
+        
+        /**
+        * @brief The position of the center of mass of the body.
+        */
+        Vector3 _cm {0.0, 0.0, 0.0};
+        
+        /**
+        * @brief The inertia tensor for the body.
+        */
+        Matrix33 _inertia = {{1.0, 0.0, 0.0} ,{0.0, 1.0, 0.0}, {0.0, 0.0, 1.0}};
+        
+        /**
+        * @brief The position state of the body.
+        */
+        Vector3 _pos {0.0, 0.0, 0.0};
+        
+        /**
+        * @brief The velocity state of the body.
+        */
+        Vector3 _vel {0.0, 0.0, 0.0};
+        
+        /**
+        * @brief The acceleration of the body.
+        */
+        Vector3 _acc {0.0, 0.0, 0.0};
+        
+        /**
+        * @brief The attitude state of the body.
+        */
+        Quaternion _att {0.0, 0.0, 0.0, 1.0};
+        
+        /**
+        * @brief The angular velocity state of the body.
+        */
+        Vector3 _ang_vel {0.0, 0.0, 0.0};
+        
+        /**
+        * @brief The angular acceleration of the body.
+        */
+        Vector3 _ang_acc {0.0, 0.0, 0.0};
 
-        Vector3 _force {0.0, 0.0, 0.0}; /**< The total force acting on the body. */
-        Vector3 _torque {0.0, 0.0, 0.0}; /**< The total torque acting on the body. */
+        /**
+        * @brief The total external force acting on the body.
+        */
+        Vector3 _force {0.0, 0.0, 0.0};
+        
+        /**
+        * @brief The total external torque acting on the body.
+        */
+        Vector3 _torque {0.0, 0.0, 0.0};
 
     private:
 
