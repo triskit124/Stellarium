@@ -1,7 +1,7 @@
 TARGET = Stellarium
 BUILDDIR = build
 
-.PHONY: clean docs run
+.PHONY: clean docs run test
 
 
 $(BUILDDIR):
@@ -20,3 +20,6 @@ docs:
 
 run:
 	./$(BUILDDIR)/$(TARGET)
+
+test:
+	cd test; ./run_tests.sh

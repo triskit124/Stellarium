@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 project(Stellarium VERSION 0.1)
-set(CMAKE_CXX_STANDARD 20)            # Enable c++20 standard
+set(CMAKE_CXX_STANDARD 20)
 
 set(PROJECT_NAME "Stellarium")
 

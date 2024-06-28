@@ -1,10 +1,13 @@
 #ifndef STELL_MATH
 #define STELL_MATH
 
+#include "Constants.h"
+
 #include <array>
 #include <cmath>
 #include <stdexcept>
 #include <string>
+#include <iostream>
 
 namespace Stellarium 
 {
@@ -21,6 +24,12 @@ class Vector3
         double* x() { return &_x; };
         double* y() { return &_y; };
         double* z() { return &_z; };
+
+        void epsilon(double e) { _epsilon = e; };
+
+        void print() const {
+            std::cout << "x: " << _x << " y: " << _y << " z: " << _z << std::endl;
+        }
 
         double operator[](int idx) const {
             if (idx == 0)
@@ -46,7 +55,12 @@ class Vector3
         void operator=(Vector3 v) { _x = v[0]; _y = v[1]; _z = v[2]; };
         void operator+=(Vector3 v) { _x += v[0]; _y += v[1]; _z += v[2]; };
         void operator-=(Vector3 v) { _x -= v[0]; _y -= v[1]; _z -= v[2]; };
-        bool operator==(Vector3 v) const { return _x == v[0] && _y == v[1] && _z == v[2]; };
+        bool operator==(Vector3 v) const { 
+            return 
+                std::abs(_x - v[0]) <= _epsilon 
+                && std::abs(_y - v[1]) <= _epsilon 
+                && std::abs(_z - v[2]) <= _epsilon;
+        };
 
         double dot(const Vector3& v) const { return _x*v[0] + _y*v[1] + _z*v[2]; };
 
@@ -74,6 +88,7 @@ class Vector3
         double _x = 0.0;
         double _y = 0.0;
         double _z = 0.0;
+        double _epsilon = STELL_EPSILON;
 
     private:
 };
@@ -82,13 +97,37 @@ class Quaternion
 {    
     public:
         Quaternion();
-        Quaternion(double w, double x, double y, double z) : _w(w), _x(x), _y(y), _z(z) {};
+        Quaternion(double w, double x, double y, double z, bool normalize = true) {
+            _w = w;
+            _x = x;
+            _y = y;
+            _z = z;
+            if (normalize)
+            {
+                this->normalize();
+            }
+        };
         ~Quaternion() {};
 
         double* w() { return &_w; };
         double* x() { return &_x; };
         double* y() { return &_y; };
         double* z() { return &_z; };
+
+        void normalize() { 
+            if (!isUnit())
+            {
+                double n = norm();
+                _w /= n;
+                _x /= n;
+                _y /= n;
+                _z /= n;
+            }
+        }
+
+        void epsilon(double e) { _epsilon = e; };
+
+        bool isUnit() const { return std::abs(norm() - 1.0) <= _epsilon; };
 
         double operator[](int idx) const {
             if (idx == 0)
@@ -110,17 +149,21 @@ class Quaternion
             throw std::invalid_argument("invalid index"); 
         }
 
-        Quaternion operator*(double c) const { return Quaternion(_x*c, _y*c, _z*c, _w*c); };
-        Quaternion operator/(double c) const { return Quaternion(_x/c, _y/c, _z/c, _w/c); };
-        bool operator==(Quaternion q) const { return _w == q[0] && _x == q[1] && _y == q[2] && _z == q[3]; };
+        Quaternion operator*(double c) const { return Quaternion(_w*c, _x*c, _y*c, _z*c); };
+        Quaternion operator/(double c) const { return Quaternion(_w/c, _x/c, _y/c, _z/c); };
+        bool operator==(Quaternion q) const { 
+            return std::abs(_w - q[0]) <= _epsilon 
+                    && std::abs(_x - q[1]) <= _epsilon 
+                    && std::abs(_y - q[2]) <= _epsilon
+                    && std::abs(_z - q[3]) <= _epsilon;
+        }; 
 
         Quaternion operator*(const Quaternion& q) const {
             return Quaternion(
-                // TODO check this
                 _w*q[0] - _x*q[1] - _y*q[2] - _z*q[3],
-                _w*q[1] + _x*q[0] - _y*q[3] + _z*q[2],
-                _w*q[2] + _x*q[3] + _y*q[0] - _z*q[1],
-                _w*q[3] - _x*q[2] + _y*q[1] + _z*q[0]
+                _w*q[1] + _x*q[0] + _y*q[3] - _z*q[2],
+                _w*q[2] - _x*q[3] + _y*q[0] + _z*q[1],
+                _w*q[3] + _x*q[2] - _y*q[1] + _z*q[0]
             );
         }
 
@@ -128,19 +171,25 @@ class Quaternion
             // passive rotation
             // TODO check this
             Quaternion p = Quaternion(0.0, v[0], v[1], v[2]);
-            Quaternion pp = *this * p * this->inverse();
+            Quaternion pp = *this * p * this->conjugate();
             return Vector3(pp[1], pp[2], pp[3]);
         };
 
-        Quaternion inverse() const { return Quaternion(_w, -_x, -_y, -_z); };
+        Quaternion conjugate() const { return Quaternion(_w, -_x, -_y, -_z); };
+        Quaternion inverse() const { return conjugate() / pow(norm(), 2); };
 
         double norm() const { return std::sqrt(pow(_w, 2) + pow(_x, 2) + pow(_y, 2) + pow(_z, 2)); };
+
+        void print() const {
+            std::cout << "w: " << _w << " x: " << _x << " y: " << _y << " z: " << _z << std::endl;
+        }
 
     protected:
         double _w = 1.0;
         double _x = 0.0;
         double _y = 0.0;
         double _z = 0.0;
+        double _epsilon = STELL_EPSILON;
 
     private:
 };
