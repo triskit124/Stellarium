@@ -38,11 +38,6 @@ class Body
         */
         Body(const std::string& name, double mass, const Vector3& cm, const Matrix33& inertia) : _name(name), _mass(mass), _cm(cm), _inertia(inertia) {};
 
-        /**
-        * @brief Destructor for the Body object.
-        */
-        ~Body() {};
-
         /* 
         ==============
             Methods
@@ -160,25 +155,25 @@ class Body
         * @brief Gets the position of the body.
         * @return The position of the body.
         */
-        Vector3 getPosition() const { return _pos; };
+        Vector3 getPosition() const { return Vector3(_pos); };
 
         /**
         * @brief Gets the velocity of the body.
         * @return The velocity of the body.
         */
-        Vector3 getVelocity() const { return _vel; };
+        Vector3 getVelocity() const { return Vector3(_vel); };
 
         /**
         * @brief Gets the attitude of the body.
         * @return The attitude of the body.
         */
-        Quaternion getAttitude() const { return _att; };
+        Quaternion getAttitude() const { return Quaternion(_att); };
 
         /**
         * @brief Gets the angular velocity of the body.
         * @return The angular velocity of the body.
         */
-        Vector3 getAngularVelocity() const { return _ang_vel; };
+        Vector3 getAngularVelocity() const { return Vector3(_ang_vel); };
 
     protected:
         /**
@@ -189,7 +184,7 @@ class Body
         /**
         * @brief The mass of the body
         */
-        double _mass = 1.0;
+        double _mass { 1.0 };
         
         /**
         * @brief The position of the center of mass of the body.

@@ -111,6 +111,12 @@ class Vector3
         };
 
         /**
+        * @brief Unary operator for negating the vector.
+        * @return The negated vector.
+        */
+        Vector3 operator-() const { return Vector3(-_x, -_y, -_z); };
+
+        /**
         * @brief Operator for accessing the x, y, and z values of the vector.
         * @param idx The index of the value to access.
         * @return The value at the given index.
@@ -202,7 +208,7 @@ class Vector3
         };
 
         /**
-        * @brief Normalizes the vector.
+        * @brief Normalizes the vector in place.
         */
         void normalize() { 
             double n = norm();
@@ -213,6 +219,22 @@ class Vector3
                 _z /= n;
             }
         }
+
+        /**
+        * @brief Returns a copy of this vector that is normalized. Does not modify the existed vector
+        * @return The normalized vector.
+        */
+        Vector3 getNormalized() const {
+            Vector3 v = *this;
+            v.normalize();
+            return v;
+        }
+
+        /**
+        * @brief Checks if the vector is a unit vector.
+        * @return Whether the vector is a unit vector.
+        */
+        bool isUnit() const { return std::abs(norm() - 1.0) <= _epsilon; };
     
     protected:
         /**
@@ -250,17 +272,6 @@ inline Vector3 operator*(double c, const Vector3& v)
 };
 
 /**
-* @brief Global operator for element-wise dividing a vector by a scalar.
-* @param v The vector to divide.
-* @param c The scalar to divide by.
-* @return The vector divided element-wise by the scalar.
-*/
-inline Vector3 operator/(double c, const Vector3& v)
-{
-    return v/c;
-};
-
-/**
 * @brief Global operator for element-wise adding a scalar to a vector.
 * @param v The vector to add to.
 * @param c The scalar to add.
@@ -270,18 +281,6 @@ inline Vector3 operator+(double c, const Vector3& v)
 {
     return v+c;
 };
-
-/**
-* @brief Global operator for element-wise subtracting a scalar from a vector.
-* @param v The vector to subtract from.
-* @param c The scalar to subtract.
-* @return The vector subtracted element-wise by the scalar.
-*/
-inline Vector3 operator-(double c, const Vector3& v)
-{
-    return Vector3(c-v[0], c-v[1], c-v[2]);
-};
-
 
 /**
 * @brief A class representing a quaternion.
@@ -320,6 +319,22 @@ class Quaternion
             }
         };
 
+        /**
+        * @brief Constructs a Quaternion based on an axis-angle rotation.
+        * @param axis The axis of rotation.
+        * @param angle The angle of rotation in radians.
+        */
+        Quaternion(const Vector3& axis, double angle) {
+            Vector3 ax = axis.getNormalized();
+            double s = std::sin(angle/2);
+            _w = std::cos(angle/2);
+            _x = ax[0]*s;
+            _y = ax[1]*s;
+            _z = ax[2]*s;
+            this->normalize();
+        };
+
+
         /* 
         ===================
              Operators 
@@ -353,6 +368,18 @@ class Quaternion
         }; 
 
         /**
+        * @brief Operator for checking equality with a scalar. This implies that the vector portions of the quaternion are zero.
+        * @param c The scalar to check equality with.
+        * @return Whether the quaternion is equal to the scalar within this->epsilon().
+        */
+        bool operator==(double c) const { 
+            return std::abs(_w - c) <= _epsilon 
+                    && std::abs(_x) <= _epsilon 
+                    && std::abs(_y) <= _epsilon
+                    && std::abs(_z) <= _epsilon;
+        };
+
+        /**
         * @brief Operator for multiplying two quaternions via their Hamilton product.
         * @param q The quaternion to multiply by.
         * @return The Hamilton product of the two quaternions.
@@ -367,13 +394,13 @@ class Quaternion
         }
 
         /**
-        * @brief Operator for rotating a vector via this quaternion via PASSIVE rotation operator.
+        * @brief Operator for rotating a vector by this quaternion via the rotation operation.
         * @param v The vector to rotate.
-        * @return The vector rotated by this quaternion via a PASSIVE rotation.
+        * @return The vector rotated by this quaternion.
         */
         Vector3 operator*(const Vector3& v) const { 
-            // passive rotation
-            // TODO check this
+            // Reference: https://math.umd.edu/~immortal/MATH431/book/ch_quaternions.pdf
+            // Theorem 5.1.2:
             Quaternion p = Quaternion(0.0, v[0], v[1], v[2]);
             Quaternion pp = *this * p * this->conjugate();
             return Vector3(pp[1], pp[2], pp[3]);
@@ -531,18 +558,6 @@ inline Quaternion operator*(double c, const Quaternion& q)
 {
     return q*c;
 };
-
-/**
-* @brief Global operator for element-wise dividing a quaternion by a scalar on the lefthand side.
-* @param c The scalar to divide by.
-* @param q The quaternion to divide.
-* @return The quaternion divided element-wise by the scalar.
-*/
-inline Quaternion operator/(double c, const Quaternion& q)
-{
-    return q/c;
-};
-
 
 /**
 * @brief A class representing a 3x3 matrix.
