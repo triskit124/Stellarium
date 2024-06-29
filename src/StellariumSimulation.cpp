@@ -71,11 +71,20 @@ void StellariumSimulation::_step()
 
 void StellariumSimulation::run(double t)
 {
+    const double t_f = time() + t;
     std::cout << "Running simulation for " << t << " seconds\n";
-    while (time() < t)
+    while (time() < t_f)
     {
-        std::cout << "Time: " << time() << " sec\n";
         _step();
+
+        std::cout << "Time: " << time() << " sec\n";
+        for (auto& body : _bodies)
+        {
+            std::cout << "Body: " << body->name() << " Position: ";
+            body->getPosition().print();
+            std::cout << "Body: " << body->name() << " Velocity: ";
+            body->getVelocity().print();
+        }
     }
 }
 

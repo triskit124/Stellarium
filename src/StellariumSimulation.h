@@ -48,7 +48,15 @@ class StellariumSimulation
          * @param att The attitude of the body.
          * @param ang_vel The angular velocity of the body.
          */
-        Body* addBody(const std::string& name, double mass, Vector3 cm, Matrix33 inertia, Vector3 pos, Vector3 vel, Quaternion att, Vector3 ang_vel);
+        Body* addBody(const std::string& name, 
+                      double mass = 1.0, 
+                      Vector3 cm = Vector3(0,0,0), 
+                      Matrix33 inertia = Matrix33(Vector3(1,0,0), Vector3(0,1,0), Vector3(0,0,1)),
+                      Vector3 pos = Vector3(0,0,0), 
+                      Vector3 vel = Vector3(0,0,0), 
+                      Quaternion att = Quaternion(1,0,0,0), 
+                      Vector3 ang_vel = Vector3(0,0,0)
+        );
 
         /**
          * @brief Adds an integrator to the simulation.

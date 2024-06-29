@@ -52,8 +52,8 @@ void RK4::integrate(std::vector<Body*> bodies, double& t)
     _computeStateVector(bodies);
     _computeStateDotVector(bodies);
 
-    std::vector<double> k0, k1, k2, k3, k4;
-    k0.resize(_state.size());
+    std::vector<double> initial_state, k1, k2, k3, k4;
+    initial_state.resize(_state.size());
     k1.resize(_state.size());
     k2.resize(_state.size());
     k3.resize(_state.size());
@@ -61,7 +61,7 @@ void RK4::integrate(std::vector<Body*> bodies, double& t)
 
     for (size_t i = 0; i < _state.size(); ++i)
     {
-        k0[i] = *_state[i];
+        initial_state[i] = *_state[i];
     }
 
     /* 
@@ -80,7 +80,7 @@ void RK4::integrate(std::vector<Body*> bodies, double& t)
 
     for (size_t i = 0; i < _state.size(); ++i)
     {
-        *_state[i] += (_dt * k1[i] / 2);
+        *_state[i] = initial_state[i] + (_dt * k1[i] / 2);
     }
 
     _computeStateDotVector(bodies);
@@ -94,7 +94,7 @@ void RK4::integrate(std::vector<Body*> bodies, double& t)
     */
     for (size_t i = 0; i < _state.size(); ++i)
     {
-        *_state[i] += (_dt * k2[i] / 2);
+        *_state[i] = initial_state[i] + (_dt * k2[i] / 2);
     }
 
     _computeStateDotVector(bodies);
@@ -110,7 +110,7 @@ void RK4::integrate(std::vector<Body*> bodies, double& t)
 
     for (size_t i = 0; i < _state.size(); ++i)
     {
-        *_state[i] += (_dt * k3[i]);
+        *_state[i] = initial_state[i] + (_dt * k3[i]);
     }
 
     _computeStateDotVector(bodies);
@@ -124,7 +124,7 @@ void RK4::integrate(std::vector<Body*> bodies, double& t)
     */
     for (size_t i = 0; i < _state.size(); i++)
     {
-        *_state[i] = k0[i] + (_dt / 6) * (k1[i] + 2*k2[i] + 2*k3[i] + k4[i]);
+        *_state[i] = initial_state[i] + (_dt / 6) * (k1[i] + 2*k2[i] + 2*k3[i] + k4[i]);
     }
 };
 
