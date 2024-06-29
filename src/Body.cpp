@@ -32,7 +32,7 @@ std::array<double*, STELL_BODY_STATE_SIZE> Body::getState()
 std::array<double, STELL_BODY_STATE_SIZE> Body::getStateDot() const
 {
     // rigid body 6DOF equations of motion
-    Quaternion q_dot = _att * Quaternion(0.0, _ang_vel[0], _ang_vel[1], _ang_vel[2]) * 0.5;
+    Quaternion q_dot = 0.5 * _att * Quaternion(0.0, _ang_vel[0], _ang_vel[1], _ang_vel[2]);
     Vector3 accel = (_force / _mass) - (_ang_vel.cross(_vel));
     Vector3 ang_accel = _inertia.inverse() * (_torque - _ang_vel.cross(_inertia * _ang_vel));
 

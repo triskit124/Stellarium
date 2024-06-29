@@ -38,16 +38,6 @@ class Vector3
         */
         Vector3(double x, double y, double z) : _x(x), _y(y), _z(z) {};
 
-        /**
-        * @brief Copy constructor.
-        */
-        Vector3(const Vector3& v) : _x(v[0]), _y(v[1]), _z(v[2]) {};
-
-        /**
-        * @brief Default destructor.
-        */
-        ~Vector3() {};
-
         /* 
         ===================
              Operators 
@@ -87,39 +77,33 @@ class Vector3
         * @param v The vector to add.
         * @return The element-wise sum of the two vectors.
         */
-        Vector3 operator+(Vector3 v) const { return Vector3(_x+v[0], _y+v[1], _z+v[2]); };
+        Vector3 operator+(const Vector3& v) const { return Vector3(_x+v[0], _y+v[1], _z+v[2]); };
         
         /**
         * @brief Operator for subtracting two vectors.
         * @param v The vector to subtract.
         * @return The vector subtracted from this vector.
         */
-        Vector3 operator-(Vector3 v) const { return Vector3(_x-v[0], _y-v[1], _z-v[2]); };
-        
-        /**
-        * @brief Operator for assigning a vector to another vector.
-        * @param v The vector to assign.
-        */
-        void operator=(Vector3 v) { _x = v[0]; _y = v[1]; _z = v[2]; };
-        
+        Vector3 operator-(const Vector3& v) const { return Vector3(_x-v[0], _y-v[1], _z-v[2]); };
+               
         /**
         * @brief Operator for element-wise adding the values of another vector to this vector.
         * @param v The vector to add with.
         */
-        void operator+=(Vector3 v) { _x += v[0]; _y += v[1]; _z += v[2]; };
+        void operator+=(const Vector3& v) { _x += v[0]; _y += v[1]; _z += v[2]; };
         
         /**
         * @brief Operator for element-wise subtracting the values of another vector to this vector.
         * @param v The vector to subtract with.
         */
-        void operator-=(Vector3 v) { _x -= v[0]; _y -= v[1]; _z -= v[2]; };
+        void operator-=(const Vector3& v) { _x -= v[0]; _y -= v[1]; _z -= v[2]; };
         
         /**
         * @brief Operator for checking equality of two vectors.
         * @param v The vector to check equality with.
         * @return Whether the two vectors are equal within this->epsilon().
         */
-        bool operator==(Vector3 v) const { 
+        bool operator==(const Vector3& v) const { 
             return 
                 std::abs(_x - v[0]) <= _epsilon 
                 && std::abs(_y - v[1]) <= _epsilon 
@@ -254,6 +238,50 @@ class Vector3
     private:
 };
 
+/**
+* @brief Global operator for element-wise multiplying a vector by a scalar.
+* @param v The vector to multiply by.
+* @param c The scalar to multiply by.
+* @return The vector multiplied element-wise by the scalar.
+*/
+inline Vector3 operator*(double c, const Vector3& v)
+{
+    return v*c;
+};
+
+/**
+* @brief Global operator for element-wise dividing a vector by a scalar.
+* @param v The vector to divide.
+* @param c The scalar to divide by.
+* @return The vector divided element-wise by the scalar.
+*/
+inline Vector3 operator/(double c, const Vector3& v)
+{
+    return v/c;
+};
+
+/**
+* @brief Global operator for element-wise adding a scalar to a vector.
+* @param v The vector to add to.
+* @param c The scalar to add.
+* @return The vector added element-wise by the scalar.
+*/
+inline Vector3 operator+(double c, const Vector3& v)
+{
+    return v+c;
+};
+
+/**
+* @brief Global operator for element-wise subtracting a scalar from a vector.
+* @param v The vector to subtract from.
+* @param c The scalar to subtract.
+* @return The vector subtracted element-wise by the scalar.
+*/
+inline Vector3 operator-(double c, const Vector3& v)
+{
+    return Vector3(c-v[0], c-v[1], c-v[2]);
+};
+
 
 /**
 * @brief A class representing a quaternion.
@@ -292,11 +320,6 @@ class Quaternion
             }
         };
 
-        /**
-        * @brief Destructor.
-        */
-        ~Quaternion() {};
-
         /* 
         ===================
              Operators 
@@ -322,7 +345,7 @@ class Quaternion
         * @param q The quaternion to check equality with.
         * @return Whether the two quaternions are equal within this->epsilon().
         */
-        bool operator==(Quaternion q) const { 
+        bool operator==(const Quaternion& q) const { 
             return std::abs(_w - q[0]) <= _epsilon 
                     && std::abs(_x - q[1]) <= _epsilon 
                     && std::abs(_y - q[2]) <= _epsilon
@@ -495,6 +518,29 @@ class Quaternion
         double _epsilon = STELL_EPSILON;
 
     private:
+};
+
+
+/**
+* @brief Global operator for element-wise multiplying a quaternion by a scalar on the lefthand side.
+* @param c The scalar to multiply by.
+* @param q The quaternion to multiply by.
+* @return The quaternion multiplied element-wise by the scalar.
+*/
+inline Quaternion operator*(double c, const Quaternion& q)
+{
+    return q*c;
+};
+
+/**
+* @brief Global operator for element-wise dividing a quaternion by a scalar on the lefthand side.
+* @param c The scalar to divide by.
+* @param q The quaternion to divide.
+* @return The quaternion divided element-wise by the scalar.
+*/
+inline Quaternion operator/(double c, const Quaternion& q)
+{
+    return q/c;
 };
 
 
@@ -681,6 +727,28 @@ class Matrix33
         Vector3 _z {0.0, 0.0, 0.0};
 
     private:
+};
+
+/**
+* @brief Global operator for element-wise multiplying a matrix by a scalar on the lefthand side.
+* @param c The scalar to multiply by.
+* @param m The matrix to multiply by.
+* @return The matrix multiplied element-wise by the scalar.
+*/
+inline Matrix33 operator*(double c, const Matrix33& m)
+{
+    return m*c;
+};
+
+/**
+* @brief Global operator for element-wise dividing a matrix by a scalar on the lefthand side.
+* @param c The scalar to divide by.
+* @param m The matrix to divide.
+* @return The matrix divided element-wise by the scalar.
+*/
+inline Matrix33 operator/(double c, const Matrix33& m)
+{
+    return m/c;
 };
 
 

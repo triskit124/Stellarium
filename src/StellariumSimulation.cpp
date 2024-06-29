@@ -77,6 +77,7 @@ void StellariumSimulation::run(double t)
     {
         _step();
 
+#if 0
         std::cout << "Time: " << time() << " sec\n";
         for (auto& body : _bodies)
         {
@@ -85,6 +86,7 @@ void StellariumSimulation::run(double t)
             std::cout << "Body: " << body->name() << " Velocity: ";
             body->getVelocity().print();
         }
+#endif
     }
 }
 

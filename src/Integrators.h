@@ -25,13 +25,13 @@ class Integrator
     public:
 
         /**
-        * @brief Constructor for the Integrator object.
+        * @brief Default constructor.
         * @param dt The integration step size.
         */
         Integrator(const double dt = 1.0) { _dt = dt; };
 
         /**
-        * @brief Destructor for the Integrator object.
+        * @brief Destructor.
         */
         virtual ~Integrator();
 
@@ -80,7 +80,7 @@ class RK4 : public Integrator
     public:
 
         /**
-        * @brief Constructor for the rk4 object.
+        * @brief Default constructor.
         */
         RK4(const double dt = 1.0) { _dt = dt; };
         
