@@ -54,25 +54,14 @@ class StellariumSimulation
          * @brief Adds an integrator to the simulation.
          * 
          * @param type The type of the integrator.
+         * @param dt The size of the fixed integrator step.
          */
-        void addIntegrator(const std::string& type);
-
-        /**
-         * @brief Returns the size of the fixed integrator step.
-         */
-        double stepSize() const { return _dt; };
+        void addIntegrator(STELL_INTEGRATOR_TYPE type,  const double dt);
 
         /**
          * @brief Returns the current time of the simulation.
          */
         double time() const { return _t; };
-
-        /**
-         * @brief Sets the size of the fixed integrator step.
-         * 
-         * @param dt The size of the fixed integrator step
-         */
-        void stepSize(double dt) { _dt = dt; };
 
         /**
          * @brief Runs the simulation for a given time.
@@ -81,16 +70,28 @@ class StellariumSimulation
          */
         void run(double t);
 
-        void _step();
    
     protected:
+        /**
+        * @brief The bodies in the simulation.
+        */
         std::vector<std::unique_ptr<Body>> _bodies {}; /**< vector of bodies in the simulation. */
-        std::vector<double*> _state {}; /**< The vector of state variables for the bodies. */
-        std::vector<double> _state_dot {}; /**< The vector of state derivatives for the bodies. */
+        
+        /**
+        * @brief The integrator used for advancing the simulation.
+        */
         std::unique_ptr<Integrator> _integrator = nullptr; /**< The integrator used for advancing the simulation. */
 
-        double _dt = 0.1; /**< The size of the fixed integrator step. */
-        double _t = 0.0; /**< The current time of the simulation. */
+        /**
+        * @brief The simulation time.
+        */
+        double _t = 0.0;
+
+        /**
+        * @brief Advances the simulation by one step. The size of the step is determined by the integrator.
+        */
+        void _step();
+
 
     private:
 };

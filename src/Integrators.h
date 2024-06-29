@@ -3,28 +3,93 @@
 
 #include <vector>
 
+#include "Body.h"
 #include "Math.h"
 
 namespace Stellarium 
 {
 
+/**
+* @brief Supported integrator types.
+*/
+enum STELL_INTEGRATOR_TYPE
+{
+    rk4,
+};
+
+/**
+ * @brief An abstract class representing an integrator.
+ */
 class Integrator
 {
     public:
-        Integrator() {};
-        virtual ~Integrator() {};
-        virtual void integrate(std::vector<double*>& state, const std::vector<double>& state_dot, double dt) = 0;
+
+        /**
+        * @brief Constructor for the Integrator object.
+        * @param dt The integration step size.
+        */
+        Integrator(const double dt = 1.0) { _dt = dt; };
+
+        /**
+        * @brief Destructor for the Integrator object.
+        */
+        virtual ~Integrator();
+
+        /**
+        * @brief Integrates the state of the system.
+        * @param bodies[in] The bodies to be integrated.
+        * @param t[out] The simulation time variable. Gets updated by the integrator.
+        */
+        virtual void integrate(std::vector<Body*> bodies, double& t) = 0;
+
+    protected:
+        /**
+        * @brief Collects the state vector for each body and stores the total simulation state in this->_state.
+        * @param bodies[in] The bodies to be integrated.
+        */
+        virtual void _computeStateVector(std::vector<Body*> bodies) = 0;
+
+        /**
+        * @brief Collects the state derivative vector for each body and stores the total simulation state derivative in this->_state_dot.
+        * @param bodies[in] The bodies to be integrated.
+        */
+        virtual void _computeStateDotVector(std::vector<Body*> bodies) = 0;
+
+        /**
+        * @brief The total state vector for all bodies in the simulation.
+        */
+        std::vector<double*> _state {};
+        
+        /**
+        * @brief The total state derivative vector for all bodies in the simulation.
+        */
+        std::vector<double> _state_dot {};
+
+        /**
+        * @brief the integration step size 
+        */
+        double _dt;
 
 };
 
-class rk4 : public Integrator
+/**
+ * @brief A class representing the RK4 integrator.
+ */
+class RK4 : public Integrator
 {
     public:
-        rk4() {};
-        ~rk4() {};
-        void integrate(std::vector<double*>& state, const std::vector<double>& state_dot, double dt);
+
+        /**
+        * @brief Constructor for the rk4 object.
+        */
+        RK4(const double dt = 1.0) { _dt = dt; };
+        
+
+        void integrate(std::vector<Body*> bodies, double& t);
 
     protected:
+        void _computeStateVector(std::vector<Body*> bodies);
+        void _computeStateDotVector(std::vector<Body*> bodies);
 
     private:
 
