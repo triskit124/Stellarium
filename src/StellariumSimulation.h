@@ -80,8 +80,9 @@ class StellariumSimulation
          */
         void run(double t);
 
-   
     protected:
+
+    private:
         /**
         * @brief The bodies in the simulation.
         */
@@ -102,8 +103,6 @@ class StellariumSimulation
         */
         void _step();
 
-
-    private:
 };
 
 } // end namespace Stellarium

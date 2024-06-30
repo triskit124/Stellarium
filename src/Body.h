@@ -184,6 +184,8 @@ class Body
         Vector3 getAngularVelocity() const { return Vector3(_ang_vel); };
 
     protected:
+    
+    private:
         /**
         * @brief The name of the body.
         */
@@ -243,8 +245,6 @@ class Body
         * @brief The total external torque acting on the body, expressed in the BODY frame.
         */
         Vector3 _torque {0.0, 0.0, 0.0};
-
-    private:
 
 };
 

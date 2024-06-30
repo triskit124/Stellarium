@@ -235,6 +235,8 @@ class Vector3
         bool isUnit() const { return std::abs(norm() - 1.0) <= _epsilon; };
     
     protected:
+    
+    private:
         /**
         * @brief The x value of the vector.
         */
@@ -254,8 +256,6 @@ class Vector3
         * @brief The epsilon value for floating point comparisons.
         */
         double _epsilon = STELL_EPSILON;
-
-    private:
 };
 
 /**

@@ -174,8 +174,9 @@ class Matrix33
             return adjoint().transpose() / det();
         };
 
-
     protected:
+
+    private:
         /**
         * @brief The 1st row of the matrix.
         */
@@ -190,8 +191,6 @@ class Matrix33
         * @brief The 3rd row of the matrix.
         */
         Vector3 _z {0.0, 0.0, 0.0};
-
-    private:
 };
 
 /**

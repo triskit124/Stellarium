@@ -18,7 +18,7 @@ class Test
         void assert(const std::string& description, bool condition);
         void summarize();
 
-    protected:
+    private:
         std::string _name {};
         std::map<std::string, bool> _results {};
 
@@ -28,7 +28,7 @@ class Test
         void boldGreen(const std::string& text);
         void boldRed(const std::string& text);
 
-    private:
+    protected:
 };
 
 } // end namespace Stellarium

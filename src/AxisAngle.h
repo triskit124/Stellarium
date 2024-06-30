@@ -91,6 +91,8 @@ class AxisAngle
         void epsilon(double e) { _epsilon = e; };
 
     protected:
+
+    private:
         /**
         * @brief The axis of rotation.
         */
@@ -106,7 +108,6 @@ class AxisAngle
         */
         double _epsilon = STELL_EPSILON;
 
-    private:
 };
 
 } // end namespace Stellarium

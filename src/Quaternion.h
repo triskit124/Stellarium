@@ -268,6 +268,8 @@ class Quaternion
         }
 
     protected:
+    
+    private:
         /**
         * @brief The scalar component of the quaternion.
         */
@@ -292,8 +294,6 @@ class Quaternion
         * @brief The epsilon value for floating point comparisons.
         */
         double _epsilon = STELL_EPSILON;
-
-    private:
 };
 
 
