@@ -187,52 +187,52 @@ class Body
         double _mass { 1.0 };
         
         /**
-        * @brief The position of the center of mass of the body.
+        * @brief The position of the center of mass of the body w.r.t the body frame, expressed in the body frame.
         */
         Vector3 _cm {0.0, 0.0, 0.0};
         
         /**
-        * @brief The inertia tensor for the body.
+        * @brief The inertia tensor for the body expressed in the body frame.
         */
         Matrix33 _inertia = {{1.0, 0.0, 0.0} ,{0.0, 1.0, 0.0}, {0.0, 0.0, 1.0}};
         
         /**
-        * @brief The position state of the body.
+        * @brief The position of the body w.r.t inertial, expressed in INERTIAL frame.
         */
         Vector3 _pos {0.0, 0.0, 0.0};
         
         /**
-        * @brief The velocity state of the body.
+        * @brief The velocity of the body w.r.t inertial, expressed in INERTIAL frame.
         */
         Vector3 _vel {0.0, 0.0, 0.0};
         
         /**
-        * @brief The acceleration of the body.
+        * @brief The acceleration of the body w.r.t inertial, expressed in INERTIAL frame.
         */
         Vector3 _acc {0.0, 0.0, 0.0};
         
         /**
-        * @brief The attitude state of the body.
+        * @brief The attitude quaternion of the body, representing frame rotation from INERTIAL to BODY frame.
         */
         Quaternion _att {0.0, 0.0, 0.0, 1.0};
         
         /**
-        * @brief The angular velocity state of the body.
+        * @brief The angular velocity of the body w.r.t inertial, expressed in the BODY frame.
         */
         Vector3 _ang_vel {0.0, 0.0, 0.0};
         
         /**
-        * @brief The angular acceleration of the body.
+        * @brief The angular acceleration of the body w.r.t inertial, expressed in the BODY frame.
         */
         Vector3 _ang_acc {0.0, 0.0, 0.0};
 
         /**
-        * @brief The total external force acting on the body.
+        * @brief The total external force acting on the body, expressed in the BODY frame.
         */
         Vector3 _force {0.0, 0.0, 0.0};
         
         /**
-        * @brief The total external torque acting on the body.
+        * @brief The total external torque acting on the body, expressed in the BODY frame.
         */
         Vector3 _torque {0.0, 0.0, 0.0};
 

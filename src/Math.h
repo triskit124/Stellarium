@@ -394,15 +394,20 @@ class Quaternion
         }
 
         /**
-        * @brief Operator for rotating a vector by this quaternion via the rotation operation.
-        * @param v The vector to rotate.
-        * @return The vector rotated by this quaternion.
+        * @brief Rotates the frame that the vector v is expressed in. This is a PASSIVE rotation (i.e. rotates the frame, not the vector)
+        * @param v The vector.
+        * @return The vector expressed in the rotated frame.
         */
         Vector3 operator*(const Vector3& v) const { 
-            // Reference: https://math.umd.edu/~immortal/MATH431/book/ch_quaternions.pdf
-            // Theorem 5.1.2:
+            if (isIdentity())
+            {
+                return v;
+            }
+            // Reference: https://faculty.sites.iastate.edu/jia/files/inline-files/quaternion.pdf
+            // Theorem 2:
             Quaternion p = Quaternion(0.0, v[0], v[1], v[2]);
-            Quaternion pp = *this * p * this->conjugate();
+            Quaternion pp = this->conjugate() * p * (*this);
+
             return Vector3(pp[1], pp[2], pp[3]);
         };
 
@@ -468,10 +473,13 @@ class Quaternion
             if (!isUnit())
             {
                 double n = norm();
-                _w /= n;
-                _x /= n;
-                _y /= n;
-                _z /= n;
+                if (n > _epsilon)
+                {
+                    _w /= n;
+                    _x /= n;
+                    _y /= n;
+                    _z /= n;
+                }
             }
         }
 
@@ -492,6 +500,12 @@ class Quaternion
         * @return Whether the quaternion is a unit quaternion.
         */
         bool isUnit() const { return std::abs(norm() - 1.0) <= _epsilon; };
+
+        /**
+        * @brief Checks if the quaternion is the identity quaternion.
+        * @return Whether the quaternion is the identity quaternion.
+        */
+        bool isIdentity() const { return *this == Quaternion(1.0, 0.0, 0.0, 0.0); };
 
         /**
         * @brief Returns the conjugate of the quaternion.
