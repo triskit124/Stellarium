@@ -8,12 +8,12 @@ namespace Stellarium
 {
 
 
-void RK4::_computeStateVector(std::vector<Body*> bodies)
+void Integrator::_computeStateVector(std::vector<Body*> bodies)
 {
    _state.clear();
    _state.reserve(bodies.size() * STELL_BODY_STATE_SIZE);
 
-    // Collect the state derivatives of the system
+    // Collect the state vector of the system
     for (auto& body : bodies)
     {
         std::array<double*, STELL_BODY_STATE_SIZE> state_dot = body->getState();
@@ -24,7 +24,7 @@ void RK4::_computeStateVector(std::vector<Body*> bodies)
     }
 };
 
-void RK4::_computeStateDotVector(std::vector<Body*> bodies)
+void Integrator::_computeStateDotVector(std::vector<Body*> bodies)
 {
    _state_dot.clear();
    _state_dot.reserve(bodies.size() * STELL_BODY_STATE_SIZE);

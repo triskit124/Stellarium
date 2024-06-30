@@ -1,5 +1,4 @@
 #include "Body.h"
-#include "Math.h"
 #include "Constants.h"
 
 #include <array>
@@ -67,12 +66,5 @@ std::array<double, STELL_BODY_STATE_SIZE> Body::getStateDot() const
     return state_dot;
 }
 
-void Body::setState(const std::array<double, STELL_BODY_STATE_SIZE>& state)
-{
-    _pos = {state[0], state[1], state[2]};
-    _att = {state[3], state[4], state[5], state[6]};
-    _vel = {state[7], state[8], state[9]};
-    _ang_vel = {state[10], state[11], state[12]};
-}
 
 } // end namespace Stellarium

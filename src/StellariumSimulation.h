@@ -3,7 +3,9 @@
 
 #include "Constants.h"
 #include "Body.h"
-#include "Math.h"
+#include "Vector3.h"
+#include "Matrix33.h"
+#include "Quaternion.h"
 #include "Integrators.h"
 
 #include <memory>

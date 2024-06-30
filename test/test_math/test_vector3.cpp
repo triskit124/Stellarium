@@ -1,5 +1,6 @@
 #include "../../src/TestHarness.h"
-#include "../../src/Math.h"
+#include "../../src/Quaternion.h"
+#include "../../src/Vector3.h"
 
 using namespace Stellarium;
 

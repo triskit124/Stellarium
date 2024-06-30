@@ -4,7 +4,9 @@
 #include <array>
 #include <string>
 
-#include "Math.h"
+#include "Vector3.h"
+#include "Matrix33.h"
+#include "Quaternion.h"
 
 namespace Stellarium 
 {
@@ -94,15 +96,27 @@ class Body
 
         /**
         * @brief Adds a force to the body.
-        * @param force The force to be added.
+        * @param force The force to be added, expressed in the body frame.
         */
-        void addForce(const Vector3& force) { _force += force; };
+        void addBodyFrameForce(const Vector3& force) { _force += force; };
 
         /**
         * @brief Adds a torque to the body.
-        * @param torque The torque to be added.
+        * @param torque The torque to be added, expressed in the body frame.
         */
-        void addTorque(const Vector3& torque) { _torque += torque; };
+        void addBodyFrameTorque(const Vector3& torque) { _torque += torque; };
+
+        /**
+        * @brief Adds a force to the body.
+        * @param force The force to be added, expressed in the inertial frame.
+        */
+        void addInertialFrameForce(const Vector3& force) { _force += _att * force; };
+
+        /**
+        * @brief Adds a torque to the body.
+        * @param torque The torque to be added, expressed in the inertial frame.
+        */
+        void addInertialFrameTorque(const Vector3& torque) { _torque += _att * torque; };
 
         /**
         * @brief Clears all forces and torques acting on the body.
@@ -120,12 +134,6 @@ class Body
         * @return The derivative of the state of the body as an array of doubles.
         */
         std::array<double, 13> getStateDot() const;
-
-        /**
-        * @brief Sets the state of the body.
-        * @param state The new state of the body as an array of doubles.
-        */
-        void setState(const std::array<double, 13>& state);
 
         /**
         * @brief Sets the position state of the body.
@@ -214,7 +222,7 @@ class Body
         /**
         * @brief The attitude quaternion of the body, representing frame rotation from INERTIAL to BODY frame.
         */
-        Quaternion _att {0.0, 0.0, 0.0, 1.0};
+        Quaternion _att {1.0, 0.0, 0.0, 0.0};
         
         /**
         * @brief The angular velocity of the body w.r.t inertial, expressed in the BODY frame.

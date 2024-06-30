@@ -14,7 +14,7 @@ int main() {
 
     auto body = sim.addBody("body_1");
 
-    body->addForce(Vector3(1,-1,1));
+    body->addInertialFrameForce(Vector3(1,-1,1));
 
     sim.run(10.0);
 
@@ -22,13 +22,19 @@ int main() {
     test.assert("Body velocity 1", body->getVelocity() == Vector3(10, -10, 10));
 
     body->clearForces();
-    body->addForce(Vector3(-1,1,-1));
+    body->addInertialFrameForce(Vector3(-1,1,-1));
 
     sim.run(10.0);
 
     test.assert("Body position 2", body->getPosition() == Vector3(100, -100, 100));
     test.assert("Body velocity 2", body->getVelocity() == Vector3(0, 0, 0));
 
+    // at rest
+    body->clearForces();
+    sim.run(10.0);
+
+    test.assert("Body position 3", body->getPosition() == Vector3(100, -100, 100));
+    test.assert("Body velocity 3", body->getVelocity() == Vector3(0, 0, 0));
 
     return 0;
 }

@@ -4,7 +4,6 @@
 #include <vector>
 
 #include "Body.h"
-#include "Math.h"
 
 namespace Stellarium 
 {
@@ -47,13 +46,13 @@ class Integrator
         * @brief Collects the state vector for each body and stores the total simulation state in this->_state.
         * @param bodies[in] The bodies to be integrated.
         */
-        virtual void _computeStateVector(std::vector<Body*> bodies) = 0;
+        virtual void _computeStateVector(std::vector<Body*> bodies);
 
         /**
         * @brief Collects the state derivative vector for each body and stores the total simulation state derivative in this->_state_dot.
         * @param bodies[in] The bodies to be integrated.
         */
-        virtual void _computeStateDotVector(std::vector<Body*> bodies) = 0;
+        virtual void _computeStateDotVector(std::vector<Body*> bodies);
 
         /**
         * @brief The total state vector for all bodies in the simulation.
@@ -84,12 +83,14 @@ class RK4 : public Integrator
         */
         RK4(const double dt = 1.0) { _dt = dt; };
         
-
-        void integrate(std::vector<Body*> bodies, double& t);
+        /**
+        * @brief Integrates the state of the system.
+        * @param bodies[in] The bodies to be integrated.
+        * @param t[out] The simulation time variable. Gets updated by the integrator.
+        */
+        void integrate(std::vector<Body*> bodies, double& t) override;
 
     protected:
-        void _computeStateVector(std::vector<Body*> bodies);
-        void _computeStateDotVector(std::vector<Body*> bodies);
 
     private:
 
