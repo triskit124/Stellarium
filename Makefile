@@ -15,7 +15,8 @@ $(DOCSDIR):
 all: $(BUILDDIR)
 	cd $(BUILDDIR); \
 	cmake ..; \
-	cmake --build .
+	cmake --build .; \
+	cp compile_commands.json ../.vscode/
 
 clean:
 	rm -rf $(BUILDDIR) $(DOCSDIR)
