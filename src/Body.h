@@ -133,7 +133,7 @@ class Body
         * @brief Gets the derivative of the state of the body via rigid-body equations of motion.
         * @return The derivative of the state of the body as an array of doubles.
         */
-        std::array<double, 13> getStateDot() const;
+        std::array<double, 13> getStateDot();
 
         /**
         * @brief Sets the position state of the body.

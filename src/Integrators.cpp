@@ -16,8 +16,8 @@ void Integrator::_computeStateVector(std::vector<Body*> bodies)
     // Collect the state vector of the system
     for (auto& body : bodies)
     {
-        std::array<double*, STELL_BODY_STATE_SIZE> state_dot = body->getState();
-        for (double* s : state_dot)
+        std::array<double*, STELL_BODY_STATE_SIZE> state = body->getState();
+        for (double* s : state)
         {
             _state.push_back(s);
         }

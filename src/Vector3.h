@@ -210,7 +210,7 @@ class Vector3
         */
         void normalize() { 
             double n = norm();
-            if (n != 1.0)
+            if (!isUnit() && n > _epsilon)
             {
                 _x /= n;
                 _y /= n;

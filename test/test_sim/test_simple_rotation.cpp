@@ -21,9 +21,13 @@ int main() {
 
     test.assert("Body angular velocity 1", body->getAngularVelocity() == Vector3(10, 0, 0));
 
+    std::cout << "FINISHED\n";
+    // body->getAttitude().print();
     AxisAngle aa = AxisAngle(body->getAttitude());
     aa.getAxis().print();
     std::cout << aa.getAngle() << std::endl;
+
+    // TODO: the rotational dynamics seem to be broken. Need to investigate
 
     return 0;
 }

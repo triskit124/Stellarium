@@ -2,6 +2,7 @@
 #include "Constants.h"
 
 #include <array>
+#include <iostream>
 #include <string>
 
 namespace Stellarium 
@@ -10,6 +11,8 @@ namespace Stellarium
 
 std::array<double*, STELL_BODY_STATE_SIZE> Body::getState()
 {
+    _att.normalize();
+
     std::array<double*, STELL_BODY_STATE_SIZE> state {
         _pos.x(),
         _pos.y(),
@@ -28,13 +31,15 @@ std::array<double*, STELL_BODY_STATE_SIZE> Body::getState()
     return state;
 }
 
-std::array<double, STELL_BODY_STATE_SIZE> Body::getStateDot() const
+std::array<double, STELL_BODY_STATE_SIZE> Body::getStateDot()
 {
     /* 
     =============================================
         rigid body 6DOF equations of motion
     =============================================
     */
+
+    _att.normalize();
 
     // translational acceleration of body w.r.t. inertial frame, expressed in INERTIAL frame
     // _force is given in the body frame so we need to rotate it to the inertial frame first

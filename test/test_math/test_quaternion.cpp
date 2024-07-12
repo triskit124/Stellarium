@@ -22,6 +22,17 @@ int main() {
 
     Test test("Quaternion");
 
+    /*
+    ========================================
+            test basic operations
+    ========================================
+    */
+
+    Quaternion qq(1, 2, 3, 4);
+    test.assert("Quaternion operators 1", 2*qq == Quaternion(2, 4, 6, 8));
+    test.assert("Quaternion operators 2", qq*2 == Quaternion(2, 4, 6, 8));
+    test.assert("Quaternion operators 3", qq/2 == Quaternion(0.5, 1, 1.5, 2));
+
     /* 
     ==============================================================================================
             test quaternion multiplation (Hamilton product), conjugation, norm, inverse
@@ -38,6 +49,11 @@ int main() {
     q1 = Quaternion(2, 3, -2, 1);
     q2 = Quaternion(1, -1, 4, 5);
     test.assert("Quaternion multiplication 3", q1*q2 == Quaternion(8, -13, -10, 21));
+
+    // ref [2] Example 1
+    Quaternion p = Quaternion(3, 1, -2, 1);
+    Quaternion q = Quaternion(2, -1, 2, 3);
+    test.assert("Quaternion multiplication 4", p*q == Quaternion(8, -9, -2, 11));
     
     // ref [1] Definition 2.3.1
     test.assert("Quaternion conjugation 1", q1.conjugate() == Quaternion(2, -3, 2, -1));
