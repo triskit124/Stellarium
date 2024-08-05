@@ -9,7 +9,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(PROJECT_NAME "Stellarium")
 
 # Specify the source files
-file(GLOB SRC_FILES "src/*.cpp" "src/*.cc")
+file(GLOB SRC_FILES "src/*.cpp" "src/*.cc" "src/*.c")
 
 # Specify the include directories
 set(INCLUDE_DIRS "src")
@@ -22,6 +22,9 @@ target_compile_options(${PROJECT_NAME} PUBLIC -g -Wall -Wextra -Wpedantic -O3)
 
 # Set include directories
 target_include_directories(${PROJECT_NAME} PUBLIC ${INCLUDE_DIRS})
+
+# Set libraries to link in
+target_link_libraries(${PROJECT_NAME} glfw3 GL X11 pthread Xrandr Xi dl)
 
 # Compile all tests
 add_subdirectory(test)

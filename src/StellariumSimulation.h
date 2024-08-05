@@ -7,6 +7,7 @@
 #include "Matrix33.h"
 #include "Quaternion.h"
 #include "Integrators.h"
+#include "GraphicsEngine.h"
 
 #include <memory>
 #include <vector>
@@ -24,7 +25,11 @@ class StellariumSimulation
         /**
          * @brief Constructs a StellariumSimulation object.
          */
-        StellariumSimulation() {};
+        StellariumSimulation(bool graphics = false) {
+            if (graphics) {
+                _graphics = std::make_unique<GraphicsEngine>();
+            }
+        };
 
         /**
          * @brief Destroys the StellariumSimulation object.
@@ -97,6 +102,11 @@ class StellariumSimulation
         * @brief The simulation time.
         */
         double _t = 0.0;
+
+        /**
+        * @brief Pointer to the graphics engine.
+        */
+        std::unique_ptr<GraphicsEngine> _graphics = nullptr;
 
         /**
         * @brief Advances the simulation by one step. The size of the step is determined by the integrator.

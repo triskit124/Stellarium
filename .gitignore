@@ -33,3 +33,5 @@
 
 build/
 doc/
+.vscode
+.cache
