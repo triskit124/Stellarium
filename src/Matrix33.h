@@ -1,8 +1,6 @@
 #ifndef STELL_MATRIX33
 #define STELL_MATRIX33
 
-#include <stdexcept>
-
 #include "Constants.h"
 #include "Vector3.h"
 
@@ -18,7 +16,7 @@ class Matrix33
 
         /* 
         ===================================
-             Constructors/Desctructors 
+             Constructors/Destructors 
         ===================================
         */
 
@@ -120,6 +118,15 @@ class Matrix33
             throw std::invalid_argument("invalid index"); 
         }
 
+        /**
+        * @brief Operator testing equality of two matrices.
+        * @param m The matrix to compare to.
+        * @return True if the matrices are equal, false otherwise.
+        */
+        bool operator==(const Matrix33& m) const {
+            return _x == m[0] && _y == m[1] && _z == m[2];
+        };
+
         /* 
         ===================
               Methods 
@@ -140,7 +147,7 @@ class Matrix33
         * @brief Computes the transpose of the matrix.
         * @return The transpose of the matrix.
         */
-        Matrix33 transpose() const {
+        Matrix33 getTranspose() const {
             return Matrix33(
                 _x[0], _y[0], _z[0],
                 _x[1], _y[1], _z[1],
@@ -149,20 +156,26 @@ class Matrix33
         };
 
         /**
-        * @brief Computes the adjoint of the matrix.
-        * @return The adjoint of the matrix.
+        * @brief Computes the adjugate of the matrix.
+        * @return The adjugate of the matrix.
         */
-        Matrix33 adjoint() const {
+        Matrix33 getAdjugate() const {
             return Matrix33(
-                _y[1]*_z[2] - _y[2]*_z[1],
-                _x[2]*_z[1] - _x[1]*_z[2],
-                _x[1]*_y[2] - _x[2]*_y[1],
-                _y[2]*_z[0] - _y[0]*_z[2],
-                _x[0]*_z[2] - _x[2]*_z[0],
-                _x[2]*_y[0] - _x[0]*_y[2],
-                _y[0]*_z[1] - _y[1]*_z[0],
-                _x[1]*_z[0] - _x[0]*_z[1],
-                _x[0]*_y[1] - _x[1]*_y[0]
+                Vector3(
+                    ((_y[1] * _z[2]) - (_z[1] * _y[2])),
+                    -((_x[1] * _z[2]) - (_z[1] * _x[2])),
+                    ((_x[1] * _y[2]) - (_y[1] * _x[2]))
+                ),
+                Vector3(
+                    -((_y[0] * _z[2]) - (_z[0] * _y[2])),
+                    ((_x[0] * _z[2]) - (_z[0] * _x[2])),
+                    -((_x[0] * _y[2]) - (_y[0] * _x[2]))
+                ),
+                Vector3(
+                    ((_y[0] * _z[1]) - (_z[0] * _y[1])),
+                    -((_x[0] * _z[1]) - (_z[0] * _x[1])),
+                    ((_x[0] * _y[1]) - (_y[0] * _x[1]))
+                )
             );
         };
 
@@ -171,7 +184,20 @@ class Matrix33
         * @return The inverse of the matrix.
         */
         Matrix33 inverse() const {
-            return adjoint().transpose() / det();
+            if (std::abs(det()) <= STELL_EPSILON)
+            {
+                throw std::invalid_argument("Matrix is singular and cannot be inverted.");
+            }
+            return getAdjugate() / det();
+        };
+
+        /**
+        * @brief Prints the matrix to stdout.
+        */
+        void print() const {
+            _x.print();
+            _y.print();
+            _z.print();
         };
 
     protected:
@@ -180,17 +206,17 @@ class Matrix33
         /**
         * @brief The 1st row of the matrix.
         */
-        Vector3 _x {0.0, 0.0, 0.0};
+        Vector3 _x {1.0, 0.0, 0.0};
         
         /**
         * @brief The 2nd row of the matrix.
         */
-        Vector3 _y {0.0, 0.0, 0.0};
+        Vector3 _y {0.0, 1.0, 0.0};
         
         /**
         * @brief The 3rd row of the matrix.
         */
-        Vector3 _z {0.0, 0.0, 0.0};
+        Vector3 _z {0.0, 0.0, 1.0};
 };
 
 /**

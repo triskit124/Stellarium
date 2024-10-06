@@ -7,7 +7,7 @@
 namespace Stellarium {
 
 
-void Test::assert(const std::string& description, bool condition)
+void Test::assertTrue(const std::string& description, bool condition)
 {
     _results[description] = condition;
 

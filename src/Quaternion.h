@@ -1,7 +1,10 @@
 #ifndef STELL_QUATERNION
 #define STELL_QUATERNION
 
+#include <cassert>
+
 #include "Constants.h"
+#include "Matrix33.h"
 #include "Vector3.h"
 
 namespace Stellarium
@@ -71,14 +74,14 @@ class Quaternion
         * @param c The scalar to multiply by.
         * @return The quaternion multiplied by the scalar.
         */
-        Quaternion operator*(double c) const { return Quaternion(_w*c, _x*c, _y*c, _z*c); };
+        Quaternion operator*(double c) const { return Quaternion(_w*c, _x*c, _y*c, _z*c, false); };
         
         /**
         * @brief Operator for element-wise dividing the quaternion by a scalar.
         * @param c The scalar to divide by.
         * @return The quaternion divided by the scalar.
         */
-        Quaternion operator/(double c) const { return Quaternion(_w/c, _x/c, _y/c, _z/c); };
+        Quaternion operator/(double c) const { return Quaternion(_w/c, _x/c, _y/c, _z/c, false); };
         
         /**
         * @brief Operator for checking equality with another quaternion.
@@ -110,28 +113,33 @@ class Quaternion
         * @return The Hamilton product of the two quaternions.
         */
         Quaternion operator*(const Quaternion& q) const {
+            bool normalize = this->isUnit() && q.isUnit();
             return Quaternion(
                 _w*q[0] - _x*q[1] - _y*q[2] - _z*q[3],
                 _w*q[1] + _x*q[0] + _y*q[3] - _z*q[2],
                 _w*q[2] - _x*q[3] + _y*q[0] + _z*q[1],
-                _w*q[3] + _x*q[2] - _y*q[1] + _z*q[0]
+                _w*q[3] + _x*q[2] - _y*q[1] + _z*q[0],
+                normalize
             );
         }
 
         /**
-        * @brief Rotates the frame that the vector v is expressed in. This is a PASSIVE rotation (i.e. rotates the frame, not the vector)
+        * @brief Rotates the vector v. This is an active rotation (i.e. rotates vectors or frames from the starting pose to the end pose).
         * @param v The vector.
-        * @return The vector expressed in the rotated frame.
+        * @return The rotated vector.
         */
         Vector3 operator*(const Vector3& v) const { 
             if (isIdentity())
             {
                 return v;
             }
+            
+            assert(isUnit());
+
             // Reference: https://faculty.sites.iastate.edu/jia/files/inline-files/quaternion.pdf
             // Theorem 2:
             Quaternion p = Quaternion(0.0, v[0], v[1], v[2]);
-            Quaternion pp = this->conjugate() * p * (*this);
+            Quaternion pp = *this * p * this->conjugate();
 
             return Vector3(pp[1], pp[2], pp[3]);
         };
@@ -216,7 +224,30 @@ class Quaternion
             Quaternion q = *this;
             q.normalize();
             return q;
-        }  
+        }
+
+        /**
+        * @brief Gets the rotation matrix representation of the quaternion.
+        * This is an active rotation. That is, it actively rotates a vector or frame from the starting pose to the end pose.
+        * @return The rotation matrix representation of the quaternion.
+        */
+        Matrix33 getRotationMatrix() const {
+
+            // See: https://www.mathworks.com/help/nav/ref/quaternion.rotmat.html
+
+            assert(isUnit());
+
+            double a = _w;
+            double b = _x;
+            double c = _y;
+            double d = _z;
+
+            return Matrix33(
+                2*a*a - 1 + 2*b*b, 2*b*c - 2*a*d, 2*b*d + 2*a*c,
+                2*b*c + 2*a*d, 2*a*a - 1 + 2*c*c, 2*c*d - 2*a*b,
+                2*b*d - 2*a*c, 2*c*d + 2*a*b, 2*a*a - 1 + 2*d*d
+            );
+        }
 
         /**
         * @brief Gets the epsilon value for floating point comparisons.
@@ -246,7 +277,7 @@ class Quaternion
         * @brief Returns the conjugate of the quaternion.
         * @return The conjugate of the quaternion.
         */
-        Quaternion conjugate() const { return Quaternion(_w, -_x, -_y, -_z); };
+        Quaternion conjugate() const { return Quaternion(_w, -_x, -_y, -_z, false); };
         
         /**
         * @brief Returns the inverse of the quaternion.

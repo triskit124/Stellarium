@@ -51,7 +51,7 @@ std::array<double, STELL_BODY_STATE_SIZE> Body::getStateDot()
     // quaternion derivative based on angular velocity
     // _att represents frame rotation from INERTIAL to BODY frame
     // _ang_vel is expressed in the BODY frame
-    Quaternion q_dot = 0.5 * _att * Quaternion(0.0, _ang_vel[0], _ang_vel[1], _ang_vel[2]);
+    Quaternion q_dot = 0.5 * _att * Quaternion(0.0, _ang_vel[0], _ang_vel[1], _ang_vel[2], false);
 
     std::array<double, STELL_BODY_STATE_SIZE> state_dot {
         _vel[0],

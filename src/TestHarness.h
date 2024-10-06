@@ -15,7 +15,7 @@ class Test
     public:
         Test(const std::string& name) : _name(name) {};
         ~Test() { summarize(); };
-        void assert(const std::string& description, bool condition);
+        void assertTrue(const std::string& description, bool condition);
         void summarize();
 
     private:

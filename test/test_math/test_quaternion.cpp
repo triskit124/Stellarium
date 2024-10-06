@@ -28,10 +28,10 @@ int main() {
     ========================================
     */
 
-    Quaternion qq(1, 2, 3, 4);
-    test.assert("Quaternion operators 1", 2*qq == Quaternion(2, 4, 6, 8));
-    test.assert("Quaternion operators 2", qq*2 == Quaternion(2, 4, 6, 8));
-    test.assert("Quaternion operators 3", qq/2 == Quaternion(0.5, 1, 1.5, 2));
+    Quaternion qq(1, 2, 3, 4, false);
+    test.assertTrue("Quaternion operators 1", 2*qq == Quaternion(2, 4, 6, 8, false));
+    test.assertTrue("Quaternion operators 2", qq*2 == Quaternion(2, 4, 6, 8, false));
+    test.assertTrue("Quaternion operators 3", qq/2 == Quaternion(0.5, 1, 1.5, 2, false));
 
     /* 
     ==============================================================================================
@@ -42,30 +42,30 @@ int main() {
     // ref [1] Example 1.1
     Quaternion q1(2, 1, 0, 0);
     Quaternion q2(3, 0, 4, 0);
-    test.assert("Quaternion multiplication 1", q1*q2 == Quaternion(6, 3, 8, 4));
-    test.assert("Quaternion multiplication 2", q2*q1 == Quaternion(6, 3, 8, -4));
+    test.assertTrue("Quaternion multiplication 1", q1*q2 == Quaternion(6, 3, 8, 4));
+    test.assertTrue("Quaternion multiplication 2", q2*q1 == Quaternion(6, 3, 8, -4));
 
     // ref [1] Example 1.2
     q1 = Quaternion(2, 3, -2, 1);
     q2 = Quaternion(1, -1, 4, 5);
-    test.assert("Quaternion multiplication 3", q1*q2 == Quaternion(8, -13, -10, 21));
+    test.assertTrue("Quaternion multiplication 3", q1*q2 == Quaternion(8, -13, -10, 21));
 
     // ref [2] Example 1
     Quaternion p = Quaternion(3, 1, -2, 1);
     Quaternion q = Quaternion(2, -1, 2, 3);
-    test.assert("Quaternion multiplication 4", p*q == Quaternion(8, -9, -2, 11));
+    test.assertTrue("Quaternion multiplication 4", p*q == Quaternion(8, -9, -2, 11));
     
     // ref [1] Definition 2.3.1
-    test.assert("Quaternion conjugation 1", q1.conjugate() == Quaternion(2, -3, 2, -1));
-    test.assert("Quaternion conjugation 2", q2.conjugate() == Quaternion(1, 1, -4, -5));
+    test.assertTrue("Quaternion conjugation 1", q1.conjugate() == Quaternion(2, -3, 2, -1));
+    test.assertTrue("Quaternion conjugation 2", q2.conjugate() == Quaternion(1, 1, -4, -5));
     
-    // Tref [1] heorem 2.4.2
-    test.assert("Quaternion conjugation property 1", q1 * q1.conjugate() == std::pow(q1.norm(), 2));
-    test.assert("Quaternion conjugation property 2", q2 * q2.conjugate() == std::pow(q2.norm(), 2));
+    // ref [1] Theorem 2.4.2
+    test.assertTrue("Quaternion conjugation property 1", q1 * q1.conjugate() == std::pow(q1.norm(), 2));
+    test.assertTrue("Quaternion conjugation property 2", q2 * q2.conjugate() == std::pow(q2.norm(), 2));
 
     // ref [1] Theorem 2.6.1
-    test.assert("Quaternion inverse 1", q1.inverse()*q1 == Quaternion(1, 0, 0, 0));
-    test.assert("Quaternion inverse 2", q2.inverse()*q2 == Quaternion(1, 0, 0, 0));
+    test.assertTrue("Quaternion inverse 1", q1.inverse()*q1 == Quaternion(1, 0, 0, 0));
+    test.assertTrue("Quaternion inverse 2", q2.inverse()*q2 == Quaternion(1, 0, 0, 0));
 
     /* 
     =========================================================
@@ -73,34 +73,45 @@ int main() {
     =========================================================
     */
 
-    // rotate frame by +90 degrees about z-axis 
-    test.assert("Quaternion rotation +90 z", Quaternion(Vector3(0, 0, 1), M_PI/2) * Vector3(1,0,0) == Vector3(0, -1, 0));
+    // rotate vector by +90 degrees about z-axis
+    q1 = Quaternion(Vector3(0, 0, 1), M_PI/2);
+    test.assertTrue("Quaternion to rotation matrix 1", q1.getRotationMatrix() == Matrix33(Vector3(0, -1, 0), Vector3(1, 0, 0), Vector3(0, 0, 1)));
+    test.assertTrue("Quaternion rotation +90 z", q1 * Vector3(1,0,0) == Vector3(0, 1, 0));
 
-    // rotate frame by -90 degrees about z-axis
-    test.assert("Quaternion rotation -90 z", Quaternion(Vector3(0, 0, 1), -M_PI/2) * Vector3(1,0,0) == Vector3(0, 1, 0));
+    // rotate vector by -90 degrees about z-axis
+    q1 = Quaternion(Vector3(0, 0, 1), -M_PI/2);
+    test.assertTrue("Quaternion to rotation matrix 2", q1.getRotationMatrix() == Matrix33(Vector3(0, 1, 0), Vector3(-1, 0, 0), Vector3(0, 0, 1)));
+    test.assertTrue("Quaternion rotation -90 z", q1 * Vector3(1,0,0) == Vector3(0, -1, 0));
 
-    // rotate frame by +90 degrees about y-axis
-    test.assert("Quaternion rotation +90 y", Quaternion(Vector3(0, 1, 0), M_PI/2) * Vector3(1,0,0) == Vector3(0, 0, 1));
+    // rotate vector by +90 degrees about y-axis
+    q1 = Quaternion(Vector3(0, 1, 0), M_PI/2);
+    test.assertTrue("Quaternion to rotation matrix 3", q1.getRotationMatrix() == Matrix33(Vector3(0, 0, 1), Vector3(0, 1, 0), Vector3(-1, 0, 0)));
+    test.assertTrue("Quaternion rotation +90 y", q1 * Vector3(1,0,0) == Vector3(0, 0, -1));
 
-    // rotate frame by -90 degrees about y-axis
-    test.assert("Quaternion rotation -90 y", Quaternion(Vector3(0, 1, 0), -M_PI/2) * Vector3(1,0,0) == Vector3(0, 0, -1));
+    // rotate vector by -90 degrees about y-axis
+    q1 = Quaternion(Vector3(0, 1, 0), -M_PI/2);
+    test.assertTrue("Quaternion to rotation matrix 4", q1.getRotationMatrix() == Matrix33(Vector3(0, 0, -1), Vector3(0, 1, 0), Vector3(1, 0, 0)));
+    test.assertTrue("Quaternion rotation -90 y", q1 * Vector3(1,0,0) == Vector3(0, 0, 1));
 
-    // rotate frame by +90 degrees about x-axis
-    test.assert("Quaternion rotation +90 x", Quaternion(Vector3(1, 0, 0), M_PI/2) * Vector3(0,1,0) == Vector3(0, 0, -1));
+    // rotate vector by +90 degrees about x-axis
+    q1 = Quaternion(Vector3(1, 0, 0), M_PI/2);
+    test.assertTrue("Quaternion to rotation matrix 5", q1.getRotationMatrix() == Matrix33(Vector3(1, 0, 0), Vector3(0, 0, -1), Vector3(0, 1, 0)));
+    test.assertTrue("Quaternion rotation +90 x", q1 * Vector3(0,1,0) == Vector3(0, 0, 1));
 
-    // rotate frame by -90 degrees about x-axis
-    test.assert("Quaternion rotation -90 x", Quaternion(Vector3(1, 0, 0), -M_PI/2) * Vector3(0,1,0) == Vector3(0, 0, 1));
+    // rotate vector by -90 degrees about x-axis
+    q1 = Quaternion(Vector3(1, 0, 0), -M_PI/2);
+    test.assertTrue("Quaternion to rotation matrix 6", q1.getRotationMatrix() == Matrix33(Vector3(1, 0, 0), Vector3(0, 0, 1), Vector3(0, -1, 0)));
+    test.assertTrue("Quaternion rotation -90 x", q1 * Vector3(0,1,0) == Vector3(0, 0, -1));
 
     // ref [1] Example 5.1
     q1 = Quaternion(std::sqrt(3)/2, 0, 1/(2*std::sqrt(2)), 1/(2*std::sqrt(2)));
     Vector3 u = Vector3(2, 1, 0);
     
-    Vector3 u1 = q1.conjugate() * u;
+    Vector3 u1 = q1 * u;
     u1.epsilon(1e-5);
     
     Vector3 u2 = Vector3(0.3876, 1.9747, -0.9747).getNormalized();
-    test.assert("Quaternion rotation complicated", u1 == u2);
-
+    test.assertTrue("Quaternion rotation complicated", u1 == u2);
 
     return 0;
 

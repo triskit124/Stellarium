@@ -126,6 +126,9 @@ void RK4::integrate(std::vector<Body*> bodies, double& t)
     {
         *_state[i] = initial_state[i] + (_dt / 6) * (k1[i] + 2*k2[i] + 2*k3[i] + k4[i]);
     }
+
+    // one last state dot call to normalize attitude quaternions and update derivatives
+    _computeStateDotVector(bodies);
 };
 
 Integrator::~Integrator()
