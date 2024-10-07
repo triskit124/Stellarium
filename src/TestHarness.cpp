@@ -51,14 +51,15 @@ void Test::summarize()
                 << boldRed("FAIL\n");
         }
     }
+    
     int total = passed + failed;
     if (failed == 0)
     {
-        std::cout << boldGreen("SUMMARY: PASSED (" + std::to_string(passed) + " of " + std::to_string(total) + ")\n");
+        std::cout << boldGreen("SUMMARY: PASSED (" + std::to_string(passed) + " of " + std::to_string(total) + ") \u2705 \n");
     }
     else
     {
-        std::cout << boldRed("SUMMARY: FAILED (" + std::to_string(failed) + " of " + std::to_string(passed+failed) + ") tests failed\n");
+        std::cout << boldRed("SUMMARY: FAILED (" + std::to_string(failed) + " of " + std::to_string(passed+failed) + ") tests failed \u274C \n");
     }
 }
 

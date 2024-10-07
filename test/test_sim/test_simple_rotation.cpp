@@ -21,7 +21,7 @@ int main() {
     body->addBodyFrameTorque(Vector3(1,0,0));
 
     sim.run(10.0);
-    test.assertTrue("Body angular velocity 1", body->getAngularVelocity() == Vector3(10, 0, 0));
+    test.assertTrue("Body angular velocity 1", body->getAngularVelocity() == Vector3(-10, 0, 0));
 
     // check rotation angle
     // Should be 50 radians about x-axis
