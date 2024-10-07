@@ -2,7 +2,7 @@
 #define STELL_TEST
 
 #include <string>
-#include <map>
+#include <vector>
 
 namespace Stellarium
 {
@@ -20,13 +20,14 @@ class Test
 
     private:
         std::string _name {};
-        std::map<std::string, bool> _results {};
+        std::vector<std::pair<std::string, bool>> _results {};
+        bool _verbose = false;
 
-        void bold(const std::string& text);
-        void red(const std::string& text);
-        void green(const std::string& text);
-        void boldGreen(const std::string& text);
-        void boldRed(const std::string& text);
+        std::string bold(const std::string& text);
+        std::string red(const std::string& text);
+        std::string green(const std::string& text);
+        std::string boldGreen(const std::string& text);
+        std::string boldRed(const std::string& text);
 
     protected:
 };

@@ -1,7 +1,10 @@
 #include "TestHarness.h"
 
+#include <iomanip>
 #include <iostream>
+// #include <iomanip>
 #include <string>
+#include <utility>
 
 
 namespace Stellarium {
@@ -9,64 +12,79 @@ namespace Stellarium {
 
 void Test::assertTrue(const std::string& description, bool condition)
 {
-    _results[description] = condition;
-
+    _results.push_back(std::make_pair(description, condition));
 }
 
 void Test::summarize()
 {
     unsigned int passed = 0;
     unsigned int failed = 0;
+    const int width = 50;
 
-    bold("Running test: " + _name + "\n");
+    std::cout << bold("\nRunning test: " + _name + "\n");
+    
     for (auto& result : _results)
     {
         if (result.second)
         {
             passed++;
-            green("\t" + result.first + ":\t");
-            boldGreen("PASS\n");
+
+            if (_verbose)
+            {
+                std::cout 
+                    << std::left
+                    << std::setw(width)
+                    << green("\t" + result.first + ":")
+                    << std::right
+                    << boldGreen("PASS\n");
+            }
         }
         else
         {
             failed++;
-            red("\t" + result.first + ":\t");
-            boldRed("FAIL\n");
+
+            std::cout
+                << std::left
+                << std::setw(width)
+                << red("\t" + result.first + ":")
+                << std::right
+                << boldRed("FAIL\n");
         }
     }
+    int total = passed + failed;
     if (failed == 0)
     {
-        boldGreen("SUMMARY: PASSED\n");
+        std::cout << boldGreen("SUMMARY: PASSED (" + std::to_string(passed) + " of " + std::to_string(total) + ")\n");
     }
     else
     {
-        boldRed("SUMMARY: FAILED (" + std::to_string(failed) + " of " + std::to_string(passed+failed) + ") tests failed\n");
+        std::cout << boldRed("SUMMARY: FAILED (" + std::to_string(failed) + " of " + std::to_string(passed+failed) + ") tests failed\n");
     }
 }
 
-void Test::bold(const std::string& text)
+std::string Test::bold(const std::string& text)
 {
-    std::cout << "\033[1m" << text << "\033[0m";
+    return "\033[1m" + text + "\033[0m";
 }
 
-void Test::red(const std::string& text)
+std::string Test::red(const std::string& text)
 {
-    std::cout << "\033[31m" << text << "\033[0m";
+    return "\033[31m" + text + "\033[0m";
 }
 
-void Test::green(const std::string& text)
+std::string Test::green(const std::string& text)
 {
-    std::cout << "\033[32m" << text << "\033[0m";
+    return  "\033[32m" + text + "\033[0m";
 }
 
-void Test::boldGreen(const std::string& text)
+std::string Test::boldGreen(const std::string& text)
 {
-    std::cout << "\033[01;32m" << text << "\033[0m";
+    return "\033[01;32m" + text + "\033[0m";
 }
 
-void Test::boldRed(const std::string& text)
+std::string Test::boldRed(const std::string& text)
 {
-    std::cout << "\033[01;31m" << text << "\033[0m";
+    return "\033[01;31m" + text + "\033[0m";
 }
 
 }

@@ -5,6 +5,8 @@ DOXY_FILE = doxygen
 
 .PHONY: clean docs run test
 
+.vscode:
+	mkdir -p .vscode
 
 $(BUILDDIR):
 	mkdir -p $(BUILDDIR)
@@ -12,7 +14,7 @@ $(BUILDDIR):
 $(DOCSDIR):
 	mkdir -p $(DOCSDIR)
 
-all: $(BUILDDIR)
+all: $(BUILDDIR) .vscode
 	cd $(BUILDDIR); \
 	cmake ..; \
 	cmake --build .; \

@@ -34,7 +34,7 @@ Body* StellariumSimulation::addBody(const std::string& name, double mass, Vector
 
     _bodies.emplace_back(std::move(new_body));
 
-    std::cout << "Added body " << name << " to the simulation\n";
+    // std::cout << "Added body " << name << " to the simulation\n";
 
     return _bodies.back().get();
 }
@@ -50,7 +50,7 @@ void StellariumSimulation::addIntegrator(STELL_INTEGRATOR_TYPE type, const doubl
         throw std::invalid_argument("invalid integrator type");
     }
 
-    std::cout << "Added integrator of type " << type << " to the simulation\n";
+    // std::cout << "Added integrator of type " << type << " to the simulation\n";
 }
 
 void StellariumSimulation::_step()
@@ -72,7 +72,7 @@ void StellariumSimulation::_step()
 void StellariumSimulation::run(double t)
 {
     const double t_f = time() + t;
-    std::cout << "Running simulation for " << t << " seconds\n";
+    // std::cout << "Running simulation for " << t << " seconds\n";
     while (time() < t_f)
     {
         _step();

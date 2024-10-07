@@ -10,7 +10,7 @@ using namespace Stellarium;
 
 int main() {
 
-    Test test("Simple propagation of rotational motion");
+    Test test("Simple rotational motion");
 
 
     StellariumSimulation sim;

@@ -28,26 +28,26 @@ int main() {
     Frame frame_a = Frame("Frame_A");
     Frame frame_b = Frame("Frame_B", r_a2b, q_a2b);
 
-    test.assertTrue("Transformation from A to B - translation portion", frame_a.getTransformTo(frame_b).getTranslation() == r_a2b);
-    test.assertTrue("Transformation from A to B - rotation portion", frame_a.getTransformTo(frame_b).getRotation() == q_a2b.getRotationMatrix());
-    test.assertTrue("Transformation from A to B", frame_a.getTransformTo(frame_b) == Matrix44(q_a2b, r_a2b));
+    test.assertTrue("Homtran from A to B - trans portion", frame_a.getTransformTo(frame_b).getTranslation() == r_a2b);
+    test.assertTrue("Homtran from A to B - rot portion", frame_a.getTransformTo(frame_b).getRotation() == q_a2b.getRotationMatrix());
+    test.assertTrue("Homtran from A to B", frame_a.getTransformTo(frame_b) == Matrix44(q_a2b, r_a2b));
 
     Vector3 p_a = Vector3(0,1,0); // Point P in Frame_A
     
     // Get point P in Frame_B [frame rotation only]
     Matrix44 T_a2b = Matrix44(q_a2b);
     Vector3 p_b = T_a2b.inverseTransform() * p_a;
-    test.assertTrue("Homoegeneous transform, rotation only",  p_b == Vector3(0, 0, 1));
+    test.assertTrue("Homtran, rot only",  p_b == Vector3(0, 0, 1));
 
     // Get point P in Frame_B [frame translation only]
     T_a2b = Matrix44(Quaternion(1, 0, 0, 0), r_a2b);
     p_b = T_a2b.inverseTransform() * p_a;
-    test.assertTrue("Homoegeneous transform, translation only", p_b == Vector3(-1, -1, 3));
+    test.assertTrue("Homtran, trans only", p_b == Vector3(-1, -1, 3));
     
     // Get point P in Frame_B [rotation and translation]
     T_a2b = frame_a.getTransformTo(frame_b);
     p_b = T_a2b.inverseTransform() * p_a;
-    test.assertTrue("Homoegeneous transform, rotation and translation", p_b == Vector3(-1, -3, -1));
+    test.assertTrue("Homtran, rot and trans", p_b == Vector3(-1, -3, -1));
 
     // Test inverse transforms
     test.assertTrue("Inverse transform 1 ", frame_a.getTransformTo(frame_b) * frame_a.getTransformTo(frame_b).inverseTransform() == Matrix44(Quaternion(1, 0, 0, 0), Vector3(0, 0, 0)));
