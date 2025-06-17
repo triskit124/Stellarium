@@ -1,6 +1,7 @@
 #ifndef STELL_SHADER
 #define STELL_SHADER
 
+#include "Matrix44.h"
 #include <glad/glad.h>
 
 #include <string>
@@ -20,6 +21,7 @@ class Shader
         void setBool(const std::string &name, bool value) const;
         void setInt(const std::string &name, int value) const;
         void setFloat(const std::string &name, float value) const;
+        void setMat4(const std::string &name, const Matrix44& value) const;
 
     private:
         unsigned int ID;

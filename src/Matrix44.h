@@ -1,7 +1,9 @@
 #ifndef STELL_MATRIX44
 #define STELL_MATRIX44
 
+#include <array>
 #include <cmath>
+#include <cstddef>
 #include <stdexcept>
 
 #include "Constants.h"
@@ -29,7 +31,7 @@ class Matrix44
         /**
         * @brief Default constructor for the Matrix44 object.
         */
-        Matrix44();
+        Matrix44() = default;
         
         /**
         * @brief Constructs a Matrix44 object with the given x, y, z, and w vectors.
@@ -48,10 +50,11 @@ class Matrix44
         * @param rotation The rotation matrix.
         * @param translation The translation vector.
         */
-        Matrix44(Matrix33 rotation = Matrix33(Vector3(1, 0, 0), Vector3(0, 1, 0), Vector3(0, 0, 1)), Vector3 translation = Vector3(0, 0, 0)) {
+        Matrix44(Matrix33 rotation, Vector3 translation) {
             setRotation(rotation);
             setTranslation(translation);
         };
+        
 
         /**
         * @brief Construct from a quaternion and translation vector.
@@ -60,27 +63,29 @@ class Matrix44
         * @param quat The quaternion.
         * @param translation The translation vector.
         */
-        Matrix44(Quaternion quat = Quaternion(1, 0, 0, 0), Vector3 translation = Vector3(0, 0, 0)) {
+        Matrix44(Quaternion quat, Vector3 translation) {
             setRotation(quat.getRotationMatrix());
             setTranslation(translation);
         };
 
         /**
-        * @brief Constructs a perspective projection matrix.
-        * See: http://www.songho.ca/opengl/gl_projectionmatrix.html
-        * @param fov The field of view in degrees.
-        * @param aspect_ratio The aspect ratio of the screen (width / height).
-        * @param near Near clipping plane distance.
-        * @param far Far clipping plane distance.
+        * @brief Construct from a quaternion.
+        * The resulting homogeneous transformation matrix will represent a rotation and translation of a vector/frame from the initial pose to the final pose. 
+        * The translation and rotation are both w.r.t the initial pose, expressed in the initial pose.
+        * @param quat The quaternion.
         */
-        Matrix44(double fov, double aspect_ratio, double near, double far) {
-            double tangent = tan((fov * M_PI / 180) / 2.0);
-            double top = near * tangent;
-            double right = top * aspect_ratio;
-            _x = Vector4(near / right, 0.0, 0.0, 0.0);
-            _y = Vector4(0.0, near / top, 0.0, 0.0);
-            _z = Vector4(0.0, 0.0, -(far + near) / (far - near), -(2 * far * near) / (far - near));
-            _w = Vector4(0.0, 0.0, -1.0, 0.0);
+        Matrix44(Quaternion quat) {
+            setRotation(quat.getRotationMatrix());
+        };
+
+        /**
+        * @brief Construct from a vector.
+        * The resulting homogeneous transformation matrix will represent a rotation and translation of a vector/frame from the initial pose to the final pose. 
+        * The translation and rotation are both w.r.t the initial pose, expressed in the initial pose.
+        * @param translation The translation vector.
+        */
+        Matrix44(Vector3 translation) {
+            setTranslation(translation);
         };
 
         /* 
@@ -264,6 +269,19 @@ class Matrix44
         Matrix44 inverseTransform() const {
             return Matrix44(getRotation().inverse(), -(getRotation().inverse() * getTranslation()));
         };
+
+        std::array<float, 16> getColMajorArray() const {
+            Matrix44 mat = getTranspose();
+            std::array<float, 16> array;
+            for (int i = 0; i < 4; ++i)
+            {
+                for (int j = 0; j < 4; ++j)
+                {
+                    array[4*i + j] = static_cast<float>(mat[i][j]);
+                }
+            }
+            return array;
+        }
 
         /**
         * @brief Gets the epsilon value for floating point comparisons.

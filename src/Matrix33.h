@@ -3,6 +3,9 @@
 
 #include "Constants.h"
 #include "Vector3.h"
+#include <cmath>
+#include <math.h>
+#include <stdexcept>
 
 namespace Stellarium
 {
@@ -23,7 +26,7 @@ class Matrix33
         /**
         * @brief Default constructor for the Matrix33 object.
         */
-        Matrix33();
+        Matrix33() = default;
         
         /**
         * @brief Constructs a Matrix33 object with the given x, y, and z vectors.
@@ -94,6 +97,21 @@ class Matrix33
                 _x / c,
                 _y / c,
                 _z / c
+            );
+        };
+
+        /**
+        * @brief Operator for multiplying this matrix by another matrix.
+        * @param m The matrix to left-multiply by the current matrix.
+        * @return The resulting matrix.
+        */
+        Matrix33 operator*(Matrix33 m) const {
+            // TODO: check this
+            Matrix33 mat = m.getTranspose();
+            return Matrix33(
+                { _x.dot(mat[0]), _x.dot(mat[1]), _x.dot(mat[2]) },
+                { _y.dot(mat[0]), _y.dot(mat[1]), _y.dot(mat[2]) },
+                { _z.dot(mat[0]), _z.dot(mat[1]), _z.dot(mat[2]) }
             );
         };
 
@@ -200,6 +218,50 @@ class Matrix33
             _z.print();
         };
 
+        Vector3 getRollPitchYaw() const {
+            // See: https://eecs.qmul.ac.uk/~gslabaugh/publications/euler.pdf
+            if (!isRotationMatrix())
+            {
+                throw std::runtime_error("Cannot get roll-pitch-yaw. Matrix is not a rotation matrix");
+            }
+
+            double roll, pitch, yaw = 0.0;
+
+            if (abs( _z[0] - 1) <= _epsilon)
+            {
+                pitch = -M_PI_2;
+                roll = -yaw + atan2(-_x[1], -_x[2]);
+            }
+            else if (std::abs( _z[0] + 1) <= _epsilon)
+            {
+                pitch = M_PI_2;
+                roll = yaw + atan2( _x[1],  _x[2]);
+            }
+            else 
+            {
+                pitch = -asin( _z[0]);
+                roll = atan2( _z[1] / cos(pitch),  _z[2] / cos(pitch));
+                yaw = atan2( _y[0] / cos(pitch),  _x[0] / cos(pitch));
+            }
+            return Vector3(roll, pitch, yaw);
+        }
+
+        bool isRotationMatrix() const {
+            return abs(det() - 1.0) <= _epsilon && *this * this->getTranspose() == Matrix33();
+        }
+
+        /**
+        * @brief Gets the epsilon value for floating point comparisons.
+        * @return The epsilon value.
+        */
+        double epsilon() const { return _epsilon; };
+
+        /**
+        * @brief Sets the epsilon value for floating point comparisons.
+        * @param e The new epsilon value.
+        */
+        void epsilon(double e) { _epsilon = e; };
+
     protected:
 
     private:
@@ -217,6 +279,11 @@ class Matrix33
         * @brief The 3rd row of the matrix.
         */
         Vector3 _z {0.0, 0.0, 1.0};
+
+        /**
+        * @brief The epsilon value for floating point comparisons.
+        */
+        double _epsilon = STELL_EPSILON;
 };
 
 /**

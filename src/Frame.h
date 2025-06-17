@@ -114,7 +114,7 @@ class Frame
         /**
         * @brief The name of the frame.
         */
-        std::string _name;
+        std::string _name { "frame" };
 
         /**
         * @brief The position of the frame w.r.t inertial, expressed in INERTIAL frame.

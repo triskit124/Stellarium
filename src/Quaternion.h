@@ -26,7 +26,7 @@ class Quaternion
         /**
         * @brief Default constructor for the Quaternion object.
         */
-        Quaternion();
+        Quaternion() = default;
         
         /**
         * @brief Constructs a Quaternion object with the given w, x, y, and z values.
@@ -59,6 +59,25 @@ class Quaternion
             _x = ax[0]*s;
             _y = ax[1]*s;
             _z = ax[2]*s;
+            this->normalize();
+        };
+
+        /**
+        * @brief Constructs a Quaternion based on a roll-pitch-yaw (XYZ) Euler rotation sequence.
+        * @param roll The roll Euler angle in radians.
+        * @param pitch The pitch Euler angle in radians.
+        * @param yaw The yaw Euler angle in radians.
+        */
+        Quaternion(double roll, double pitch, double yaw) {
+            // TODO: this needs to be checked
+            Quaternion q_roll = Quaternion(Vector3(1, 0, 0), roll);
+            Quaternion q_pitch = Quaternion(Vector3(0, 1, 0), pitch);
+            Quaternion q_yaw = Quaternion(Vector3(0, 0, 1), yaw);
+            Quaternion q = q_yaw * q_pitch * q_roll;
+            _w = q[0];
+            _x = q[1];
+            _y = q[2];
+            _z = q[3];
             this->normalize();
         };
 
@@ -290,6 +309,8 @@ class Quaternion
         * @return The norm of the quaternion.
         */
         double norm() const { return std::sqrt(pow(_w, 2) + pow(_x, 2) + pow(_y, 2) + pow(_z, 2)); };
+
+        Vector3 getRollPitchYaw() const { return this->getRotationMatrix().getRollPitchYaw(); };
 
         /**
         * @brief Prints the w, x, y, and z values of the quaternion to stdout.
