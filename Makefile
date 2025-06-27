@@ -1,4 +1,4 @@
-TARGET = Stellarium
+TARGET = stellarium
 BUILDDIR = build
 DOCSDIR = doc
 DOXY_FILE = doxygen
@@ -20,6 +20,12 @@ all: $(BUILDDIR) .vscode
 	cmake --build .; \
 	cp compile_commands.json ../.vscode/
 
+all-no-graphics: $(BUILDDIR) .vscode
+	cd $(BUILDDIR); \
+	cmake -DBUILD_RENDERING=OFF ..; \
+	cmake --build .; \
+	cp compile_commands.json ../.vscode/
+
 clean:
 	rm -rf $(BUILDDIR) $(DOCSDIR)
 
@@ -30,4 +36,4 @@ run:
 	./$(BUILDDIR)/$(TARGET)
 
 test:
-	cd test; ./run_tests.sh
+	test/run_tests.sh

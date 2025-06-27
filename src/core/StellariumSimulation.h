@@ -7,7 +7,10 @@
 #include "Matrix33.h"
 #include "Quaternion.h"
 #include "Integrators.h"
+
+#ifdef STELL_BUILD_RENDERING
 #include "GraphicsEngine.h"
+#endif
 
 #include <memory>
 #include <vector>
@@ -27,7 +30,11 @@ class StellariumSimulation
          */
         StellariumSimulation(bool graphics = false) {
             if (graphics) {
+#ifdef STELL_BUILD_RENDERING
                 _graphics = std::make_unique<GraphicsEngine>();
+#else
+                throw std::invalid_argument("graphics was enabled but stellarium has been built without rendering. Cannot continue.");
+#endif
             }
         };
 
@@ -103,10 +110,12 @@ class StellariumSimulation
         */
         double _t = 0.0;
 
+#ifdef STELL_BUILD_RENDERING
         /**
         * @brief Pointer to the graphics engine.
         */
         std::unique_ptr<GraphicsEngine> _graphics = nullptr;
+#endif
 
         /**
         * @brief Advances the simulation by one step. The size of the step is determined by the integrator.

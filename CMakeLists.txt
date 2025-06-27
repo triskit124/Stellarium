@@ -1,31 +1,73 @@
-cmake_minimum_required(VERSION 3.20)
-project(Stellarium VERSION 0.1)
+######################################################################################
+#   ███████ ████████ ███████ ██      ██       █████  ██████  ██ ██    ██ ███    ███ 
+#   ██         ██    ██      ██      ██      ██   ██ ██   ██ ██ ██    ██ ████  ████ 
+#   ███████    ██    █████   ██      ██      ███████ ██████  ██ ██    ██ ██ ████ ██ 
+#        ██    ██    ██      ██      ██      ██   ██ ██   ██ ██ ██    ██ ██  ██  ██ 
+#   ███████    ██    ███████ ███████ ███████ ██   ██ ██   ██ ██  ██████  ██      ██ 
+######################################################################################
+
+cmake_minimum_required(VERSION 3.16)
+
 set(CMAKE_CXX_STANDARD 20)
+
+project(
+    stellarium 
+    VERSION 0.2
+    DESCRIPTION "A pretty-much-from-scratch physics engine"
+    HOMEPAGE_URL "https://github.com/triskit124/Stellarium"
+)
+
+enable_language(C)
+enable_language(CXX)
+
+# Build options
+option(BUILD_RENDERING "Enable building of rendering" ON)
+option(BUILD_TESTS "Enable building of tests" ON)
 
 # Generate a compile_commands.json file for clangd
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# Set the project name
-set(PROJECT_NAME "Stellarium")
+add_library(
+    stellarium
+    SHARED
+)
 
-# Specify the source files
-file(GLOB SRC_FILES "src/*.cpp" "src/*.cc" "src/*.c")
+target_include_directories(
+    stellarium 
+    PUBLIC 
+    src/core
+    src/math
+    src/render
+    src/util
+)
 
-# Specify the include directories
-set(INCLUDE_DIRS "src")
+add_subdirectory(src/core)
+add_subdirectory(src/math)
+add_subdirectory(src/util)
 
-# Add the library target
-add_library(${PROJECT_NAME} ${SRC_FILES})
+if (BUILD_TESTS)
+    add_subdirectory(test)
+    target_compile_definitions(stellarium PUBLIC STELL_BUILD_TESTS)
+endif()
 
-# Compiler flags
-target_compile_options(${PROJECT_NAME} PUBLIC -g -Wall -Wextra -Wpedantic -O3)
+if (BUILD_RENDERING)
+    add_subdirectory(src/render)
+    target_compile_definitions(stellarium PUBLIC STELL_BUILD_RENDERING)
+endif()
 
-# Set include directories
-target_include_directories(${PROJECT_NAME} PUBLIC ${INCLUDE_DIRS})
+target_compile_options(
+    stellarium 
+    PUBLIC 
+    -g 
+    -Wall 
+    -Wextra 
+    -Wpedantic 
+    -O3
+)
 
-# Set libraries to link in
-target_link_libraries(${PROJECT_NAME} glfw3 GL X11 pthread Xrandr Xi dl)
+set(STELL_LINK_LIBRARIES "")
 
-# Compile all tests
-add_subdirectory(test)
-
+target_link_libraries(
+    stellarium
+    PUBLIC ${STELL_LINK_LIBRARIES}
+)
