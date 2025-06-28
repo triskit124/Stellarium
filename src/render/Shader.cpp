@@ -1,5 +1,6 @@
 #include "Shader.h"
 #include "Matrix44.h"
+#include <filesystem>
 
 namespace Stellarium
 {

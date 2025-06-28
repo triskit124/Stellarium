@@ -27,6 +27,14 @@ option(BUILD_TESTS "Enable building of tests" ON)
 # Generate a compile_commands.json file for clangd
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+# Generate a Config.h file from the template
+# This file contains useful constants like the project root directory
+configure_file(
+    src/util/Config.h.in
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/util/Config.h 
+    @ONLY
+)
+
 add_library(
     stellarium
     SHARED

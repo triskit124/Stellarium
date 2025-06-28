@@ -4,6 +4,9 @@
 #include "Quaternion.h"
 #include "Shader.h"
 #include "Vector3.h"
+#include "Config.h"
+
+#include <filesystem>
 #include <memory>
 
 #define STB_IMAGE_IMPLEMENTATION
@@ -88,8 +91,8 @@ GraphicsEngine::GraphicsEngine()
 
     // Load shaders
     Shader shader(
-        "/home/tristan/Documents/github/Stellarium/src/shader/shader.vert", 
-        "/home/tristan/Documents/github/Stellarium/src/shader/shader.frag"
+        (std::filesystem::path(STELL_PROJECT_ROOT) / std::filesystem::path("src/render/shader/shader.vert")).string(), 
+        (std::filesystem::path(STELL_PROJECT_ROOT) / std::filesystem::path("src/render/shader/shader.frag")).string()
     );
 
     // Vertex data
