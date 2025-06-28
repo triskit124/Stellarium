@@ -8,6 +8,7 @@ set(STELL_RENDER_SRCS
     Shader.cpp
     Window.h
     Window.cpp
+    glad/glad.c
 )
 
 target_sources(stellarium PRIVATE ${STELL_RENDER_SRCS})

@@ -12,7 +12,7 @@ set(
 if (BUILD_RENDERING)
     list(
         APPEND STELL_TESTS
-        test_graphics/test_graphics.cpp
+        test_graphics/test_window.cpp
     )
 endif()
 
