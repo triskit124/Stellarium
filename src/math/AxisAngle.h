@@ -1,7 +1,6 @@
-#ifndef STELL_AXISANGLE
-#define STELL_AXISANGLE
+#ifndef STELL_AXISANGLE_H
+#define STELL_AXISANGLE_H
 
-#include "Constants.h"
 #include "Vector3.h"
 #include "Quaternion.h"
 
@@ -11,7 +10,7 @@ namespace Stellarium
 /**
 * @brief Axis-angle rotation representation.
 */
-class AxisAngle
+class AxisAngle: public MathBase
 {
     public:
 
@@ -24,14 +23,17 @@ class AxisAngle
         /**
         * @brief Default constructor for the AxisAngle object.
         */
-        AxisAngle();
+        AxisAngle() = default;
 
         /**
         * @brief Constructs an AxisAngle object with the given axis and angle.
         * @param axis The axis of rotation.
         * @param angle The angle of rotation in radians.
         */
-        AxisAngle(Vector3 axis, double angle) : _axis(axis.getNormalized()), _angle(angle) {};
+        AxisAngle(Vector3 axis, double angle) {
+            this->setAxis(axis);
+            this->setAngle(angle);
+        };
 
         /**
         * brief Constructs an AxisAngle object based on a quaternion.
@@ -78,38 +80,21 @@ class AxisAngle
         */
         void setAngle(double angle) { _angle = angle; };
 
-        /**
-        * @brief Gets the epsilon value for floating point comparisons.
-        * @return The epsilon value.
-        */
-        double epsilon() const { return _epsilon; };
-
-        /**
-        * @brief Sets the epsilon value for floating point comparisons.
-        * @param e The new epsilon value.
-        */
-        void epsilon(double e) { _epsilon = e; };
-
     protected:
 
     private:
         /**
         * @brief The axis of rotation.
         */
-        Vector3 _axis {0.0, 0.0, 0.0};
+        Vector3 _axis {1.0, 0.0, 0.0};
         
         /**
-        * @brief The angle of rotation.
+        * @brief The angle of rotation in radians.
         */
         double _angle = 0.0;
-
-        /**
-        * @brief The epsilon value for floating point comparisons.
-        */
-        double _epsilon = STELL_EPSILON;
 
 };
 
 } // end namespace Stellarium
 
-#endif // end STELL_AXISANGLE
+#endif // end STELL_AXISANGLE_H

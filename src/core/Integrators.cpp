@@ -1,22 +1,21 @@
 #include "Integrators.h"
 #include "Body.h"
-#include "Constants.h"
+
 #include <cstddef>
 #include <vector>
 
 namespace Stellarium 
 {
 
-
 void Integrator::_computeStateVector(std::vector<Body*> bodies)
 {
    _state.clear();
-   _state.reserve(bodies.size() * STELL_BODY_STATE_SIZE);
+   _state.reserve(bodies.size() * Body::STATE_SIZE);
 
     // Collect the state vector of the system
     for (auto& body : bodies)
     {
-        std::array<double*, STELL_BODY_STATE_SIZE> state = body->getState();
+        std::array<double*, Body::STATE_SIZE> state = body->getState();
         for (double* s : state)
         {
             _state.push_back(s);
@@ -27,12 +26,12 @@ void Integrator::_computeStateVector(std::vector<Body*> bodies)
 void Integrator::_computeStateDotVector(std::vector<Body*> bodies)
 {
    _state_dot.clear();
-   _state_dot.reserve(bodies.size() * STELL_BODY_STATE_SIZE);
+   _state_dot.reserve(bodies.size() * Body::STATE_SIZE);
 
     // Collect the state derivatives of the system
     for (auto& body : bodies)
     {
-        std::array<double, STELL_BODY_STATE_SIZE> state_dot = body->getStateDot();
+        std::array<double, Body::STATE_SIZE> state_dot = body->getStateDot();
         for (double s : state_dot)
         {
             _state_dot.push_back(s);

@@ -1,8 +1,9 @@
-#ifndef STELL_MATRIX33
-#define STELL_MATRIX33
+#ifndef STELL_MATRIX33_H
+#define STELL_MATRIX33_H
 
-#include "Constants.h"
+#include "MathBase.h"
 #include "Vector3.h"
+
 #include <cmath>
 #include <math.h>
 #include <stdexcept>
@@ -13,7 +14,7 @@ namespace Stellarium
 /**
 * @brief A class representing a 3x3 matrix.
 */
-class Matrix33
+class Matrix33: public MathBase
 {    
     public:
 
@@ -34,27 +35,29 @@ class Matrix33
         * @param y The 2nd row of the matrix.
         * @param z The 3rd row of the matrix.
         */
-        Matrix33(Vector3 x, Vector3 y, Vector3 z) : _x(x), _y(y), _z(z) {};
+        Matrix33(Vector3 x, Vector3 y, Vector3 z) : x(x), y(y), z(z) {};
+        
+        /*
+        ====================
+            Data Members
+        ====================
+        */
         
         /**
-        * @brief Constructs a Matrix33 object with the given elements.
-        * @param x1 The 1st element of the 1st row.
-        * @param x2 The 2nd element of the 1st row.
-        * @param x3 The 3rd element of the 1st row.
-        * @param y1 The 1st element of the 2nd row.
-        * @param y2 The 2nd element of the 2nd row.
-        * @param y3 The 3rd element of the 2nd row.
-        * @param z1 The 1st element of the 3rd row.
-        * @param z2 The 2nd element of the 3rd row.
-        * @param z3 The 3rd element of the 3rd row.
+        * @brief The 1st row of the matrix.
         */
-        Matrix33(double x1, double x2, double x3, double y1, double y2, double y3, double z1, double z2, double z3) : _x(x1, x2, x3), _y(y1, y2, y3), _z(z1, z2, z3) {};
+        Vector3 x {1.0, 0.0, 0.0};
         
         /**
-        * @brief Destructor
+        * @brief The 2nd row of the matrix.
         */
-        ~Matrix33() {};
-
+        Vector3 y {0.0, 1.0, 0.0};
+        
+        /**
+        * @brief The 3rd row of the matrix.
+        */
+        Vector3 z {0.0, 0.0, 1.0};
+        
         /* 
         ===================
              Operators 
@@ -68,9 +71,9 @@ class Matrix33
         */
         Vector3 operator*(Vector3 v) const { 
             return Vector3(
-                _x.dot(v),
-                _y.dot(v),
-                _z.dot(v)
+                x.dot(v),
+                y.dot(v),
+                z.dot(v)
             );
         };
 
@@ -81,9 +84,9 @@ class Matrix33
         */
         Matrix33 operator*(double c) const {
             return Matrix33(
-                _x * c,
-                _y * c,
-                _z * c
+                x * c,
+                y * c,
+                z * c
             );
         };
 
@@ -94,9 +97,9 @@ class Matrix33
         */
         Matrix33 operator/(double c) const {
             return Matrix33(
-                _x / c,
-                _y / c,
-                _z / c
+                x / c,
+                y / c,
+                z / c
             );
         };
 
@@ -109,9 +112,9 @@ class Matrix33
             // TODO: check this
             Matrix33 mat = m.getTranspose();
             return Matrix33(
-                { _x.dot(mat[0]), _x.dot(mat[1]), _x.dot(mat[2]) },
-                { _y.dot(mat[0]), _y.dot(mat[1]), _y.dot(mat[2]) },
-                { _z.dot(mat[0]), _z.dot(mat[1]), _z.dot(mat[2]) }
+                { x.dot(mat[0]), x.dot(mat[1]), x.dot(mat[2]) },
+                { y.dot(mat[0]), y.dot(mat[1]), y.dot(mat[2]) },
+                { z.dot(mat[0]), z.dot(mat[1]), z.dot(mat[2]) }
             );
         };
 
@@ -123,15 +126,36 @@ class Matrix33
         Vector3 operator[](int idx) const {
             if (idx == 0)
             {
-                return _x;
+                return x;
             }
             if (idx == 1)
             {
-                return _y;
+                return y;
             }
             if (idx == 2)
             {
-                return _z;
+                return z;
+            }
+            throw std::invalid_argument("invalid index"); 
+        }
+
+        /**
+        * @brief Operator for accessing the 1st, 2nd, and 3rd rows of the matrix.
+        * @param idx The index of the row to access.
+        * @return The row at the given index.
+        */
+        Vector3& operator[](int idx) {
+            if (idx == 0)
+            {
+                return x;
+            }
+            if (idx == 1)
+            {
+                return y;
+            }
+            if (idx == 2)
+            {
+                return z;
             }
             throw std::invalid_argument("invalid index"); 
         }
@@ -142,7 +166,7 @@ class Matrix33
         * @return True if the matrices are equal, false otherwise.
         */
         bool operator==(const Matrix33& m) const {
-            return _x == m[0] && _y == m[1] && _z == m[2];
+            return x == m[0] && y == m[1] && z == m[2];
         };
 
         /* 
@@ -155,10 +179,10 @@ class Matrix33
         * @brief Computes the determinant of the matrix.
         * @return The determinant of the matrix.
         */
-        double det() const { 
-            return _x[0]*(_y[1]*_z[2] - _y[2]*_z[1]) 
-                   - _x[1]*(_y[0]*_z[2] - _y[2]*_z[0]) 
-                   + _x[2]*(_y[0]*_z[1] - _y[1]*_z[0]); 
+        double getDeterminant() const { 
+            return x[0]*(y[1]*z[2] - y[2]*z[1]) 
+                   - x[1]*(y[0]*z[2] - y[2]*z[0]) 
+                   + x[2]*(y[0]*z[1] - y[1]*z[0]); 
         };
 
         /**
@@ -167,9 +191,9 @@ class Matrix33
         */
         Matrix33 getTranspose() const {
             return Matrix33(
-                _x[0], _y[0], _z[0],
-                _x[1], _y[1], _z[1],
-                _x[2], _y[2], _z[2]
+                Vector3(x[0], y[0], z[0]),
+                Vector3(x[1], y[1], z[1]),
+                Vector3(x[2], y[2], z[2])
             );
         };
 
@@ -180,19 +204,19 @@ class Matrix33
         Matrix33 getAdjugate() const {
             return Matrix33(
                 Vector3(
-                    ((_y[1] * _z[2]) - (_z[1] * _y[2])),
-                    -((_x[1] * _z[2]) - (_z[1] * _x[2])),
-                    ((_x[1] * _y[2]) - (_y[1] * _x[2]))
+                    ((y[1] * z[2]) - (z[1] * y[2])),
+                    -((x[1] * z[2]) - (z[1] * x[2])),
+                    ((x[1] * y[2]) - (y[1] * x[2]))
                 ),
                 Vector3(
-                    -((_y[0] * _z[2]) - (_z[0] * _y[2])),
-                    ((_x[0] * _z[2]) - (_z[0] * _x[2])),
-                    -((_x[0] * _y[2]) - (_y[0] * _x[2]))
+                    -((y[0] * z[2]) - (z[0] * y[2])),
+                    ((x[0] * z[2]) - (z[0] * x[2])),
+                    -((x[0] * y[2]) - (y[0] * x[2]))
                 ),
                 Vector3(
-                    ((_y[0] * _z[1]) - (_z[0] * _y[1])),
-                    -((_x[0] * _z[1]) - (_z[0] * _x[1])),
-                    ((_x[0] * _y[1]) - (_y[0] * _x[1]))
+                    ((y[0] * z[1]) - (z[0] * y[1])),
+                    -((x[0] * z[1]) - (z[0] * x[1])),
+                    ((x[0] * y[1]) - (y[0] * x[1]))
                 )
             );
         };
@@ -202,20 +226,20 @@ class Matrix33
         * @return The inverse of the matrix.
         */
         Matrix33 inverse() const {
-            if (std::abs(det()) <= STELL_EPSILON)
+            if (std::abs(getDeterminant()) <= _epsilon)
             {
                 throw std::invalid_argument("Matrix is singular and cannot be inverted.");
             }
-            return getAdjugate() / det();
+            return getAdjugate() / getDeterminant();
         };
 
         /**
         * @brief Prints the matrix to stdout.
         */
         void print() const {
-            _x.print();
-            _y.print();
-            _z.print();
+            x.print();
+            y.print();
+            z.print();
         };
 
         Vector3 getRollPitchYaw() const {
@@ -227,63 +251,29 @@ class Matrix33
 
             double roll, pitch, yaw = 0.0;
 
-            if (abs( _z[0] - 1) <= _epsilon)
+            if (abs( z[0] - 1) <= _epsilon)
             {
                 pitch = -M_PI_2;
-                roll = -yaw + atan2(-_x[1], -_x[2]);
+                roll = -yaw + atan2(-x[1], -x[2]);
             }
-            else if (std::abs( _z[0] + 1) <= _epsilon)
+            else if (std::abs( z[0] + 1) <= _epsilon)
             {
                 pitch = M_PI_2;
-                roll = yaw + atan2( _x[1],  _x[2]);
+                roll = yaw + atan2( x[1],  x[2]);
             }
             else 
             {
-                pitch = -asin( _z[0]);
-                roll = atan2( _z[1] / cos(pitch),  _z[2] / cos(pitch));
-                yaw = atan2( _y[0] / cos(pitch),  _x[0] / cos(pitch));
+                pitch = -asin( z[0]);
+                roll = atan2( z[1] / cos(pitch),  z[2] / cos(pitch));
+                yaw = atan2( y[0] / cos(pitch),  x[0] / cos(pitch));
             }
             return Vector3(roll, pitch, yaw);
         }
 
         bool isRotationMatrix() const {
-            return abs(det() - 1.0) <= _epsilon && *this * this->getTranspose() == Matrix33();
+            return abs(getDeterminant() - 1.0) <= _epsilon && *this * this->getTranspose() == Matrix33();
         }
 
-        /**
-        * @brief Gets the epsilon value for floating point comparisons.
-        * @return The epsilon value.
-        */
-        double epsilon() const { return _epsilon; };
-
-        /**
-        * @brief Sets the epsilon value for floating point comparisons.
-        * @param e The new epsilon value.
-        */
-        void epsilon(double e) { _epsilon = e; };
-
-    protected:
-
-    private:
-        /**
-        * @brief The 1st row of the matrix.
-        */
-        Vector3 _x {1.0, 0.0, 0.0};
-        
-        /**
-        * @brief The 2nd row of the matrix.
-        */
-        Vector3 _y {0.0, 1.0, 0.0};
-        
-        /**
-        * @brief The 3rd row of the matrix.
-        */
-        Vector3 _z {0.0, 0.0, 1.0};
-
-        /**
-        * @brief The epsilon value for floating point comparisons.
-        */
-        double _epsilon = STELL_EPSILON;
 };
 
 /**
@@ -311,4 +301,4 @@ inline Matrix33 operator/(double c, const Matrix33& m)
 
 } // end namespace Stellarium
 
-#endif // end STELL_MATRIX33
+#endif // end STELL_MATRIX33_H

@@ -1,9 +1,8 @@
-#ifndef STELL_QUATERNION
-#define STELL_QUATERNION
+#ifndef STELL_QUATERNION_H
+#define STELL_QUATERNION_H
 
 #include <cassert>
 
-#include "Constants.h"
 #include "Matrix33.h"
 #include "Vector3.h"
 
@@ -13,7 +12,7 @@ namespace Stellarium
 /**
 * @brief A class representing a quaternion.
 */
-class Quaternion
+class Quaternion: public MathBase
 {    
     public:
 
@@ -37,10 +36,10 @@ class Quaternion
         * @param normalize Whether to normalize the quaternion.
         */
         Quaternion(double w, double x, double y, double z, bool normalize = true) {
-            _w = w;
-            _x = x;
-            _y = y;
-            _z = z;
+            this->w = w;
+            this->x = x;
+            this->y = y;
+            this->z = z;
             if (normalize)
             {
                 this->normalize();
@@ -55,10 +54,10 @@ class Quaternion
         Quaternion(const Vector3& axis, double angle) {
             Vector3 ax = axis.getNormalized();
             double s = std::sin(angle/2);
-            _w = std::cos(angle/2);
-            _x = ax[0]*s;
-            _y = ax[1]*s;
-            _z = ax[2]*s;
+            this->w = std::cos(angle/2);
+            this->x = ax.x*s;
+            this->y = ax.y*s;
+            this->z = ax.z*s;
             this->normalize();
         };
 
@@ -72,15 +71,40 @@ class Quaternion
             // TODO: this needs to be checked
             Quaternion q_roll = Quaternion(Vector3(1, 0, 0), roll);
             Quaternion q_pitch = Quaternion(Vector3(0, 1, 0), pitch);
-            Quaternion q_yaw = Quaternion(Vector3(0, 0, 1), yaw);
-            Quaternion q = q_yaw * q_pitch * q_roll;
-            _w = q[0];
-            _x = q[1];
-            _y = q[2];
-            _z = q[3];
+            Quaternion qyaw = Quaternion(Vector3(0, 0, 1), yaw);
+            Quaternion q = qyaw * q_pitch * q_roll;
+            this->w = q.w;
+            this->x = q.x;
+            this->y = q.y;
+            this->z = q.z;
             this->normalize();
         };
 
+        /*
+        ====================
+            Data Members
+        ====================
+        */
+
+        /**
+        * @brief The scalar component of the quaternion.
+        */
+        double w = 1.0;
+        
+        /**
+        * @brief The 1st vector component of the quaternion.
+        */
+        double x = 0.0;
+        
+        /**
+        * @brief The 2nd vector component of the quaternion.
+        */
+        double y = 0.0;
+        
+        /**
+        * @brief The 3rd vector component of the quaternion.
+        */
+        double z = 0.0;
 
         /* 
         ===================
@@ -88,56 +112,31 @@ class Quaternion
         ===================
         */
 
-        /**
-        * @brief Operator for element-wise multiplying the quaternion by a scalar.
-        * @param c The scalar to multiply by.
-        * @return The quaternion multiplied by the scalar.
-        */
-        Quaternion operator*(double c) const { return Quaternion(_w*c, _x*c, _y*c, _z*c, false); };
-        
-        /**
-        * @brief Operator for element-wise dividing the quaternion by a scalar.
-        * @param c The scalar to divide by.
-        * @return The quaternion divided by the scalar.
-        */
-        Quaternion operator/(double c) const { return Quaternion(_w/c, _x/c, _y/c, _z/c, false); };
-        
-        /**
-        * @brief Operator for checking equality with another quaternion.
-        * @param q The quaternion to check equality with.
-        * @return Whether the two quaternions are equal within this->epsilon().
-        */
+        Quaternion operator*(double c) const { return Quaternion(w*c, x*c, y*c, z*c, false); };
+        Quaternion operator/(double c) const { return Quaternion(w/c, x/c, y/c, z/c, false); };
+    
         bool operator==(const Quaternion& q) const { 
-            return std::abs(_w - q[0]) <= _epsilon 
-                    && std::abs(_x - q[1]) <= _epsilon 
-                    && std::abs(_y - q[2]) <= _epsilon
-                    && std::abs(_z - q[3]) <= _epsilon;
+            return std::abs(w - q.w) <= _epsilon 
+                    && std::abs(x - q.x) <= _epsilon 
+                    && std::abs(y - q.y) <= _epsilon
+                    && std::abs(z - q.z) <= _epsilon;
         }; 
 
-        /**
-        * @brief Operator for checking equality with a scalar. This implies that the vector portions of the quaternion are zero.
-        * @param c The scalar to check equality with.
-        * @return Whether the quaternion is equal to the scalar within this->epsilon().
-        */
         bool operator==(double c) const { 
-            return std::abs(_w - c) <= _epsilon 
-                    && std::abs(_x) <= _epsilon 
-                    && std::abs(_y) <= _epsilon
-                    && std::abs(_z) <= _epsilon;
+            return std::abs(w - c) <= _epsilon 
+                    && std::abs(x) <= _epsilon 
+                    && std::abs(y) <= _epsilon
+                    && std::abs(z) <= _epsilon;
         };
 
-        /**
-        * @brief Operator for multiplying two quaternions via their Hamilton product.
-        * @param q The quaternion to multiply by.
-        * @return The Hamilton product of the two quaternions.
-        */
+        // Hamiltom product
         Quaternion operator*(const Quaternion& q) const {
             bool normalize = this->isUnit() && q.isUnit();
             return Quaternion(
-                _w*q[0] - _x*q[1] - _y*q[2] - _z*q[3],
-                _w*q[1] + _x*q[0] + _y*q[3] - _z*q[2],
-                _w*q[2] - _x*q[3] + _y*q[0] + _z*q[1],
-                _w*q[3] + _x*q[2] - _y*q[1] + _z*q[0],
+                w*q.w - x*q.x - y*q.y - z*q.z,
+                w*q.x + x*q.w + y*q.z - z*q.y,
+                w*q.y - x*q.z + y*q.w + z*q.x,
+                w*q.z + x*q.y - y*q.x + z*q.w,
                 normalize
             );
         }
@@ -157,10 +156,10 @@ class Quaternion
 
             // Reference: https://faculty.sites.iastate.edu/jia/files/inline-files/quaternion.pdf
             // Theorem 2:
-            Quaternion p = Quaternion(0.0, v[0], v[1], v[2]);
-            Quaternion pp = *this * p * this->conjugate();
+            Quaternion p = Quaternion(0.0, v.x, v.y, v.z);
+            Quaternion pp = *this * p * this->getConjugate();
 
-            return Vector3(pp[1], pp[2], pp[3]);
+            return Vector3(pp.x, pp.y, pp.z);
         };
 
         /**
@@ -171,19 +170,44 @@ class Quaternion
         double operator[](int idx) const {
             if (idx == 0)
             {
-                return _w;
+                return w;
             }
             if (idx == 1)
             {
-                return _x;
+                return x;
             }
             if (idx == 2)
             {
-                return _y;
+                return y;
             }
             if (idx == 3)
             {
-                return _z;
+                return z;
+            }
+            throw std::invalid_argument("invalid index"); 
+        }
+
+        /**
+        * @brief Operator for accessing the w, x, y, and z values of the quaternion.
+        * @param idx The index of the value to access.
+        * @return The value at the given index.
+        */
+        double& operator[](int idx) {
+            if (idx == 0)
+            {
+                return w;
+            }
+            if (idx == 1)
+            {
+                return x;
+            }
+            if (idx == 2)
+            {
+                return y;
+            }
+            if (idx == 3)
+            {
+                return z;
             }
             throw std::invalid_argument("invalid index"); 
         }
@@ -195,42 +219,18 @@ class Quaternion
         */
         
         /**
-        * @brief Gets pointer to the w value of the quaternion.
-        * @return Pointer to the w value of the quaternion.
-        */
-        double* w() { return &_w; };
-        
-        /**
-        * @brief Gets pointer to the x value of the quaternion.
-        * @return Pointer to the x value of the quaternion.
-        */
-        double* x() { return &_x; };
-        
-        /**
-        * @brief Gets pointer to the y value of the quaternion.
-        * @return Pointer to the y value of the quaternion.
-        */
-        double* y() { return &_y; };
-
-        /** 
-        * @brief Gets pointer to the z value of the quaternion.
-        * @return Pointer to the z value of the quaternion.
-        */
-        double* z() { return &_z; };
-
-        /**
         * @brief Normalizes the quaternion.
         */
         void normalize() { 
             if (!isUnit())
             {
-                double n = norm();
+                double n = getNorm();
                 if (n > _epsilon)
                 {
-                    _w /= n;
-                    _x /= n;
-                    _y /= n;
-                    _z /= n;
+                    this->w /= n;
+                    this->x /= n;
+                    this->y /= n;
+                    this->z /= n;
                 }
             }
         }
@@ -256,35 +256,23 @@ class Quaternion
 
             assert(isUnit());
 
-            double a = _w;
-            double b = _x;
-            double c = _y;
-            double d = _z;
+            double a = this->w;
+            double b = this->x;
+            double c = this->y;
+            double d = this->z;
 
             return Matrix33(
-                2*a*a - 1 + 2*b*b, 2*b*c - 2*a*d, 2*b*d + 2*a*c,
-                2*b*c + 2*a*d, 2*a*a - 1 + 2*c*c, 2*c*d - 2*a*b,
-                2*b*d - 2*a*c, 2*c*d + 2*a*b, 2*a*a - 1 + 2*d*d
+                Vector3(2*a*a - 1 + 2*b*b, 2*b*c - 2*a*d, 2*b*d + 2*a*c),
+                Vector3(2*b*c + 2*a*d, 2*a*a - 1 + 2*c*c, 2*c*d - 2*a*b),
+                Vector3(2*b*d - 2*a*c, 2*c*d + 2*a*b, 2*a*a - 1 + 2*d*d)
             );
         }
-
-        /**
-        * @brief Gets the epsilon value for floating point comparisons.
-        * @return The epsilon value.
-        */
-        double epsilon() const { return _epsilon; };
-
-        /**
-        * @brief Sets the epsilon value for floating point comparisons.
-        * @param e The new epsilon value.
-        */
-        void epsilon(double e) { _epsilon = e; };
 
         /**
         * @brief Checks if the quaternion is a unit quaternion.
         * @return Whether the quaternion is a unit quaternion.
         */
-        bool isUnit() const { return std::abs(norm() - 1.0) <= _epsilon; };
+        bool isUnit() const { return std::abs(getNorm() - 1.0) <= _epsilon; };
 
         /**
         * @brief Checks if the quaternion is the identity quaternion.
@@ -296,56 +284,29 @@ class Quaternion
         * @brief Returns the conjugate of the quaternion.
         * @return The conjugate of the quaternion.
         */
-        Quaternion conjugate() const { return Quaternion(_w, -_x, -_y, -_z, false); };
+        Quaternion getConjugate() const { return Quaternion(w, -x, -y, -z, false); };
         
         /**
         * @brief Returns the inverse of the quaternion.
         * @return The inverse of the quaternion.
         */
-        Quaternion inverse() const { return conjugate() / pow(norm(), 2); };
+        Quaternion getInverse() const { return getConjugate() / pow(getNorm(), 2); };
 
         /**
         * @brief Returns the norm of the quaternion.
         * @return The norm of the quaternion.
         */
-        double norm() const { return std::sqrt(pow(_w, 2) + pow(_x, 2) + pow(_y, 2) + pow(_z, 2)); };
+        double getNorm() const { return std::sqrt(pow(w, 2) + pow(x, 2) + pow(y, 2) + pow(z, 2)); };
 
         Vector3 getRollPitchYaw() const { return this->getRotationMatrix().getRollPitchYaw(); };
 
         /**
         * @brief Prints the w, x, y, and z values of the quaternion to stdout.
         */
-        void print() const {
-            std::cout << "w: " << _w << " x: " << _x << " y: " << _y << " z: " << _z << std::endl;
+        void print(const std::string& s) const {
+            std::cout << "s: " << s << "w: " << w << " x: " << x << " y: " << y << " z: " << z << std::endl;
         }
 
-    protected:
-    
-    private:
-        /**
-        * @brief The scalar component of the quaternion.
-        */
-        double _w = 1.0;
-        
-        /**
-        * @brief The 1st vector component of the quaternion.
-        */
-        double _x = 0.0;
-        
-        /**
-        * @brief The 2nd vector component of the quaternion.
-        */
-        double _y = 0.0;
-        
-        /**
-        * @brief The 3rd vector component of the quaternion.
-        */
-        double _z = 0.0;
-        
-        /**
-        * @brief The epsilon value for floating point comparisons.
-        */
-        double _epsilon = STELL_EPSILON;
 };
 
 
@@ -363,5 +324,5 @@ inline Quaternion operator*(double c, const Quaternion& q)
 
 } // end namespace Stellarium
 
-#endif // end STELL_QUATERNION
+#endif // end STELL_QUATERNION_H
 

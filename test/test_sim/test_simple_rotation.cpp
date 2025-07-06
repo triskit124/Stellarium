@@ -45,7 +45,7 @@ int main() {
     angle = 2*M_PI - fmod(100.0, 2*M_PI);
     aa = AxisAngle(body->getAttitude());
     Vector3 axis = aa.getAxis();
-    axis.epsilon(1e-8);
+    axis.setEpsilon(1e-8);
     
     test.assertTrue("Body rotation 2 - axis", axis == Vector3(-1, 0, 0));
     test.assertTrue("Body rotation 2 - angle", abs(aa.getAngle() - angle) <= 1e-5);
@@ -56,7 +56,7 @@ int main() {
     
     aa = AxisAngle(body->getAttitude());
     axis = aa.getAxis();
-    axis.epsilon(1e-8);
+    axis.setEpsilon(1e-8);
 
     test.assertTrue("Body angular velocity 3", body->getAngularVelocity() == Vector3(0, 0, 0));
     test.assertTrue("Body rotation 3 - axis", axis == Vector3(-1, 0, 0));

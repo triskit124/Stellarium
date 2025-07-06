@@ -1,5 +1,5 @@
-#ifndef STELL_BODY
-#define STELL_BODY
+#ifndef STELL_BODY_H
+#define STELL_BODY_H
 
 #include <array>
 #include <string>
@@ -20,6 +20,9 @@ class Body : public Frame
 
     public:
 
+        /**< The size of the state vector for a body. */
+        constexpr static unsigned int STATE_SIZE { 13 }; 
+
         /* 
         ===================================
              Constructors/Desctructors 
@@ -34,7 +37,11 @@ class Body : public Frame
         * @param cm The position of center of mass of the body.
         * @param inertia The inertia matrix of the body.
         */
-        Body(const std::string& name, double mass, const Vector3& cm, const Matrix33& inertia) : Frame(name), _mass(mass), _cm(cm), _inertia(inertia) {};
+        Body(const std::string& name, double mass, const Vector3& cm, const Matrix33& inertia) : Frame(name) {
+            this->setMass(mass);
+            this->setCm(cm);
+            this->setInertia(inertia);
+        };
 
         /* 
         ==============
@@ -46,37 +53,42 @@ class Body : public Frame
         * @brief Gets the mass of the body.
         * @return The mass of the body.
         */
-        double mass() const { return _mass; };
+        double getMass() const { return _mass; };
 
         /**
         * @brief Sets the mass of the body.
         * @param mass The new mass of the body.
         */
-        void mass(double mass) { _mass = mass; };
+        void setMass(double mass) { 
+            if (mass < 0.0) {
+                throw std::invalid_argument("Mass must be a non-negative value");
+            }
+            _mass = mass; 
+        };
 
         /**
         * @brief Gets the center of mass of the body.
         * @return The center of mass of the body.
         */
-        Vector3 cm() const { return _cm; };
+        Vector3 getCm() const { return _cm; };
 
         /**
         * @brief Sets the center of mass of the body.
         * @param cm The new center of mass of the body.
         */
-        void cm(const Vector3& cm) { _cm = cm; };
+        void setCm(const Vector3& cm) { _cm = cm; };
 
         /**
         * @brief Gets the inertia matrix of the body.
         * @return The inertia matrix of the body.
         */
-        Matrix33 inertia() const { return _inertia; };
+        Matrix33 getInertia() const { return _inertia; };
 
         /**
         * @brief Sets the inertia matrix of the body.
         * @param inertia The new inertia matrix of the body.
         */
-        void inertia(const Matrix33& inertia) { _inertia = inertia; };
+        void setInertia(const Matrix33& inertia) { _inertia = inertia; };
 
         /**
         * @brief Adds a force to the body.
@@ -111,13 +123,13 @@ class Body : public Frame
         * @brief Gets the state of the body.
         * @return The state of the body as an array of doubles.
         */
-        std::array<double*, 13> getState();
+        std::array<double*, Body::STATE_SIZE> getState();
 
         /**
         * @brief Gets the derivative of the state of the body via rigid-body equations of motion.
         * @return The derivative of the state of the body as an array of doubles.
         */
-        std::array<double, 13> getStateDot();
+        std::array<double, Body::STATE_SIZE> getStateDot();
 
     protected:
     
@@ -153,4 +165,4 @@ class Body : public Frame
 
 } // end namespace Stellarium
 
-#endif // end STELL_BODY
+#endif // end STELL_BODY_H

@@ -17,7 +17,7 @@ int main() {
     Matrix33 M1 = Matrix33(Vector3(7, 2, 1), Vector3(0, 3, -1), Vector3(-3, 4, -2));
     
     // Determinant
-    test.assertTrue("Matrix33 determinant 1", M1.det() == 1);
+    test.assertTrue("Matrix33 determinant 1", M1.getDeterminant() == 1);
 
     // Transpose
     test.assertTrue("Matrix33 transpose 1", M1.getTranspose() == Matrix33(Vector3(7, 0, -3), Vector3(2, 3, 4), Vector3(1, -1, -2)));
@@ -36,7 +36,7 @@ int main() {
     Matrix33 M2 = Matrix33(Vector3(1, 2, 3), Vector3(3, 2, 1), Vector3(2, 1, 3));
     
     // Determinant
-    test.assertTrue("Matrix33 determinant 2", M2.det() == -12);
+    test.assertTrue("Matrix33 determinant 2", M2.getDeterminant() == -12);
 
     // Transpose
     test.assertTrue("Matrix33 transpose 2", M2.getTranspose() == Matrix33(Vector3(1, 3, 2), Vector3(2, 2, 1), Vector3(3, 1, 3)));

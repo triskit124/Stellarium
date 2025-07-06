@@ -1,12 +1,11 @@
-#ifndef STELL_MATRIX44
-#define STELL_MATRIX44
+#ifndef STELL_MATRIX44_H
+#define STELL_MATRIX44_H
 
 #include <array>
 #include <cmath>
 #include <cstddef>
 #include <stdexcept>
 
-#include "Constants.h"
 #include "Matrix33.h"
 #include "Quaternion.h"
 #include "Vector3.h"
@@ -31,7 +30,10 @@ class Matrix44
         /**
         * @brief Default constructor for the Matrix44 object.
         */
-        Matrix44() = default;
+        Matrix44(Quaternion quat = Quaternion(), Vector3 translation = Vector3()) {
+            setRotation(quat.getRotationMatrix());
+            setTranslation(translation);
+        };
         
         /**
         * @brief Constructs a Matrix44 object with the given x, y, z, and w vectors.
@@ -40,7 +42,7 @@ class Matrix44
         * @param z The 3rd row of the matrix.
         * @param w The 4th row of the matrix.
         */
-        Matrix44(Vector4 x, Vector4 y, Vector4 z, Vector4 w) : _x(x), _y(y), _z(z), _w(w) {};
+        Matrix44(Vector4 x, Vector4 y, Vector4 z, Vector4 w) : x(x), y(y), z(z), w(w) {};
         
 
         /**
@@ -55,38 +57,31 @@ class Matrix44
             setTranslation(translation);
         };
         
+        /*
+        ====================
+            Data Members
+        ====================
+        */
+        
+        /**
+        * @brief The 1st row of the matrix.
+        */
+        Vector4 x {1.0, 0.0, 0.0, 0.0};
+        
+        /**
+        * @brief The 2nd row of the matrix.
+        */
+        Vector4 y {0.0, 1.0, 0.0, 0.0};
+        
+        /**
+        * @brief The 3rd row of the matrix.
+        */
+        Vector4 z {0.0, 0.0, 1.0, 0.0};
 
         /**
-        * @brief Construct from a quaternion and translation vector.
-        * The resulting homogeneous transformation matrix will represent a rotation and translation of a vector/frame from the initial pose to the final pose. 
-        * The translation and rotation are both w.r.t the initial pose, expressed in the initial pose.
-        * @param quat The quaternion.
-        * @param translation The translation vector.
+        * @brief The 4th row of the matrix.
         */
-        Matrix44(Quaternion quat, Vector3 translation) {
-            setRotation(quat.getRotationMatrix());
-            setTranslation(translation);
-        };
-
-        /**
-        * @brief Construct from a quaternion.
-        * The resulting homogeneous transformation matrix will represent a rotation and translation of a vector/frame from the initial pose to the final pose. 
-        * The translation and rotation are both w.r.t the initial pose, expressed in the initial pose.
-        * @param quat The quaternion.
-        */
-        Matrix44(Quaternion quat) {
-            setRotation(quat.getRotationMatrix());
-        };
-
-        /**
-        * @brief Construct from a vector.
-        * The resulting homogeneous transformation matrix will represent a rotation and translation of a vector/frame from the initial pose to the final pose. 
-        * The translation and rotation are both w.r.t the initial pose, expressed in the initial pose.
-        * @param translation The translation vector.
-        */
-        Matrix44(Vector3 translation) {
-            setTranslation(translation);
-        };
+        Vector4 w {0.0, 0.0, 0.0, 1.0};
 
         /* 
         ===================
@@ -101,10 +96,10 @@ class Matrix44
         */
         Vector4 operator*(Vector4 v) const { 
             return Vector4(
-                _x.dot(v),
-                _y.dot(v),
-                _z.dot(v),
-                _w.dot(v)
+                x.dot(v),
+                y.dot(v),
+                z.dot(v),
+                w.dot(v)
             );
         };
 
@@ -139,10 +134,10 @@ class Matrix44
         */
         Matrix44 operator*(double c) const {
             return Matrix44(
-                _x * c,
-                _y * c,
-                _z * c,
-                _w * c
+                x * c,
+                y * c,
+                z * c,
+                w * c
             );
         };
 
@@ -153,10 +148,10 @@ class Matrix44
         */
         Matrix44 operator/(double c) const {
             return Matrix44(
-                _x / c,
-                _y / c,
-                _z / c,
-                _w / c
+                x / c,
+                y / c,
+                z / c,
+                w / c
             );
         };
 
@@ -168,19 +163,44 @@ class Matrix44
         Vector4 operator[](int idx) const {
             if (idx == 0)
             {
-                return _x;
+                return x;
             }
             if (idx == 1)
             {
-                return _y;
+                return y;
             }
             if (idx == 2)
             {
-                return _z;
+                return z;
             }
             if (idx == 3)
             {
-                return _w;
+                return w;
+            }
+            throw std::invalid_argument("invalid index"); 
+        }
+
+        /**
+        * @brief Operator for accessing the rows of the matrix.
+        * @param idx The index of the row to access.
+        * @return The row at the given index.
+        */
+        Vector4& operator[](int idx) {
+            if (idx == 0)
+            {
+                return x;
+            }
+            if (idx == 1)
+            {
+                return y;
+            }
+            if (idx == 2)
+            {
+                return z;
+            }
+            if (idx == 3)
+            {
+                return w;
             }
             throw std::invalid_argument("invalid index"); 
         }
@@ -191,7 +211,7 @@ class Matrix44
         * @return True if the matrices are equal, false otherwise.
         */
         bool operator==(const Matrix44& m) const {
-            return _x == m[0] && _y == m[1] && _z == m[2] && _w == m[3];
+            return x == m[0] && y == m[1] && z == m[2] && w == m[3];
         };
 
         /* 
@@ -206,9 +226,9 @@ class Matrix44
         */
         Matrix33 getRotation() const {
             return Matrix33(
-                _x[0], _x[1], _x[2],
-                _y[0], _y[1], _y[2],
-                _z[0], _z[1], _z[2]
+                Vector3(x[0], x[1], x[2]),
+                Vector3(y[0], y[1], y[2]),
+                Vector3(z[0], z[1], z[2])
             );
         };
 
@@ -217,7 +237,7 @@ class Matrix44
         * @return The translation vector.
         */
         Vector3 getTranslation() const {
-            return Vector3(_x[3], _y[3], _z[3]);
+            return Vector3(x[3], y[3], z[3]);
         };
 
         /**
@@ -225,9 +245,9 @@ class Matrix44
         * @param rotation The new rotation matrix.
         */
         void setRotation(Matrix33 rotation) {
-            _x = Vector4(rotation[0][0], rotation[0][1], rotation[0][2], _x[3]);
-            _y = Vector4(rotation[1][0], rotation[1][1], rotation[1][2], _y[3]);
-            _z = Vector4(rotation[2][0], rotation[2][1], rotation[2][2], _z[3]);
+            x = Vector4(rotation[0][0], rotation[0][1], rotation[0][2], x[3]);
+            y = Vector4(rotation[1][0], rotation[1][1], rotation[1][2], y[3]);
+            z = Vector4(rotation[2][0], rotation[2][1], rotation[2][2], z[3]);
         };
 
         /**
@@ -235,9 +255,9 @@ class Matrix44
         * @param translation The new translation vector.
         */
         void setTranslation(Vector3 translation) {
-            _x = Vector4(_x[0], _x[1], _x[2], translation[0]);
-            _y = Vector4(_y[0], _y[1], _y[2], translation[1]);
-            _z = Vector4(_z[0], _z[1], _z[2], translation[2]);
+            x = Vector4(x[0], x[1], x[2], translation[0]);
+            y = Vector4(y[0], y[1], y[2], translation[1]);
+            z = Vector4(z[0], z[1], z[2], translation[2]);
         };
 
         /**
@@ -246,10 +266,10 @@ class Matrix44
         */
         Matrix44 getTranspose() const {
             return Matrix44(
-                Vector4(_x[0], _y[0], _z[0], _w[0]),
-                Vector4(_x[1], _y[1], _z[1], _w[1]),
-                Vector4(_x[2], _y[2], _z[2], _w[2]),
-                Vector4(_x[3], _y[3], _z[3], _w[3])
+                Vector4(x[0], y[0], z[0], w[0]),
+                Vector4(x[1], y[1], z[1], w[1]),
+                Vector4(x[2], y[2], z[2], w[2]),
+                Vector4(x[3], y[3], z[3], w[3])
             );
         };
 
@@ -266,7 +286,7 @@ class Matrix44
         * @brief Returns the inverse of the transform represented by the matrix.
         * @return The inverse transform.
         */
-        Matrix44 inverseTransform() const {
+        Matrix44 getInverseTransform() const {
             return Matrix44(getRotation().inverse(), -(getRotation().inverse() * getTranslation()));
         };
 
@@ -284,54 +304,15 @@ class Matrix44
         }
 
         /**
-        * @brief Gets the epsilon value for floating point comparisons.
-        * @return The epsilon value.
-        */
-        double epsilon() const { return _epsilon; };
-
-        /**
-        * @brief Sets the epsilon value for floating point comparisons.
-        * @param e The new epsilon value.
-        */
-        void epsilon(double e) { _epsilon = e; };
-
-        /**
         * @brief Prints the matrix to stdout.
         */
         void print() const {
-            _x.print();
-            _y.print();
-            _z.print();
-            _w.print();
+            x.print();
+            y.print();
+            z.print();
+            w.print();
         };
 
-    protected:
-
-    private:
-        /**
-        * @brief The 1st row of the matrix.
-        */
-        Vector4 _x {1.0, 0.0, 0.0, 0.0};
-        
-        /**
-        * @brief The 2nd row of the matrix.
-        */
-        Vector4 _y {0.0, 1.0, 0.0, 0.0};
-        
-        /**
-        * @brief The 3rd row of the matrix.
-        */
-        Vector4 _z {0.0, 0.0, 1.0, 0.0};
-
-        /**
-        * @brief The 4th row of the matrix.
-        */
-        Vector4 _w {0.0, 0.0, 0.0, 1.0};
-
-        /**
-        * @brief The epsilon value for floating point comparisons.
-        */
-        double _epsilon = STELL_EPSILON;
 };
 
 /**
@@ -359,4 +340,4 @@ inline Matrix44 operator/(double c, const Matrix44& m)
 
 } // end namespace Stellarium
 
-#endif // end STELL_MATRIX44
+#endif // end STELL_MATRIX44_H

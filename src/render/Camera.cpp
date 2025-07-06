@@ -22,7 +22,7 @@ Matrix44 Camera::getProjectionMatrix()
 
 Matrix44 Camera::getViewMatrix()
 {
-    return Matrix44(_att, _pos).inverseTransform();
+    return Matrix44(_att, _pos).getInverseTransform();
 }
 
 void Camera::processKeyboardInput(Camera_Movement direction, double delta_time)

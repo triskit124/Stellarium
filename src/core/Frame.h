@@ -1,5 +1,5 @@
-#ifndef STELL_FRAME
-#define STELL_FRAME
+#ifndef STELL_FRAME_H
+#define STELL_FRAME_H
 
 #include "Vector3.h"
 #include "Quaternion.h"
@@ -28,7 +28,7 @@ class Frame
         * @param pos The position of the frame.
         * @param att The attitude of the frame.
         */
-        Frame(const std::string& name, const Vector3& pos = Vector3(0, 0, 0), const Quaternion& att = Quaternion(1, 0, 0, 0)) : _name(name), _pos(pos), _att(att) {};        
+        Frame(const std::string& name, const Vector3& pos = Vector3(), const Quaternion& att = Quaternion()) : _name(name), _pos(pos), _att(att) {};        
 
         /* 
         ===================
@@ -40,13 +40,13 @@ class Frame
         * @brief Gets the name of the frame.
         * @return The name of the frame.
         */
-        std::string name() const { return _name; };
+        std::string getName() const { return _name; };
 
         /**
         * @brief Sets the name of the frame.
         * @param name The new name of the frame.
         */
-        void name(const std::string& name) { _name = name; };
+        void setName(const std::string& name) { _name = name; };
 
         /**
         * @brief Sets the position state of the frame.
@@ -64,7 +64,7 @@ class Frame
         * @brief Sets the attitude state of the frame.
         * @param att The new attitude of the frame.
         */
-        void setAttitude(const Quaternion& att) { _att = att; };
+        void setAttitude(const Quaternion& att) { _att = att.getNormalized(); };
         
         /**
         * @brief Sets the angular velocity state of the frame.
@@ -76,25 +76,25 @@ class Frame
         * @brief Gets the position of the frame.
         * @return The position of the frame.
         */
-        Vector3 getPosition() const { return Vector3(_pos); };
+        Vector3 getPosition() const { return _pos; };
 
         /**
         * @brief Gets the velocity of the frame.
         * @return The velocity of the frame.
         */
-        Vector3 getVelocity() const { return Vector3(_vel); };
+        Vector3 getVelocity() const { return _vel; };
 
         /**
         * @brief Gets the attitude of the frame.
         * @return The attitude of the frame.
         */
-        Quaternion getAttitude() const { return Quaternion(_att); };
+        Quaternion getAttitude() const { return _att; };
 
         /**
         * @brief Gets the angular velocity of the frame.
         * @return The angular velocity of the frame.
         */
-        Vector3 getAngularVelocity() const { return Vector3(_ang_vel); };
+        Vector3 getAngularVelocity() const { return _ang_vel; };
 
         /**
         * @brief Get the pose of the frame with respect to its parent.
@@ -107,7 +107,7 @@ class Frame
         * @param target The target frame.
         * @return The transformation matrix from this frame to the target frame.
         */
-        Matrix44 getTransformTo(const Frame& target) const { return getPose().inverseTransform() * target.getPose(); };
+        Matrix44 getTransformTo(const Frame& target) const { return getPose().getInverseTransform() * target.getPose(); };
 
     protected:
 
@@ -150,4 +150,4 @@ class Frame
 
 } // namespace Stellarium
 
-#endif // STELL_FRAME
+#endif // STELL_FRAME_H

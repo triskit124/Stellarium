@@ -1,11 +1,11 @@
-#ifndef STELL_VECTOR4
-#define STELL_VECTOR4
+#ifndef STELL_VECTOR4_H
+#define STELL_VECTOR4_H
 
 #include <cmath>
 #include <iostream>
 #include <stdexcept>
 
-#include "Constants.h"
+#include "MathBase.h"
 
 namespace Stellarium
 {
@@ -13,7 +13,7 @@ namespace Stellarium
 /**
 * @brief A class representing a 4D vector.
 */
-class Vector4
+class Vector4: public MathBase
 {   
     public:
 
@@ -26,7 +26,7 @@ class Vector4
         /**
         * @brief Default constructor for the Vector4 object.
         */
-        Vector4();
+        Vector4() = default;
 
         /**
         * @brief Constructs a Vector4 object with the given x, y, z, and w values.
@@ -35,8 +35,33 @@ class Vector4
         * @param z The z value of the vector.
         * @param w The w value of the vector.
         */
-        Vector4(double x, double y, double z, double w) : _x(x), _y(y), _z(z), _w(w) {};
+        Vector4(double x, double y, double z, double w) : x(x), y(y), z(z), w(w) {};
 
+        /*
+        ====================
+            Data Members
+        ====================
+        */
+
+        /**
+        * @brief The x value of the vector.
+        */
+        double x = 0.0;
+        
+        /**
+        * @brief The y value of the vector.
+        */
+        double y = 0.0;
+        
+        /**
+        * @brief The z value of the vector.
+        */
+        double z = 0.0;
+
+        /**
+        * @brief The w value of the vector.
+        */
+        double w = 0.0;
 
         /* 
         ===================
@@ -44,102 +69,88 @@ class Vector4
         ===================
         */
 
-        /**
-        * @brief Operator for element-wise multiplying the vector by a scalar.
-        * @param c The scalar to multiply by.
-        * @return The vector multiplied element-wise by the scalar.
-        */
-        Vector4 operator*(double c) const { return Vector4(_x*c, _y*c, _z*c, _w*c); };
+        Vector4 operator*(double c) const { return Vector4(x*c, y*c, z*c, w*c); };
+        Vector4 operator/(double c) const { return Vector4(x/c, y/c,z/c, w/c); };
+        Vector4 operator+(double c) const { return Vector4(x+c, y+c, z+c, w+c); };
+        Vector4 operator-(double c) const { return Vector4(x-c, y-c, z-c, w-c); };
         
-        /**
-        * @brief Operator for element-wise dividing the vector by a scalar.
-        * @param c The scalar to divide by.
-        * @return The vector divided element-wise by the scalar.
-        */
-        Vector4 operator/(double c) const { return Vector4(_x/c, _y/c,_z/c, _w/c); };
+        double operator*(const Vector4& v) const { return this->dot(v); };
+        Vector4 operator+(const Vector4& v) const { return Vector4(x+v.x, y+v.y, z+v.z, w+v.w); };
+        Vector4 operator-(const Vector4& v) const { return Vector4(x-v.x, y-v.y, z-v.z, w-v.w); };
         
-        /**
-        * @brief Operator for element-wise adding a scalar to the vector.
-        * @param c The scalar to add.
-        * @return The vector added e lement-wise by the scalar.
-        */
-        Vector4 operator+(double c) const { return Vector4(_x+c, _y+c, _z+c, _w+c); };
-        
-        /**
-        * @brief Operator for element-wise subtracting a scalar from the vector.
-        * @param c The scalar to subtract.
-        * @return The vector subtracted element-wise by the scalar.
-        */
-        Vector4 operator-(double c) const { return Vector4(_x-c, _y-c, _z-c, _w-c); };
-        
-        /**
-        * @brief Operator for element-wise adding two vectors.
-        * @param v The vector to add.
-        * @return The element-wise sum of the two vectors.
-        */
-        Vector4 operator+(const Vector4& v) const { return Vector4(_x+v[0], _y+v[1], _z+v[2], _w+v[3]); };
-        
-        /**
-        * @brief Operator for subtracting two vectors.
-        * @param v The vector to subtract.
-        * @return The vector subtracted from this vector.
-        */
-        Vector4 operator-(const Vector4& v) const { return Vector4(_x-v[0], _y-v[1], _z-v[2], _w-v[3]); };
-               
-        /**
-        * @brief Operator for element-wise adding the values of another vector to this vector.
-        * @param v The vector to add with.
-        */
-        void operator+=(const Vector4& v) { _x += v[0]; _y += v[1]; _z += v[2]; _w += v[3]; };
-        
-        /**
-        * @brief Operator for element-wise subtracting the values of another vector to this vector.
-        * @param v The vector to subtract with.
-        */
-        void operator-=(const Vector4& v) { _x -= v[0]; _y -= v[1]; _z -= v[2]; _w -= v[3]; };
-        
-        /**
-        * @brief Operator for checking equality of two vectors.
-        * @param v The vector to check equality with.
-        * @return Whether the two vectors are equal within this->epsilon().
-        */
-        bool operator==(const Vector4& v) const { 
-            return 
-                std::abs(_x - v[0]) <= _epsilon 
-                && std::abs(_y - v[1]) <= _epsilon 
-                && std::abs(_z - v[2]) <= _epsilon
-                && std::abs(_w - v[3]) <= _epsilon;
+        void operator*=(double c) { x *= c; y *= c; z *= c; w *= c; };
+        void operator/=(double c) { 
+            if (std::abs(c) <= _epsilon) {
+                throw std::invalid_argument("Division by zero in Vector4 operator/=");
+            }
+            x /= c; y /= c; z /= c; w /= c; 
         };
 
-        /**
-        * @brief Unary operator for negating the vector.
-        * @return The negated vector.
-        */
-        Vector4 operator-() const { return Vector4(-_x, -_y, -_z, -_w); };
+        void operator+=(const Vector4& v) { x += v.x; y += v.y; z += v.z; w += v.w; };
+        void operator-=(const Vector4& v) { x -= v.x; y -= v.y; z -= v.z; w -= v.w; };
+
+        bool operator==(const Vector4& v) const { 
+            return 
+                std::abs(x - v.x) <= _epsilon 
+                && std::abs(y - v.y) <= _epsilon 
+                && std::abs(z - v.z) <= _epsilon
+                && std::abs(w - v.w) <= _epsilon;
+        };
+
+        bool operator!=(const Vector4& v) const { 
+            return !(*this == v); 
+        };
+
+        Vector4 operator-() const { return Vector4(-x, -y, -z, -w); };
 
         /**
         * @brief Operator for accessing the x, y, and z values of the vector.
         * @param idx The index of the value to access.
         * @return The value at the given index.
         */
-        double operator[](int idx) const {
+        double operator[](unsigned int idx) const {
             if (idx == 0)
             {
-                return _x;
+                return x;
             }
             if (idx == 1)
             {
-                return _y;
+                return y;
             }
             if (idx == 2)
             {
-                return _z;
+                return z;
             }
             if (idx == 3)
             {
-                return _w;
+                return w;
             }
-            throw std::invalid_argument("invalid index"); 
+            throw std::invalid_argument("invalid index: " + std::to_string(idx)); 
+        }
+
+        /**
+        * @brief Operator for accessing the x, y, and z values of the vector.
+        * @param idx The index of the value to access.
+        * @return The value at the given index.
+        */
+        double& operator[](unsigned int idx) {
+            if (idx == 0)
+            {
+                return x;
+            }
+            if (idx == 1)
+            {
+                return y;
+            }
+            if (idx == 2)
+            {
+                return z;
+            }
+            if (idx == 3)
+            {
+                return w;
+            }
+            throw std::invalid_argument("invalid index: " + std::to_string(idx)); 
         }
 
         /* 
@@ -148,47 +159,13 @@ class Vector4
         ===================
         */
 
-        /**
-        * @brief Gets pointer to the x value of the vector.
-        * @return Pointer to the x value of the vector.
-        */
-        double* x() { return &_x; };
-        
-        /**
-        * @brief Gets pointer to the y value of the vector.
-        * @return Pointer to the y value of the vector.
-        */
-        double* y() { return &_y; };
-        
-        /**
-        * @brief Gets pointer to the z value of the vector.
-        * @return Pointer to the z value of the vector.
-        */
-        double* z() { return &_z; };
+        constexpr static unsigned int size() { return 4; }
 
         /**
-        * @brief Gets pointer to the w value of the vector.
-        * @return Pointer to the w value of the vector.
+        * @brief Prints the values of the vector to stdout.
         */
-        double* w() { return &_w; };
-
-        /**
-        * @brief Gets the epsilon value for floating point comparisons.
-        * @return The epsilon value.
-        */
-        double epsilon() const { return _epsilon; };
-
-        /**
-        * @brief Sets the epsilon value for floating point comparisons.
-        * @param e The new epsilon value.
-        */
-        void epsilon(double e) { _epsilon = e; };
-
-        /**
-        * @brief Prints the x, y, and z values of the vector to stdout.
-        */
-        void print() const {
-            std::cout << "x: " << _x << " y: " << _y << " z: " << _z << " w: " << _w << "\n";
+        void print(const std::string& s = "") const {
+            std::cout << s << "x: " << x << " y: " << y << " z: " << z << " w:" << w << std::endl;
         }
 
         /**
@@ -196,35 +173,8 @@ class Vector4
         * @param v The vector to dot with.
         * @return The dot product of the two vectors.
         */
-        double dot(const Vector4& v) const { return _x*v[0] + _y*v[1] + _z*v[2] + _w*v[3]; };
+        double dot(const Vector4& v) const { return x*v.x + y*v.y + z*v.z + w*v.w; };
 
-    protected:
-    
-    private:
-        /**
-        * @brief The x value of the vector.
-        */
-        double _x = 0.0;
-        
-        /**
-        * @brief The y value of the vector.
-        */
-        double _y = 0.0;
-        
-        /**
-        * @brief The z value of the vector.
-        */
-        double _z = 0.0;
-
-        /**
-        * @brief The w value of the vector.
-        */
-        double _w = 0.0;
-        
-        /**
-        * @brief The epsilon value for floating point comparisons.
-        */
-        double _epsilon = STELL_EPSILON;
 };
 
 /**
@@ -251,4 +201,4 @@ inline Vector4 operator+(double c, const Vector4& v)
 
 } // namespace Stellarium
 
-#endif // STELL_VECTOR4
+#endif // STELL_VECTOR4_H

@@ -1,5 +1,5 @@
-#ifndef STELL_VECTOR3_H
-#define STELL_VECTOR3_H
+#ifndef STELL_VECTOR2_H
+#define STELL_VECTOR2_H
 
 #include <cmath>
 #include <iostream>
@@ -11,9 +11,9 @@ namespace Stellarium
 {
 
 /**
-* @brief A class representing a 3D vector.
+* @brief A class representing a 2D vector.
 */
-class Vector3: public MathBase
+class Vector2: public MathBase
 {   
     public:
 
@@ -24,17 +24,17 @@ class Vector3: public MathBase
         */
 
         /**
-        * @brief Default constructor for the Vector3 object.
+        * @brief Default constructor for the Vector2 object.
         */
-        Vector3() = default;
+        Vector2() = default;
 
         /**
-        * @brief Constructs a Vector3 object with the given x, y, and z values.
+        * @brief Constructs a Vector2 object with the given x, y, and z values.
         * @param x The x value of the vector.
         * @param y The y value of the vector.
         * @param z The z value of the vector.
         */
-        Vector3(double x, double y, double z) : x(x), y(y), z(z) {};
+        Vector2(double x, double y) : x(x), y(y) {};
 
         /*
         ====================
@@ -52,53 +52,46 @@ class Vector3: public MathBase
         */
         double y = 0.0;
         
-        /**
-        * @brief The z value of the vector.
-        */
-        double z = 0.0;
-        
-        
         /* 
         ===================
              Operators 
         ===================
         */
 
-        Vector3 operator*(double c) const { return Vector3(x*c, y*c, z*c); };
-        Vector3 operator/(double c) const { return Vector3(x/c, y/c,z/c); };
-        Vector3 operator+(double c) const { return Vector3(x+c, y+c, z+c); };
-        Vector3 operator-(double c) const { return Vector3(x-c, y-c, z-c); };
+        Vector2 operator*(double c) const { return Vector2(x*c, y*c); };
+        Vector2 operator/(double c) const { return Vector2(x/c, y/c); };
+        Vector2 operator+(double c) const { return Vector2(x+c, y+c); };
+        Vector2 operator-(double c) const { return Vector2(x-c, y-c); };
         
-        double operator*(const Vector3& v) const { return this->dot(v); };
-        Vector3 operator+(const Vector3& v) const { return Vector3(x+v.x, y+v.y, z+v.z); };
-        Vector3 operator-(const Vector3& v) const { return Vector3(x-v.x, y-v.y, z-v.z); };
+        double operator*(const Vector2& v) const { return this->dot(v); };
+        Vector2 operator+(const Vector2& v) const { return Vector2(x+v.x, y+v.y); };
+        Vector2 operator-(const Vector2& v) const { return Vector2(x-v.x, y-v.y); };
 
-        void operator*=(double c) { x *= c; y *= c; z *= c; };
+        void operator*=(double c) { x *= c; y *= c; };
         void operator/=(double c) { 
             if (std::abs(c) <= _epsilon) {
-                throw std::invalid_argument("Division by zero in Vector3 operator/=");
+                throw std::invalid_argument("Division by zero in Vector2 operator/=");
             }
-            x /= c; y /= c; z /= c; 
+            x /= c; y /= c; 
         };
 
-        void operator+=(double c) { x += c; y += c; z += c; };
-        void operator-=(double c) { x -= c; y -= c; z -= c; };
+        void operator+=(double c) { x += c; y += c; };
+        void operator-=(double c) { x -= c; y -= c; };
 
-        void operator+=(const Vector3& v) { x += v.x; y += v.y; z += v.z; };
-        void operator-=(const Vector3& v) { x -= v.x; y -= v.y; z -= v.z; };
+        void operator+=(const Vector2& v) { x += v.x; y += v.y; };
+        void operator-=(const Vector2& v) { x -= v.x; y -= v.y; };
         
-        bool operator==(const Vector3& v) const { 
+        bool operator==(const Vector2& v) const { 
             return 
                 std::abs(x - v.x) <= _epsilon 
                 && std::abs(y - v.y) <= _epsilon 
-                && std::abs(z - v.z) <= _epsilon;
         };
 
-        bool operator!=(const Vector3& v) const { 
+        bool operator!=(const Vector2& v) const { 
             return !(*this == v); 
         };
 
-        Vector3 operator-() const { return Vector3(-x, -y, -z); };
+        Vector2 operator-() const { return Vector2(-x, -y); };
 
         /**
         * @brief Operator for accessing the x, y, and z values of the vector.
@@ -113,10 +106,6 @@ class Vector3: public MathBase
             if (idx == 1)
             {
                 return y;
-            }
-            if (idx == 2)
-            {
-                return z;
             }
             throw std::invalid_argument("invalid index: " + std::to_string(idx)); 
         }
@@ -135,10 +124,6 @@ class Vector3: public MathBase
             {
                 return y;
             }
-            if (idx == 2)
-            {
-                return z;
-            }
             throw std::invalid_argument("invalid index: " + std::to_string(idx)); 
         }
 
@@ -148,13 +133,13 @@ class Vector3: public MathBase
         ===================
         */
 
-        constexpr static unsigned int size() { return 3; }
+        constexpr static unsigned int size() { return 2; }
 
         /**
         * @brief Prints the x, y, and z values of the vector to stdout.
         */
         void print(const std::string& s = "") const {
-            std::cout << s << "x: " << x << " y: " << y << " z: " << z << std::endl;
+            std::cout << s << "x: " << x << " y: " << y << std::endl;
         }
 
         /**
@@ -162,26 +147,13 @@ class Vector3: public MathBase
         * @param v The vector to dot with.
         * @return The dot product of the two vectors.
         */
-        double dot(const Vector3& v) const { return x*v.x + y*v.y + z*v.z; };
-
-        /**
-        * @brief Returns the cross product of the vector with another vector.
-        * @param v The vector to cross with.
-        * @return The cross product of the two vectors.
-        */
-        Vector3 cross(const Vector3& v) const {
-            return Vector3(
-                y*v.z - z*v.y,
-                z*v.x - x*v.z,
-                x*v.y - y*v.x
-            );
-        };
+        double dot(const Vector2& v) const { return x*v.x + y*v.y; };
 
         /**
         * @brief Returns the norm of the vector.
         */
         double norm() const { 
-            return std::sqrt(pow(x, 2) + pow(y, 2) + pow(z, 2)); 
+            return std::sqrt(pow(x, 2) + pow(y, 2)); 
         };
 
         /**
@@ -193,7 +165,6 @@ class Vector3: public MathBase
             {
                 x /= n;
                 y /= n;
-                z /= n;
             }
         }
 
@@ -201,8 +172,8 @@ class Vector3: public MathBase
         * @brief Returns a copy of this vector that is normalized. Does not modify the existed vector
         * @return The normalized vector.
         */
-        Vector3 getNormalized() const {
-            Vector3 v = *this;
+        Vector2 getNormalized() const {
+            Vector2 v = *this;
             v.normalize();
             return v;
         }
@@ -221,7 +192,7 @@ class Vector3: public MathBase
 * @param c The scalar to multiply by.
 * @return The vector multiplied element-wise by the scalar.
 */
-inline Vector3 operator*(double c, const Vector3& v)
+inline Vector2 operator*(double c, const Vector2& v)
 {
     return v*c;
 };
@@ -232,11 +203,11 @@ inline Vector3 operator*(double c, const Vector3& v)
 * @param c The scalar to add.
 * @return The vector added element-wise by the scalar.
 */
-inline Vector3 operator+(double c, const Vector3& v)
+inline Vector2 operator+(double c, const Vector2& v)
 {
     return v+c;
 };
 
 } // namespace Stellarium
 
-#endif // STELL_VECTOR3_H
+#endif // STELL_VECTOR2_H

@@ -1,6 +1,7 @@
 #ifndef STELL_TEST
 #define STELL_TEST
 
+#include <iostream>
 #include <string>
 #include <vector>
 
@@ -13,7 +14,9 @@ namespace Stellarium
 class Test
 {
     public:
-        Test(const std::string& name) : _name(name) {};
+        Test(const std::string& name) : _name(name) {
+            std::cout << bold("\nRunning test: " + _name) << std::endl;
+        };
         ~Test() { summarize(); };
         void assertTrue(const std::string& description, bool condition);
         void summarize();

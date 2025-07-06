@@ -1,8 +1,6 @@
 #include "TestHarness.h"
 
 #include <iomanip>
-#include <iostream>
-// #include <iomanip>
 #include <string>
 #include <utility>
 
@@ -20,8 +18,6 @@ void Test::summarize()
     unsigned int passed = 0;
     unsigned int failed = 0;
     const int width = 50;
-
-    std::cout << bold("\nRunning test: " + _name + "\n");
     
     for (auto& result : _results)
     {

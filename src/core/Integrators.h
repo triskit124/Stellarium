@@ -1,8 +1,9 @@
-#ifndef STELL_INTEGRATORS
-#define STELL_INTEGRATORS
+#ifndef STELL_INTEGRATORS_H
+#define STELL_INTEGRATORS_H
 
 #include <vector>
 
+#include "Constants.h"
 #include "Body.h"
 
 namespace Stellarium 
@@ -27,7 +28,13 @@ class Integrator
         * @brief Default constructor.
         * @param dt The integration step size.
         */
-        Integrator(const double dt = 1.0) { _dt = dt; };
+        Integrator(const double dt = 1.0) { 
+            if (dt <= STELL_EPSILON)
+            {
+                throw std::invalid_argument("dt must be positive.");
+            }
+            _dt = dt; 
+        };
 
         /**
         * @brief Destructor.
@@ -81,7 +88,7 @@ class RK4 : public Integrator
         /**
         * @brief Default constructor.
         */
-        RK4(const double dt = 1.0) { _dt = dt; };
+        RK4(const double dt = 1.0) : Integrator(dt) {};
         
         /**
         * @brief Integrates the state of the system.
@@ -99,4 +106,4 @@ class RK4 : public Integrator
 
 } // end namespace Stellarium
 
-#endif // end STELL_INTEGRATORS
+#endif // end STELL_INTEGRATORS_H

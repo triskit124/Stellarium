@@ -39,7 +39,7 @@ Body* StellariumSimulation::addBody(const std::string& name, double mass, Vector
     return _bodies.back().get();
 }
 
-void StellariumSimulation::addIntegrator(STELL_INTEGRATOR_TYPE type, const double dt)
+void StellariumSimulation::addIntegrator(const STELL_INTEGRATOR_TYPE& type, const double dt)
 {
     if (type == STELL_INTEGRATOR_TYPE::rk4)
     {

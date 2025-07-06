@@ -1,37 +1,34 @@
 #include "Body.h"
-#include "Constants.h"
 
-#include <array>
 #include <iostream>
-#include <string>
 
 namespace Stellarium 
 {
 
 
-std::array<double*, STELL_BODY_STATE_SIZE> Body::getState()
+std::array<double*, Body::STATE_SIZE> Body::getState()
 {
     _att.normalize();
 
-    std::array<double*, STELL_BODY_STATE_SIZE> state {
-        _pos.x(),
-        _pos.y(),
-        _pos.z(),
-        _att.w(),
-        _att.x(),
-        _att.y(),
-        _att.z(),
-        _vel.x(),
-        _vel.y(),
-        _vel.z(),
-        _ang_vel.x(),
-        _ang_vel.y(),
-        _ang_vel.z(),
+    std::array<double*, Body::STATE_SIZE> state {
+        &_pos.x,
+        &_pos.y,
+        &_pos.z,
+        &_att.w,
+        &_att.x,
+        &_att.y,
+        &_att.z,
+        &_vel.x,
+        &_vel.y,
+        &_vel.z,
+        &_ang_vel.x,
+        &_ang_vel.y,
+        &_ang_vel.z,
     };
     return state;
 }
 
-std::array<double, STELL_BODY_STATE_SIZE> Body::getStateDot()
+std::array<double, Body::STATE_SIZE> Body::getStateDot()
 {
     /* 
     =============================================
@@ -43,7 +40,7 @@ std::array<double, STELL_BODY_STATE_SIZE> Body::getStateDot()
 
     // translational acceleration of body w.r.t. inertial frame, expressed in INERTIAL frame
     // _force is given in the body frame so we need to rotate it to the inertial frame first
-    Vector3 accel = (_att.conjugate() * _force) / _mass;
+    Vector3 accel = (_att.getConjugate() * _force) / _mass;
 
     // angular acceleration of body w.r.t. inertial frame, expressed in BODY frame
     Vector3 ang_accel = _inertia.inverse() * (_torque - _ang_vel.cross(_inertia * _ang_vel));
@@ -53,7 +50,7 @@ std::array<double, STELL_BODY_STATE_SIZE> Body::getStateDot()
     // _ang_vel is expressed in the BODY frame
     Quaternion q_dot = 0.5 * _att * Quaternion(0.0, _ang_vel[0], _ang_vel[1], _ang_vel[2], false);
 
-    std::array<double, STELL_BODY_STATE_SIZE> state_dot {
+    std::array<double, Body::STATE_SIZE> state_dot {
         _vel[0],
         _vel[1],
         _vel[2],

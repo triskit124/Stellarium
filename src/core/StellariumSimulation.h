@@ -78,7 +78,7 @@ class StellariumSimulation
          * @param type The type of the integrator.
          * @param dt The size of the fixed integrator step.
          */
-        void addIntegrator(STELL_INTEGRATOR_TYPE type,  const double dt);
+        void addIntegrator(const STELL_INTEGRATOR_TYPE& type,  const double dt);
 
         /**
          * @brief Returns the current time of the simulation.

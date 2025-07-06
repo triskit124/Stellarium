@@ -36,23 +36,23 @@ int main() {
     
     // Get point P in Frame_B [frame rotation only]
     Matrix44 T_a2b = Matrix44(q_a2b);
-    Vector3 p_b = T_a2b.inverseTransform() * p_a;
+    Vector3 p_b = T_a2b.getInverseTransform() * p_a;
     test.assertTrue("Homtran, rot only",  p_b == Vector3(0, 0, 1));
 
     // Get point P in Frame_B [frame translation only]
     T_a2b = Matrix44(Quaternion(1, 0, 0, 0), r_a2b);
-    p_b = T_a2b.inverseTransform() * p_a;
+    p_b = T_a2b.getInverseTransform() * p_a;
     test.assertTrue("Homtran, trans only", p_b == Vector3(-1, -1, 3));
     
     // Get point P in Frame_B [rotation and translation]
     T_a2b = frame_a.getTransformTo(frame_b);
-    p_b = T_a2b.inverseTransform() * p_a;
+    p_b = T_a2b.getInverseTransform() * p_a;
     test.assertTrue("Homtran, rot and trans", p_b == Vector3(-1, -3, -1));
 
     // Test inverse transforms
-    test.assertTrue("Inverse transform 1 ", frame_a.getTransformTo(frame_b) * frame_a.getTransformTo(frame_b).inverseTransform() == Matrix44(Quaternion(1, 0, 0, 0), Vector3(0, 0, 0)));
-    test.assertTrue("Inverse transform 2 ", frame_a.getTransformTo(frame_b) == frame_b.getTransformTo(frame_a).inverseTransform());
-    test.assertTrue("Inverse transform 3 ", frame_b.getTransformTo(frame_a) == frame_a.getTransformTo(frame_b).inverseTransform());
+    test.assertTrue("Inverse transform 1 ", frame_a.getTransformTo(frame_b) * frame_a.getTransformTo(frame_b).getInverseTransform() == Matrix44(Quaternion(1, 0, 0, 0), Vector3(0, 0, 0)));
+    test.assertTrue("Inverse transform 2 ", frame_a.getTransformTo(frame_b) == frame_b.getTransformTo(frame_a).getInverseTransform());
+    test.assertTrue("Inverse transform 3 ", frame_b.getTransformTo(frame_a) == frame_a.getTransformTo(frame_b).getInverseTransform());
 
     return 0;
 }
