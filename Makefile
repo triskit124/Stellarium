@@ -3,6 +3,9 @@ BUILDDIR = build
 DOCSDIR = doc
 DOXY_FILE = doxygen
 
+# number of parallel jobs for builds
+j ?= 10
+
 .PHONY: clean docs run test
 
 .vscode:
@@ -17,13 +20,13 @@ $(DOCSDIR):
 all: $(BUILDDIR) .vscode
 	cd $(BUILDDIR); \
 	cmake ..; \
-	cmake --build .; \
+	cmake --build . -j ${j}; \
 	cp compile_commands.json ../.vscode/
 
 all-no-graphics: $(BUILDDIR) .vscode
 	cd $(BUILDDIR); \
 	cmake -DBUILD_RENDERING=OFF ..; \
-	cmake --build .; \
+	cmake --build . -j ${j}; \
 	cp compile_commands.json ../.vscode/
 
 clean:
