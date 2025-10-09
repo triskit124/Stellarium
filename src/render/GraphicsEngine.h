@@ -2,6 +2,7 @@
 #define STELL_GRAPHICSENGINE
 
 #include "Camera.h"
+#include "Model.h"
 #include <functional>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -25,6 +26,12 @@ class GraphicsEngine
         {
             glViewport(0, 0, width, height);
         };
+
+        void loadModel(Model& model);
+        void renderModel(Model& model, const Shader& shader);
+        void setupMesh(Mesh& mesh);
+        void drawMesh(const Mesh& mesh, const Shader& shader) const;
+        unsigned int loadTextureFromFile(const std::string& path);
 
         void processInput(GLFWwindow *window)
         {

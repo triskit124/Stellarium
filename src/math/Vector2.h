@@ -84,7 +84,7 @@ class Vector2: public MathBase
         bool operator==(const Vector2& v) const { 
             return 
                 std::abs(x - v.x) <= _epsilon 
-                && std::abs(y - v.y) <= _epsilon 
+                && std::abs(y - v.y) <= _epsilon;
         };
 
         bool operator!=(const Vector2& v) const { 
