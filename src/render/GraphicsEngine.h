@@ -20,7 +20,7 @@ class GraphicsEngine
 
     struct MeshBufferObjectIds
     {
-        unsigned int VAO, VBO, EBO;
+        unsigned int VAO = -1, VBO = -1, EBO = -1;
     };
 
     public:
