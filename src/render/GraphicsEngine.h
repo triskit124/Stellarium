@@ -2,6 +2,7 @@
 #define STELL_GRAPHICSENGINE
 
 #include "Camera.h"
+#include "Mesh.h"
 #include "Model.h"
 #include <functional>
 #include <glad/glad.h>
@@ -16,6 +17,12 @@ namespace Stellarium
 
 class GraphicsEngine
 {
+
+    struct MeshBufferObjectIds
+    {
+        unsigned int VAO, VBO, EBO;
+    };
+
     public:
 
         GraphicsEngine();
@@ -29,10 +36,10 @@ class GraphicsEngine
         };
 
         void setupModel(Model& model);
-        void drawModel(Model& model, const Shader& shader);
-        
         void setupMesh(Mesh& mesh);
-        void drawMesh(const Mesh& mesh, const Shader& shader) const;
+
+        void drawModel(Model& model, const Shader& shader);
+        void drawMesh(Mesh& mesh, const Shader& shader);
         
         unsigned int loadTextureFromFile(const std::string& path);
 
@@ -78,6 +85,7 @@ class GraphicsEngine
 
         std::unique_ptr<Camera> _camera = nullptr;
         std::map<std::string, unsigned int> _textures { };
+        std::map<Mesh*, MeshBufferObjectIds> _mesh_buffer_objects { };
 
 };
 

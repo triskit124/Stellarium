@@ -154,20 +154,26 @@ void GraphicsEngine::setupModel(Model& model)
 
 void GraphicsEngine::setupMesh(Mesh& mesh)
 {
-    // create buffers/arrays
-    glGenVertexArrays(1, &mesh.VAO);
-    glGenBuffers(1, &mesh.VBO);
-    glGenBuffers(1, &mesh.EBO);
+    if (_mesh_buffer_objects.find(&mesh) == _mesh_buffer_objects.end())
+    {
+        MeshBufferObjectIds ids;
+        _mesh_buffer_objects[&mesh] = ids;
+    }
 
-    glBindVertexArray(mesh.VAO);
+    // create buffers/arrays
+    glGenVertexArrays(1, &_mesh_buffer_objects[&mesh].VAO);
+    glGenBuffers(1, &_mesh_buffer_objects[&mesh].VBO);
+    glGenBuffers(1, &_mesh_buffer_objects[&mesh].EBO);
+
+    glBindVertexArray(_mesh_buffer_objects[&mesh].VAO);
     // load data into vertex buffers
-    glBindBuffer(GL_ARRAY_BUFFER, mesh.VBO);
+    glBindBuffer(GL_ARRAY_BUFFER, _mesh_buffer_objects[&mesh].VBO);
     // A great thing about structs is that their memory layout is sequential for all its items.
     // The effect is that we can simply pass a pointer to the struct and it translates perfectly to a glm::vec3/2 array which
     // again translates to 3/2 floats which translates to a byte array.
     glBufferData(GL_ARRAY_BUFFER, mesh.vertices.size() * sizeof(Vertex), &mesh.vertices[0], GL_STATIC_DRAW);
 
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.EBO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _mesh_buffer_objects[&mesh].EBO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh.indices.size() * sizeof(unsigned int), &mesh.indices[0], GL_STATIC_DRAW);
 
     // set the vertex attribute pointers
@@ -252,13 +258,13 @@ unsigned int GraphicsEngine::loadTextureFromFile(const std::string& path)
 
 void GraphicsEngine::drawModel(Model& model, const Shader& shader)
 {
-    for (const Mesh& mesh : model.meshes)
+    for (Mesh& mesh : model.meshes)
     {
         drawMesh(mesh, shader);
     }
 }
 
-void GraphicsEngine::drawMesh(const Mesh& mesh, const Shader& shader) const
+void GraphicsEngine::drawMesh(Mesh& mesh, const Shader& shader)
 {
     // bind appropriate textures
     unsigned int num_diffuse_textures = 1;
@@ -301,7 +307,7 @@ void GraphicsEngine::drawMesh(const Mesh& mesh, const Shader& shader) const
     glActiveTexture(GL_TEXTURE0);
     
     // draw mesh
-    glBindVertexArray(mesh.VAO);
+    glBindVertexArray(_mesh_buffer_objects[&mesh].VAO);
     glDrawElements(GL_TRIANGLES, static_cast<unsigned int>(mesh.indices.size()), GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
 }
