@@ -38,9 +38,9 @@ class GraphicsEngine
         void setupModel(Model& model);
         void setupMesh(Mesh& mesh);
 
-        void drawModel(Model& model, const Shader& shader);
-        void drawMesh(Mesh& mesh, const Shader& shader);
-        
+        void drawModel(const Model& model, const Shader& shader) const;
+        void drawMesh(const Mesh& mesh, const Shader& shader) const;
+
         unsigned int loadTextureFromFile(const std::string& path);
 
         void processInput(GLFWwindow *window)
@@ -85,7 +85,7 @@ class GraphicsEngine
 
         std::unique_ptr<Camera> _camera = nullptr;
         std::map<std::string, unsigned int> _textures { };
-        std::map<Mesh*, MeshBufferObjectIds> _mesh_buffer_objects { };
+        std::map<const Mesh*, MeshBufferObjectIds> _mesh_buffer_objects { };
 
 };
 

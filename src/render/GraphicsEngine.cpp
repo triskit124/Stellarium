@@ -256,15 +256,15 @@ unsigned int GraphicsEngine::loadTextureFromFile(const std::string& path)
     return texture_id;
 }
 
-void GraphicsEngine::drawModel(Model& model, const Shader& shader)
+void GraphicsEngine::drawModel(const Model& model, const Shader& shader) const
 {
-    for (Mesh& mesh : model.meshes)
+    for (const Mesh& mesh : model.meshes)
     {
         drawMesh(mesh, shader);
     }
 }
 
-void GraphicsEngine::drawMesh(Mesh& mesh, const Shader& shader)
+void GraphicsEngine::drawMesh(const Mesh& mesh, const Shader& shader) const
 {
     // bind appropriate textures
     unsigned int num_diffuse_textures = 1;
@@ -307,7 +307,7 @@ void GraphicsEngine::drawMesh(Mesh& mesh, const Shader& shader)
     glActiveTexture(GL_TEXTURE0);
     
     // draw mesh
-    glBindVertexArray(_mesh_buffer_objects[&mesh].VAO);
+    glBindVertexArray(_mesh_buffer_objects.at(&mesh).VAO);
     glDrawElements(GL_TRIANGLES, static_cast<unsigned int>(mesh.indices.size()), GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
 }
