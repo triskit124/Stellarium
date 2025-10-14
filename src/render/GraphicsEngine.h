@@ -7,6 +7,7 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <memory>
+#include <map>
 
 
 namespace Stellarium
@@ -27,10 +28,12 @@ class GraphicsEngine
             glViewport(0, 0, width, height);
         };
 
-        void loadModel(Model& model);
-        void renderModel(Model& model, const Shader& shader);
+        void setupModel(Model& model);
+        void drawModel(Model& model, const Shader& shader);
+        
         void setupMesh(Mesh& mesh);
         void drawMesh(const Mesh& mesh, const Shader& shader) const;
+        
         unsigned int loadTextureFromFile(const std::string& path);
 
         void processInput(GLFWwindow *window)
@@ -74,6 +77,7 @@ class GraphicsEngine
         double _prev_mouse_y { 0.0 };
 
         std::unique_ptr<Camera> _camera = nullptr;
+        std::map<std::string, unsigned int> _textures { };
 
 };
 

@@ -6,19 +6,19 @@
 #include <cstddef>
 #include <filesystem>
 #include <iostream>
+#include <string>
 
 namespace Stellarium
 {
 
-std::vector<Texture> textures_loaded { };
-
-Model loadModelFromAssimp(const std::string& path)
+Model AssimpImporter::loadModel(const std::string& path)
 {
     // read file via ASSIMP
     Assimp::Importer importer;
     const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
+    
     // check for errors
-    if(!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) // if is Not Zero
+    if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
     {
         throw std::runtime_error("ERROR::ASSIMP:: " + std::string(importer.GetErrorString()));
     }
@@ -28,11 +28,11 @@ Model loadModelFromAssimp(const std::string& path)
     // process ASSIMP's root node recursively
     processNode(scene->mRootNode, scene, path, meshes);
 
-    return Model(path, meshes, textures_loaded);
+    return Model(path, meshes);
 }
 
 // processes a node in a recursive fashion. Processes each individual mesh located at the node and repeats this process on its children nodes (if any).
-void processNode(aiNode *node, const aiScene *scene, const std::filesystem::path& path, std::vector<Mesh>& meshes)
+void AssimpImporter::processNode(aiNode *node, const aiScene *scene, const std::filesystem::path& path, std::vector<Mesh>& meshes)
 {
     // process each mesh located at the current node
     for (size_t i = 0; i < node->mNumMeshes; ++i)
@@ -49,14 +49,12 @@ void processNode(aiNode *node, const aiScene *scene, const std::filesystem::path
     }
 }
 
-Mesh processMesh(aiMesh *mesh, const aiScene *scene, const std::filesystem::path& path)
+Mesh AssimpImporter::processMesh(aiMesh *mesh, const aiScene *scene, const std::filesystem::path& path)
 {
     // data to fill
     std::vector<Vertex> vertices;
     std::vector<unsigned int> indices;
     std::vector<Texture> textures;
-
-    // std::cout << "Processing mesh: " << mesh->mName.C_Str() << " with " << mesh->mNumVertices << " vertices and " << mesh->mNumFaces << " faces." << std::endl;
 
     // walk through each of the mesh's vertices
     for (size_t i = 0; i < mesh->mNumVertices; ++i)
@@ -73,7 +71,7 @@ Mesh processMesh(aiMesh *mesh, const aiScene *scene, const std::filesystem::path
         // texture coordinates
         if(mesh->mTextureCoords[0]) // does the mesh contain texture coordinates?
         {
-            // a vertex can contain up to 8 different texture coordinates. We thus make the assumption that we won't
+            // TODO: a vertex can contain up to 8 different texture coordinates. We thus make the assumption that we won't
             // use models where a vertex can have multiple texture coordinates so we always take the first set (0).
             vertex.tex_coords = vec2(mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y);
         }
@@ -105,59 +103,46 @@ Mesh processMesh(aiMesh *mesh, const aiScene *scene, const std::filesystem::path
     // specular: texture_specularN
     // normal: texture_normalN
 
-    // std::cout << "Processing material: " << material->GetName().C_Str() << std::endl;
-
     // 1. diffuse maps
-    std::vector<Texture> diffuseMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE, "texture_diffuse", path);
-    textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
-    // 2. specular maps
-    std::vector<Texture> specularMaps = loadMaterialTextures(material, aiTextureType_SPECULAR, "texture_specular", path);
-    textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
-    // 3. normal maps
-    std::vector<Texture> normalMaps = loadMaterialTextures(material, aiTextureType_HEIGHT, "texture_normal", path);
-    textures.insert(textures.end(), normalMaps.begin(), normalMaps.end());
-    // 4. height maps
-    std::vector<Texture> heightMaps = loadMaterialTextures(material, aiTextureType_AMBIENT, "texture_height", path);
-    textures.insert(textures.end(), heightMaps.begin(), heightMaps.end());
+    loadMaterialTextures(material, aiTextureType_DIFFUSE, "texture_diffuse", path, textures);
     
+    // 2. specular maps
+    loadMaterialTextures(material, aiTextureType_SPECULAR, "texture_specular", path, textures);
+    
+    // 3. normal maps
+    loadMaterialTextures(material, aiTextureType_HEIGHT, "texture_normal", path, textures);
+    
+    // 4. height maps
+    loadMaterialTextures(material, aiTextureType_AMBIENT, "texture_height", path, textures);
+
     // return a mesh object created from the extracted mesh data
     return Mesh(vertices, indices, textures);
 }
 
 // checks all material textures of a given type and loads the textures if they're not loaded yet.
 // the required info is returned as a Texture struct.
-std::vector<Texture> loadMaterialTextures(aiMaterial *mat, aiTextureType type, std::string typeName, const std::filesystem::path& path)
+void AssimpImporter::loadMaterialTextures(aiMaterial *mat, aiTextureType type, const std::string& typeName, const std::filesystem::path& path, std::vector<Texture>& textures)
 {
-    std::vector<Texture> textures;
-    // std::cout << "textureCount: " << mat->GetTextureCount(type) << std::endl;
-    for (unsigned int i = 0; i < mat->GetTextureCount(type); i++)
+    for (size_t i = 0; i < mat->GetTextureCount(type); ++i)
     {
-        aiString str;
-        mat->GetTexture(type, i, &str);
-        std::filesystem::path texture_path = path.parent_path() / std::filesystem::path(str.C_Str());
-        // check if texture was loaded before and if so, continue to next iteration: skip loading a new texture
-        bool skip = false;
-        for (unsigned int j = 0; j < textures_loaded.size(); j++)
+        aiString filename;
+        mat->GetTexture(type, i, &filename);
+        std::string texture_path = (path.parent_path() / std::filesystem::path(filename.C_Str())).string();
+        Texture texture;
+
+        if (_textures_loaded.find(texture_path) != _textures_loaded.end())
         {
-            if (textures_loaded[j].path == texture_path)
-            {
-                textures.push_back(textures_loaded[j]);
-                skip = true; // a texture with the same filepath has already been loaded, continue to next one. (optimization)
-                // std::cout << "Texture already loaded: " << texture_path << std::endl;
-                break;
-            }
+            // a texture with the same filepath has already been loaded, continue to next one
+            texture = _textures_loaded[texture_path];
         }
-        if (!skip)
-        {   // if texture hasn't been loaded already, load it
-            Texture texture;
+        else 
+        {
             texture.type = typeName;
-            texture.path = texture_path.string();
-            textures.push_back(texture);
-            textures_loaded.push_back(texture);  // store it as texture loaded for entire model, to ensure we won't unnecessary load duplicate textures.
-            // std::cout << "Texture loaded: " << texture.path << std::endl;
+            texture.path = texture_path;
+            _textures_loaded[texture.path] = texture;
         }
+        textures.push_back(texture);
     }
-    return textures;
 }
 
 } // namespace Stellarium

@@ -16,11 +16,10 @@ class Model
 public:
 
     // constructor, expects a filepath to a 3D model.
-    Model(std::filesystem::path path, std::vector<Mesh> meshes, std::vector<Texture> textures_loaded) : path(path), meshes(meshes), textures_loaded(textures_loaded) {}
+    Model(std::filesystem::path path, std::vector<Mesh> meshes) : path(path), meshes(meshes) {}
 
     std::filesystem::path path;
     std::vector<Mesh> meshes;
-    std::vector<Texture> textures_loaded;
 
 };
 

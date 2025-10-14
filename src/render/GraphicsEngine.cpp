@@ -96,8 +96,9 @@ GraphicsEngine::GraphicsEngine()
     );
 
     // Load model
-    Model model = loadModelFromAssimp((std::filesystem::path(STELL_PROJECT_ROOT) / std::filesystem::path("assets/backpack/backpack.obj")).string());
-    loadModel(model);
+    AssimpImporter importer;
+    Model model = importer.loadModel((std::filesystem::path(STELL_PROJECT_ROOT) / std::filesystem::path("assets/backpack/backpack.obj")).string());
+    setupModel(model);
 
     // Main render loop
     while(!glfwWindowShouldClose(window))
@@ -128,7 +129,7 @@ GraphicsEngine::GraphicsEngine()
         // Render models
         Matrix44 model_matrix = Matrix44();
         shader.setMat4("model", model_matrix);
-        renderModel(model, shader);
+        drawModel(model, shader);
         
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         glfwSwapBuffers(window);
@@ -140,46 +141,15 @@ GraphicsEngine::GraphicsEngine()
 
 }
 
-void GraphicsEngine::loadModel(Model& model)
+void GraphicsEngine::setupModel(Model& model)
 {
     for (Mesh& mesh : model.meshes)
     {
         setupMesh(mesh);
     }
 
-    std::cout << "Model loaded from path: " << model.path.string() << std::endl;
-    std::cout << "Model contains " << model.meshes.size() << " meshes and " << model.textures_loaded.size() << " textures." << std::endl;
+    std::cout << "Model loaded successfully from " << model.path.string() << std::endl;
 
-    for (Texture& texture : model.textures_loaded)
-    {
-        unsigned int texture_id = loadTextureFromFile(texture.path);
-        texture.id = texture_id;
-        std::cout << "Texture loaded: " << texture.path << " with ID: " << texture.id << std::endl;
-
-        // TODO: figure out a cleaner way to do this
-        // Update all meshes that use this texture with the correct texture ID
-        for (Mesh& mesh : model.meshes)
-        {
-            for (Texture& mesh_texture : mesh.textures)
-            {
-                if (mesh_texture.path == texture.path)
-                {
-                    mesh_texture.id = texture.id;
-                }
-            }
-        }
-    }
-
-    std::cout << "Model loaded successfully." << std::endl;
-
-}
-
-void GraphicsEngine::renderModel(Model& model, const Shader& shader)
-{
-    for (const Mesh& mesh : model.meshes)
-    {
-        drawMesh(mesh, shader);
-    }
 }
 
 void GraphicsEngine::setupMesh(Mesh& mesh)
@@ -212,6 +182,80 @@ void GraphicsEngine::setupMesh(Mesh& mesh)
     glVertexAttribPointer(2, 2, GL_DOUBLE, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, tex_coords));
 
     glBindVertexArray(0);
+
+    // load textures
+    for (Texture& texture : mesh.textures)
+    {
+        texture.id = loadTextureFromFile(texture.path);
+        // std::cout << "Texture loaded: " << texture.path << " with ID: " << texture.id << std::endl;
+    }
+}
+
+unsigned int GraphicsEngine::loadTextureFromFile(const std::string& path)
+{
+    if (_textures.find(path) != _textures.end())
+    {
+        return _textures[path];
+    }
+    
+    unsigned int texture_id;
+    glGenTextures(1, &texture_id);
+
+    int width, height, num_channels;
+    unsigned char *data = stbi_load(path.c_str(), &width, &height, &num_channels, 0);
+
+    if (!data)
+    {
+        std::cout << "Failed to load texture at path: " << path << std::endl;
+        stbi_image_free(data);
+        return -1;
+    }
+
+    GLenum format;
+    if (num_channels == 1)
+    {
+        format = GL_RED;
+    }
+    else if (num_channels == 3)
+    {
+        format = GL_RGB;
+    }
+    else if (num_channels == 4)
+    {
+        format = GL_RGBA;
+    }
+    else 
+    {
+        std::cout << "Unsupported number of channels: " << num_channels << std::endl;
+        stbi_image_free(data);
+        return -1;
+    }
+
+    glBindTexture(GL_TEXTURE_2D, texture_id);
+    glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+    glGenerateMipmap(GL_TEXTURE_2D);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    std::cout << "Texture " << texture_id << " loaded successfully from path: " << path << std::endl;
+    std::cout << "Texture size: " << width << "x" << height << ", channels: " << num_channels << std::endl;
+
+    stbi_image_free(data);
+
+    _textures[path] = texture_id;
+
+    return texture_id;
+}
+
+void GraphicsEngine::drawModel(Model& model, const Shader& shader)
+{
+    for (const Mesh& mesh : model.meshes)
+    {
+        drawMesh(mesh, shader);
+    }
 }
 
 void GraphicsEngine::drawMesh(const Mesh& mesh, const Shader& shader) const
@@ -260,58 +304,6 @@ void GraphicsEngine::drawMesh(const Mesh& mesh, const Shader& shader) const
     glBindVertexArray(mesh.VAO);
     glDrawElements(GL_TRIANGLES, static_cast<unsigned int>(mesh.indices.size()), GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
-}
-
-unsigned int GraphicsEngine::loadTextureFromFile(const std::string& path)
-{
-    unsigned int texture_id;
-    glGenTextures(1, &texture_id);
-
-    int width, height, num_channels;
-    unsigned char *data = stbi_load(path.c_str(), &width, &height, &num_channels, 0);
-
-    if (!data)
-    {
-        std::cout << "Failed to load texture at path: " << path << std::endl;
-        stbi_image_free(data);
-        return -1;
-    }
-
-    GLenum format;
-    if (num_channels == 1)
-    {
-        format = GL_RED;
-    }
-    else if (num_channels == 3)
-    {
-        format = GL_RGB;
-    }
-    else if (num_channels == 4)
-    {
-        format = GL_RGBA;
-    }
-    else 
-    {
-        std::cout << "Unsupported number of channels: " << num_channels << std::endl;
-        stbi_image_free(data);
-        return -1;
-    }
-
-    glBindTexture(GL_TEXTURE_2D, texture_id);
-    glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
-    glGenerateMipmap(GL_TEXTURE_2D);
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-    std::cout << "Texture " << texture_id << " loaded successfully from path: " << path << std::endl;
-    std::cout << "Texture size: " << width << "x" << height << ", channels: " << num_channels << std::endl;
-
-    stbi_image_free(data);
-
-    return texture_id;
 }
 
 }
