@@ -1,6 +1,5 @@
 
 set(STELL_UTIL_SRCS
-    TestHarness.h
     TestHarness.cpp
 )
 
