@@ -47,5 +47,5 @@ int main() {
     // Inverse
     test.assertTrue("Matrix33 inverse 2", M2.inverse() == Matrix33(Vector3(-5, 3, 4), Vector3(7, 3, -8), Vector3(1, -3, 4)) / 12);
 
-    return 0;
+    return test.getNumFails();
 }

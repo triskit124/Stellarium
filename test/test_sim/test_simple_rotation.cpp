@@ -62,5 +62,5 @@ int main() {
     test.assertTrue("Body rotation 3 - axis", axis == Vector3(-1, 0, 0));
     test.assertTrue("Body rotation 3 - angle", abs(aa.getAngle() - angle) <= 1e-5);
 
-    return 0;
+    return test.getNumFails();
 }

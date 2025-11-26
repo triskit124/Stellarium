@@ -36,5 +36,5 @@ int main() {
     test.assertTrue("Body position 3", body->getPosition() == Vector3(100, -100, 100));
     test.assertTrue("Body velocity 3", body->getVelocity() == Vector3(0, 0, 0));
 
-    return 0;
+    return test.getNumFails();
 }

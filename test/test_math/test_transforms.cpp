@@ -54,5 +54,5 @@ int main() {
     test.assertTrue("Inverse transform 2 ", frame_a.getTransformTo(frame_b) == frame_b.getTransformTo(frame_a).getInverseTransform());
     test.assertTrue("Inverse transform 3 ", frame_b.getTransformTo(frame_a) == frame_a.getTransformTo(frame_b).getInverseTransform());
 
-    return 0;
+    return test.getNumFails();
 }
