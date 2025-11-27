@@ -19,6 +19,7 @@ $(DOCS_DIR):
 all: $(BUILD_DIR)/CMakeFiles
 	cd $(BUILD_DIR); \
 	cmake --build . -j ${j}
+	cp $(BUILD_DIR)/compile_commands.json .
 
 $(BUILD_DIR)/CMakeFiles: $(BUILD_DIR) $(CMAKE_FILES)
 	cd $(BUILD_DIR); \
