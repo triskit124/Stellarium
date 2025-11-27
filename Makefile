@@ -1,42 +1,34 @@
 TARGET = stellarium
-BUILDDIR = build
-DOCSDIR = doc
+BUILD_DIR = build
+DOCS_DIR = doc
 DOXY_FILE = doxygen
+
+CMAKE_FILES := $(shell find . -path ./$(BUILD_DIR) -prune -o -name "CMakeLists.txt")
 
 # number of parallel jobs for builds
 j ?= 10
 
-.PHONY: clean docs run test
+.PHONY: all clean docs test
 
-.vscode:
-	mkdir -p .vscode
+$(BUILD_DIR):
+	mkdir -p $(BUILD_DIR)
 
-$(BUILDDIR):
-	mkdir -p $(BUILDDIR)
+$(DOCS_DIR):
+	mkdir -p $(DOCS_DIR)
 
-$(DOCSDIR):
-	mkdir -p $(DOCSDIR)
+all: $(BUILD_DIR)/CMakeFiles
+	cd $(BUILD_DIR); \
+	cmake --build . -j ${j}
 
-all: $(BUILDDIR) .vscode
-	cd $(BUILDDIR); \
-	cmake ..; \
-	cmake --build . -j ${j}; \
-	cp compile_commands.json ../.vscode/
-
-all-no-graphics: $(BUILDDIR) .vscode
-	cd $(BUILDDIR); \
-	cmake -DBUILD_RENDERING=OFF ..; \
-	cmake --build . -j ${j}; \
-	cp compile_commands.json ../.vscode/
+$(BUILD_DIR)/CMakeFiles: $(BUILD_DIR) $(CMAKE_FILES)
+	cd $(BUILD_DIR); \
+	cmake ..
 
 clean:
-	rm -rf $(BUILDDIR) $(DOCSDIR)
+	rm -rf $(BUILD_DIR) $(DOCS_DIR)
 
-docs: $(DOCSDIR)
+docs: $(DOCS_DIR)
 	doxygen $(DOXY_FILE)
-
-run:
-	./$(BUILDDIR)/$(TARGET)
 
 test:
 	test/run_tests.sh
