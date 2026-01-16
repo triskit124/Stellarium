@@ -7,6 +7,7 @@ set(STELL_MATH_SRCS
     Quaternion.h
     Vector3.h
     Vector4.h
+    Vector.h
 )
 
 target_sources(stellarium PRIVATE ${STELL_MATH_SRCS})

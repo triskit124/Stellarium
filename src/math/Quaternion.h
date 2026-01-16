@@ -55,9 +55,9 @@ class Quaternion: public MathBase
             Vector3 ax = axis.getNormalized();
             double s = std::sin(angle/2);
             this->w = std::cos(angle/2);
-            this->x = ax.x*s;
-            this->y = ax.y*s;
-            this->z = ax.z*s;
+            this->x = ax[0]*s;
+            this->y = ax[1]*s;
+            this->z = ax[2]*s;
             this->normalize();
         };
 
@@ -156,7 +156,7 @@ class Quaternion: public MathBase
 
             // Reference: https://faculty.sites.iastate.edu/jia/files/inline-files/quaternion.pdf
             // Theorem 2:
-            Quaternion p = Quaternion(0.0, v.x, v.y, v.z);
+            Quaternion p = Quaternion(0.0, v[0], v[1], v[2]);
             Quaternion pp = *this * p * this->getConjugate();
 
             return Vector3(pp.x, pp.y, pp.z);

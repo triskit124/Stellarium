@@ -11,19 +11,19 @@ std::array<double*, Body::STATE_SIZE> Body::getState()
     _att.normalize();
 
     std::array<double*, Body::STATE_SIZE> state {
-        &_pos.x,
-        &_pos.y,
-        &_pos.z,
+        &_pos[0],
+        &_pos[1],
+        &_pos[2],
         &_att.w,
         &_att.x,
         &_att.y,
         &_att.z,
-        &_vel.x,
-        &_vel.y,
-        &_vel.z,
-        &_ang_vel.x,
-        &_ang_vel.y,
-        &_ang_vel.z,
+        &_vel[0],
+        &_vel[1],
+        &_vel[2],
+        &_ang_vel[0],
+        &_ang_vel[1],
+        &_ang_vel[2],
     };
     return state;
 }

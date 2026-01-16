@@ -1,11 +1,6 @@
-#ifndef STELL_VECTOR3_H
-#define STELL_VECTOR3_H
+#pragma once
 
-#include <cmath>
-#include <iostream>
-#include <stdexcept>
-
-#include "MathBase.h"
+#include "Vector.h"
 
 namespace Stellarium
 {
@@ -13,7 +8,7 @@ namespace Stellarium
 /**
 * @brief A class representing a 3D vector.
 */
-class Vector3: public MathBase
+class Vector3 : public Vector<3>
 {   
     public:
 
@@ -24,145 +19,17 @@ class Vector3: public MathBase
         */
 
         /**
-        * @brief Default constructor for the Vector3 object.
-        */
-        Vector3() = default;
-
-        /**
         * @brief Constructs a Vector3 object with the given x, y, and z values.
         * @param x The x value of the vector.
         * @param y The y value of the vector.
         * @param z The z value of the vector.
         */
-        Vector3(double x, double y, double z) : x(x), y(y), z(z) {};
-
-        /*
-        ====================
-            Data Members
-        ====================
-        */
+        Vector3(double x = 0, double y = 0, double z = 0) : Vector<3>({x, y, z}) { }
 
         /**
-        * @brief The x value of the vector.
+        * @brief Converting constructor from base Vector<3>.
         */
-        double x = 0.0;
-        
-        /**
-        * @brief The y value of the vector.
-        */
-        double y = 0.0;
-        
-        /**
-        * @brief The z value of the vector.
-        */
-        double z = 0.0;
-        
-        
-        /* 
-        ===================
-             Operators 
-        ===================
-        */
-
-        Vector3 operator*(double c) const { return Vector3(x*c, y*c, z*c); };
-        Vector3 operator/(double c) const { return Vector3(x/c, y/c,z/c); };
-        Vector3 operator+(double c) const { return Vector3(x+c, y+c, z+c); };
-        Vector3 operator-(double c) const { return Vector3(x-c, y-c, z-c); };
-        
-        double operator*(const Vector3& v) const { return this->dot(v); };
-        Vector3 operator+(const Vector3& v) const { return Vector3(x+v.x, y+v.y, z+v.z); };
-        Vector3 operator-(const Vector3& v) const { return Vector3(x-v.x, y-v.y, z-v.z); };
-
-        void operator*=(double c) { x *= c; y *= c; z *= c; };
-        void operator/=(double c) { 
-            if (std::abs(c) <= _epsilon) {
-                throw std::invalid_argument("Division by zero in Vector3 operator/=");
-            }
-            x /= c; y /= c; z /= c; 
-        };
-
-        void operator+=(double c) { x += c; y += c; z += c; };
-        void operator-=(double c) { x -= c; y -= c; z -= c; };
-
-        void operator+=(const Vector3& v) { x += v.x; y += v.y; z += v.z; };
-        void operator-=(const Vector3& v) { x -= v.x; y -= v.y; z -= v.z; };
-        
-        bool operator==(const Vector3& v) const { 
-            return 
-                std::abs(x - v.x) <= _epsilon 
-                && std::abs(y - v.y) <= _epsilon 
-                && std::abs(z - v.z) <= _epsilon;
-        };
-
-        bool operator!=(const Vector3& v) const { 
-            return !(*this == v); 
-        };
-
-        Vector3 operator-() const { return Vector3(-x, -y, -z); };
-
-        /**
-        * @brief Operator for accessing the x, y, and z values of the vector.
-        * @param idx The index of the value to access.
-        * @return The value at the given index.
-        */
-        double operator[](unsigned int idx) const {
-            if (idx == 0)
-            {
-                return x;
-            }
-            if (idx == 1)
-            {
-                return y;
-            }
-            if (idx == 2)
-            {
-                return z;
-            }
-            throw std::invalid_argument("invalid index: " + std::to_string(idx)); 
-        }
-
-        /**
-        * @brief Operator for accessing the x, y, and z values of the vector.
-        * @param idx The index of the value to access.
-        * @return The value at the given index.
-        */
-        double& operator[](unsigned int idx) {
-            if (idx == 0)
-            {
-                return x;
-            }
-            if (idx == 1)
-            {
-                return y;
-            }
-            if (idx == 2)
-            {
-                return z;
-            }
-            throw std::invalid_argument("invalid index: " + std::to_string(idx)); 
-        }
-
-        /* 
-        ===================
-              Methods 
-        ===================
-        */
-
-        constexpr static unsigned int size() { return 3; }
-
-        /**
-        * @brief Prints the x, y, and z values of the vector to stdout.
-        */
-        void print(const std::string& s = "") const {
-            std::cout << s << "x: " << x << " y: " << y << " z: " << z << std::endl;
-        }
-
-        /**
-        * @brief Returns the dot product of the vector with another vector.
-        * @param v The vector to dot with.
-        * @return The dot product of the two vectors.
-        */
-        double dot(const Vector3& v) const { return x*v.x + y*v.y + z*v.z; };
+        Vector3(const Vector<3>& v) : Vector<3>(v) { }
 
         /**
         * @brief Returns the cross product of the vector with another vector.
@@ -171,72 +38,12 @@ class Vector3: public MathBase
         */
         Vector3 cross(const Vector3& v) const {
             return Vector3(
-                y*v.z - z*v.y,
-                z*v.x - x*v.z,
-                x*v.y - y*v.x
+                (*this)[1]*v[2] - (*this)[2]*v[1],
+                (*this)[2]*v[0] - (*this)[0]*v[2],
+                (*this)[0]*v[1] - (*this)[1]*v[0]
             );
         };
 
-        /**
-        * @brief Returns the norm of the vector.
-        */
-        double norm() const { 
-            return std::sqrt(pow(x, 2) + pow(y, 2) + pow(z, 2)); 
-        };
-
-        /**
-        * @brief Normalizes the vector in place.
-        */
-        void normalize() { 
-            double n = norm();
-            if (!isUnit() && n > _epsilon)
-            {
-                x /= n;
-                y /= n;
-                z /= n;
-            }
-        }
-
-        /**
-        * @brief Returns a copy of this vector that is normalized. Does not modify the existed vector
-        * @return The normalized vector.
-        */
-        Vector3 getNormalized() const {
-            Vector3 v = *this;
-            v.normalize();
-            return v;
-        }
-
-        /**
-        * @brief Checks if the vector is a unit vector.
-        * @return Whether the vector is a unit vector.
-        */
-        bool isUnit() const { return std::abs(norm() - 1.0) <= _epsilon; };
-    
-};
-
-/**
-* @brief Global operator for element-wise multiplying a vector by a scalar.
-* @param v The vector to multiply by.
-* @param c The scalar to multiply by.
-* @return The vector multiplied element-wise by the scalar.
-*/
-inline Vector3 operator*(double c, const Vector3& v)
-{
-    return v*c;
-};
-
-/**
-* @brief Global operator for element-wise adding a scalar to a vector.
-* @param v The vector to add to.
-* @param c The scalar to add.
-* @return The vector added element-wise by the scalar.
-*/
-inline Vector3 operator+(double c, const Vector3& v)
-{
-    return v+c;
 };
 
 } // namespace Stellarium
-
-#endif // STELL_VECTOR3_H
