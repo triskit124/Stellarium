@@ -1,5 +1,4 @@
-#ifndef STELL_ASSIMP_IMPORTER_H
-#define STELL_ASSIMP_IMPORTER_H
+#pragma once
 
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
@@ -17,7 +16,7 @@ namespace Stellarium
 
 class AssimpImporter
 {
-    
+
 public:
 
     AssimpImporter() = default;
@@ -36,5 +35,3 @@ private:
 };
 
 } // namespace Stellarium
-
-#endif // STELL_ASSIMP_IMPORTER_H

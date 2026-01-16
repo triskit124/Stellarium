@@ -1,5 +1,4 @@
-#ifndef STELL_MATRIX44_H
-#define STELL_MATRIX44_H
+#pragma once
 
 #include <array>
 #include <cmath>
@@ -18,12 +17,12 @@ namespace Stellarium
 * @brief A class representing a 4x4 Homogeneous Transformation Matrix.
 */
 class Matrix44
-{    
+{
     public:
 
-        /* 
+        /*
         ===================================
-             Constructors/Destructors 
+             Constructors/Destructors
         ===================================
         */
 
@@ -34,7 +33,7 @@ class Matrix44
             setRotation(quat.getRotationMatrix());
             setTranslation(translation);
         };
-        
+
         /**
         * @brief Constructs a Matrix44 object with the given x, y, z, and w vectors.
         * @param x The 1st row of the matrix.
@@ -43,11 +42,11 @@ class Matrix44
         * @param w The 4th row of the matrix.
         */
         Matrix44(Vector4 x, Vector4 y, Vector4 z, Vector4 w) : x(x), y(y), z(z), w(w) {};
-        
+
 
         /**
         * @brief Construct from a rotation matrix and translation vector.
-        * The resulting homogeneous transformation matrix will represent a rotation and translation of a vector/frame from the initial pose to the final pose. 
+        * The resulting homogeneous transformation matrix will represent a rotation and translation of a vector/frame from the initial pose to the final pose.
         * The translation and rotation are both w.r.t the initial pose, expressed in the initial pose.
         * @param rotation The rotation matrix.
         * @param translation The translation vector.
@@ -56,23 +55,23 @@ class Matrix44
             setRotation(rotation);
             setTranslation(translation);
         };
-        
+
         /*
         ====================
             Data Members
         ====================
         */
-        
+
         /**
         * @brief The 1st row of the matrix.
         */
         Vector4 x {1.0, 0.0, 0.0, 0.0};
-        
+
         /**
         * @brief The 2nd row of the matrix.
         */
         Vector4 y {0.0, 1.0, 0.0, 0.0};
-        
+
         /**
         * @brief The 3rd row of the matrix.
         */
@@ -83,9 +82,9 @@ class Matrix44
         */
         Vector4 w {0.0, 0.0, 0.0, 1.0};
 
-        /* 
+        /*
         ===================
-             Operators 
+             Operators
         ===================
         */
 
@@ -94,7 +93,7 @@ class Matrix44
         * @param v The vector to multiply by.
         * @return The vector multiplied by the matrix.
         */
-        Vector4 operator*(Vector4 v) const { 
+        Vector4 operator*(Vector4 v) const {
             return Vector4(
                 x.dot(v),
                 y.dot(v),
@@ -177,7 +176,7 @@ class Matrix44
             {
                 return w;
             }
-            throw std::invalid_argument("invalid index"); 
+            throw std::invalid_argument("invalid index");
         }
 
         /**
@@ -202,7 +201,7 @@ class Matrix44
             {
                 return w;
             }
-            throw std::invalid_argument("invalid index"); 
+            throw std::invalid_argument("invalid index");
         }
 
         /**
@@ -214,9 +213,9 @@ class Matrix44
             return x == m[0] && y == m[1] && z == m[2] && w == m[3];
         };
 
-        /* 
+        /*
         ===================
-              Methods 
+              Methods
         ===================
         */
 
@@ -339,5 +338,3 @@ inline Matrix44 operator/(double c, const Matrix44& m)
 
 
 } // end namespace Stellarium
-
-#endif // end STELL_MATRIX44_H

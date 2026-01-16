@@ -1,5 +1,4 @@
-#ifndef STELL_AXISANGLE_H
-#define STELL_AXISANGLE_H
+#pragma once
 
 #include "Vector3.h"
 #include "Quaternion.h"
@@ -14,9 +13,9 @@ class AxisAngle: public MathBase
 {
     public:
 
-        /* 
+        /*
         ===================================
-             Constructors/Desctructors 
+             Constructors/Desctructors
         ===================================
         */
 
@@ -50,9 +49,9 @@ class AxisAngle: public MathBase
             }
         };
 
-        /* 
+        /*
         ===================
-              Methods 
+              Methods
         ===================
         */
 
@@ -87,7 +86,7 @@ class AxisAngle: public MathBase
         * @brief The axis of rotation.
         */
         Vector3 _axis {1.0, 0.0, 0.0};
-        
+
         /**
         * @brief The angle of rotation in radians.
         */
@@ -96,5 +95,3 @@ class AxisAngle: public MathBase
 };
 
 } // end namespace Stellarium
-
-#endif // end STELL_AXISANGLE_H

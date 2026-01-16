@@ -1,5 +1,4 @@
-#ifndef STELL_MATH_BASE_H
-#define STELL_MATH_BASE_H
+#pragma once
 
 #include <stdexcept>
 
@@ -19,11 +18,11 @@ namespace Stellarium
             * @brief Sets the epsilon value for floating point comparisons.
             * @param e The new epsilon value.
             */
-            void setEpsilon(double e) { 
+            void setEpsilon(double e) {
                 if (e < 0.0) {
                     throw std::invalid_argument("Epsilon must be a non-negative value");
                 }
-                _epsilon = e; 
+                _epsilon = e;
             };
 
             /**
@@ -42,5 +41,3 @@ namespace Stellarium
     };
 
 }
-
-#endif // STELL_MATH_BASE_H

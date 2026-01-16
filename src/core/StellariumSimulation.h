@@ -1,5 +1,4 @@
-#ifndef STELL_SIM
-#define STELL_SIM
+#pragma once
 
 #include "Constants.h"
 #include "Body.h"
@@ -16,14 +15,14 @@
 #include <vector>
 
 
-namespace Stellarium 
+namespace Stellarium
 {
 
 /**
  * @brief The StellariumSimulation class
  */
 class StellariumSimulation
-{    
+{
     public:
         /**
          * @brief Constructs a StellariumSimulation object.
@@ -45,14 +44,14 @@ class StellariumSimulation
 
         /**
          * @brief Loads a scenario from a file.
-         * 
+         *
          * @param filename The name of the file to load the scenario from.
          */
         void loadScenario(const std::string& filename);
 
         /**
          * @brief Adds a body to the simulation.
-         * 
+         *
          * @param name The name of the body.
          * @param mass The mass of the body.
          * @param cm The center of mass of the body.
@@ -62,19 +61,19 @@ class StellariumSimulation
          * @param att The attitude of the body.
          * @param ang_vel The angular velocity of the body.
          */
-        Body* addBody(const std::string& name, 
-                      double mass = 1.0, 
-                      Vector3 cm = Vector3(0,0,0), 
+        Body* addBody(const std::string& name,
+                      double mass = 1.0,
+                      Vector3 cm = Vector3(0,0,0),
                       Matrix33 inertia = Matrix33(Vector3(1,0,0), Vector3(0,1,0), Vector3(0,0,1)),
-                      Vector3 pos = Vector3(0,0,0), 
-                      Vector3 vel = Vector3(0,0,0), 
-                      Quaternion att = Quaternion(1,0,0,0), 
+                      Vector3 pos = Vector3(0,0,0),
+                      Vector3 vel = Vector3(0,0,0),
+                      Quaternion att = Quaternion(1,0,0,0),
                       Vector3 ang_vel = Vector3(0,0,0)
         );
 
         /**
          * @brief Adds an integrator to the simulation.
-         * 
+         *
          * @param type The type of the integrator.
          * @param dt The size of the fixed integrator step.
          */
@@ -87,7 +86,7 @@ class StellariumSimulation
 
         /**
          * @brief Runs the simulation for a given time.
-         * 
+         *
          * @param t The time to run the simulation for.
          */
         void run(double t);
@@ -99,7 +98,7 @@ class StellariumSimulation
         * @brief The bodies in the simulation.
         */
         std::vector<std::unique_ptr<Body>> _bodies {}; /**< vector of bodies in the simulation. */
-        
+
         /**
         * @brief The integrator used for advancing the simulation.
         */
@@ -125,5 +124,3 @@ class StellariumSimulation
 };
 
 } // end namespace Stellarium
-
-#endif // end STELL_SIM

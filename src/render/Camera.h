@@ -1,5 +1,4 @@
-#ifndef  STELL_CAMERA
-#define  STELL_CAMERA
+#pragma once
 
 #include "Frame.h"
 #include "Matrix44.h"
@@ -68,5 +67,3 @@ class Camera : public Frame
 };
 
 }
-
-#endif // STELL_CAMERA

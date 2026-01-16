@@ -1,5 +1,4 @@
-#ifndef STELL_MODEL_H
-#define STELL_MODEL_H
+#pragma once
 
 #include <vector>
 #include <filesystem>
@@ -10,7 +9,7 @@
 namespace Stellarium
 {
 
-class Model 
+class Model
 {
 
 public:
@@ -24,5 +23,3 @@ public:
 };
 
 } // namespace Stellarium
-
-#endif // STELL_MODEL_H

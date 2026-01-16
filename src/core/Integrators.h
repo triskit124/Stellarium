@@ -1,12 +1,11 @@
-#ifndef STELL_INTEGRATORS_H
-#define STELL_INTEGRATORS_H
+#pragma once
 
 #include <vector>
 
 #include "Constants.h"
 #include "Body.h"
 
-namespace Stellarium 
+namespace Stellarium
 {
 
 /**
@@ -28,12 +27,12 @@ class Integrator
         * @brief Default constructor.
         * @param dt The integration step size.
         */
-        Integrator(const double dt = 1.0) { 
+        Integrator(const double dt = 1.0) {
             if (dt <= STELL_EPSILON)
             {
                 throw std::invalid_argument("dt must be positive.");
             }
-            _dt = dt; 
+            _dt = dt;
         };
 
         /**
@@ -65,14 +64,14 @@ class Integrator
         * @brief The total state vector for all bodies in the simulation.
         */
         std::vector<double*> _state {};
-        
+
         /**
         * @brief The total state derivative vector for all bodies in the simulation.
         */
         std::vector<double> _state_dot {};
 
         /**
-        * @brief the integration step size 
+        * @brief the integration step size
         */
         double _dt;
 
@@ -89,7 +88,7 @@ class RK4 : public Integrator
         * @brief Default constructor.
         */
         RK4(const double dt = 1.0) : Integrator(dt) {};
-        
+
         /**
         * @brief Integrates the state of the system.
         * @param bodies[in] The bodies to be integrated.
@@ -105,5 +104,3 @@ class RK4 : public Integrator
 
 
 } // end namespace Stellarium
-
-#endif // end STELL_INTEGRATORS_H

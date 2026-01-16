@@ -1,5 +1,4 @@
-#ifndef STELL_BODY_H
-#define STELL_BODY_H
+#pragma once
 
 #include <array>
 #include <string>
@@ -9,23 +8,23 @@
 #include "Matrix33.h"
 #include "Quaternion.h"
 
-namespace Stellarium 
+namespace Stellarium
 {
 
 /**
  * @brief A class representing a rigid body.
  */
 class Body : public Frame
-{    
+{
 
     public:
 
         /**< The size of the state vector for a body. */
-        constexpr static unsigned int STATE_SIZE { 13 }; 
+        constexpr static unsigned int STATE_SIZE { 13 };
 
-        /* 
+        /*
         ===================================
-             Constructors/Desctructors 
+             Constructors/Desctructors
         ===================================
         */
 
@@ -43,7 +42,7 @@ class Body : public Frame
             this->setInertia(inertia);
         };
 
-        /* 
+        /*
         ==============
             Methods
         ==============
@@ -59,11 +58,11 @@ class Body : public Frame
         * @brief Sets the mass of the body.
         * @param mass The new mass of the body.
         */
-        void setMass(double mass) { 
+        void setMass(double mass) {
             if (mass < 0.0) {
                 throw std::invalid_argument("Mass must be a non-negative value");
             }
-            _mass = mass; 
+            _mass = mass;
         };
 
         /**
@@ -132,30 +131,30 @@ class Body : public Frame
         std::array<double, Body::STATE_SIZE> getStateDot();
 
     protected:
-    
+
     private:
 
         /**
         * @brief The mass of the body
         */
         double _mass { 1.0 };
-        
+
         /**
         * @brief The location of the center of mass of the body w.r.t the body frame, expressed in the body frame.
         */
         Vector3 _cm {0.0, 0.0, 0.0};
-        
+
         /**
         * @brief The inertia tensor for the body expressed in the body frame.
         */
         Matrix33 _inertia = {{1.0, 0.0, 0.0} ,{0.0, 1.0, 0.0}, {0.0, 0.0, 1.0}};
-        
+
 
         /**
         * @brief The total external force acting on the body, expressed in the BODY frame.
         */
         Vector3 _force {0.0, 0.0, 0.0};
-        
+
         /**
         * @brief The total external torque acting on the body, expressed in the BODY frame.
         */
@@ -164,5 +163,3 @@ class Body : public Frame
 };
 
 } // end namespace Stellarium
-
-#endif // end STELL_BODY_H

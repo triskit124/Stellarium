@@ -1,5 +1,4 @@
-#ifndef STELL_MATRIX33_H
-#define STELL_MATRIX33_H
+#pragma once
 
 #include "MathBase.h"
 #include "Vector3.h"
@@ -15,12 +14,12 @@ namespace Stellarium
 * @brief A class representing a 3x3 matrix.
 */
 class Matrix33: public MathBase
-{    
+{
     public:
 
-        /* 
+        /*
         ===================================
-             Constructors/Destructors 
+             Constructors/Destructors
         ===================================
         */
 
@@ -28,7 +27,7 @@ class Matrix33: public MathBase
         * @brief Default constructor for the Matrix33 object.
         */
         Matrix33() = default;
-        
+
         /**
         * @brief Constructs a Matrix33 object with the given x, y, and z vectors.
         * @param x The 1st row of the matrix.
@@ -36,31 +35,31 @@ class Matrix33: public MathBase
         * @param z The 3rd row of the matrix.
         */
         Matrix33(Vector3 x, Vector3 y, Vector3 z) : x(x), y(y), z(z) {};
-        
+
         /*
         ====================
             Data Members
         ====================
         */
-        
+
         /**
         * @brief The 1st row of the matrix.
         */
         Vector3 x {1.0, 0.0, 0.0};
-        
+
         /**
         * @brief The 2nd row of the matrix.
         */
         Vector3 y {0.0, 1.0, 0.0};
-        
+
         /**
         * @brief The 3rd row of the matrix.
         */
         Vector3 z {0.0, 0.0, 1.0};
-        
-        /* 
+
+        /*
         ===================
-             Operators 
+             Operators
         ===================
         */
 
@@ -69,7 +68,7 @@ class Matrix33: public MathBase
         * @param v The vector to multiply by.
         * @return The vector multiplied by the matrix.
         */
-        Vector3 operator*(Vector3 v) const { 
+        Vector3 operator*(Vector3 v) const {
             return Vector3(
                 x.dot(v),
                 y.dot(v),
@@ -136,7 +135,7 @@ class Matrix33: public MathBase
             {
                 return z;
             }
-            throw std::invalid_argument("invalid index"); 
+            throw std::invalid_argument("invalid index");
         }
 
         /**
@@ -157,7 +156,7 @@ class Matrix33: public MathBase
             {
                 return z;
             }
-            throw std::invalid_argument("invalid index"); 
+            throw std::invalid_argument("invalid index");
         }
 
         /**
@@ -169,9 +168,9 @@ class Matrix33: public MathBase
             return x == m[0] && y == m[1] && z == m[2];
         };
 
-        /* 
+        /*
         ===================
-              Methods 
+              Methods
         ===================
         */
 
@@ -179,10 +178,10 @@ class Matrix33: public MathBase
         * @brief Computes the determinant of the matrix.
         * @return The determinant of the matrix.
         */
-        double getDeterminant() const { 
-            return x[0]*(y[1]*z[2] - y[2]*z[1]) 
-                   - x[1]*(y[0]*z[2] - y[2]*z[0]) 
-                   + x[2]*(y[0]*z[1] - y[1]*z[0]); 
+        double getDeterminant() const {
+            return x[0]*(y[1]*z[2] - y[2]*z[1])
+                   - x[1]*(y[0]*z[2] - y[2]*z[0])
+                   + x[2]*(y[0]*z[1] - y[1]*z[0]);
         };
 
         /**
@@ -261,7 +260,7 @@ class Matrix33: public MathBase
                 pitch = M_PI_2;
                 roll = yaw + atan2( x[1],  x[2]);
             }
-            else 
+            else
             {
                 pitch = -asin( z[0]);
                 roll = atan2( z[1] / cos(pitch),  z[2] / cos(pitch));
@@ -300,5 +299,3 @@ inline Matrix33 operator/(double c, const Matrix33& m)
 
 
 } // end namespace Stellarium
-
-#endif // end STELL_MATRIX33_H

@@ -1,5 +1,4 @@
-#ifndef STELL_GRAPHICSENGINE
-#define STELL_GRAPHICSENGINE
+#pragma once
 
 #include "Camera.h"
 #include "Mesh.h"
@@ -90,5 +89,3 @@ class GraphicsEngine
 };
 
 }
-
-#endif // STELL_GRAPHICSENGINE

@@ -1,5 +1,4 @@
-#ifndef STELL_MESH_H
-#define STELL_MESH_H
+#pragma once
 
 #include <vector>
 #include <glad/glad.h>
@@ -45,5 +44,3 @@ class Mesh
     };
 
 } // namespace Stellarium
-
-#endif

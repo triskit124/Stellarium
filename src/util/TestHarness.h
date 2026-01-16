@@ -1,5 +1,4 @@
-#ifndef STELL_TEST
-#define STELL_TEST
+#pragma once
 
 #include <string>
 #include <vector>
@@ -19,7 +18,7 @@ class Test
 
         void assertTrue(const std::string& description, bool condition);
         void assertEquals(const std::string& description, double a, double b, double epsilon = 0.0);
-        
+
         void summarize();
 
         unsigned int getNumFails() { return _num_fails; };
@@ -46,5 +45,3 @@ class Test
 };
 
 } // end namespace Stellarium
-
-#endif // end STELL_TEST

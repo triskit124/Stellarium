@@ -1,5 +1,4 @@
-#ifndef STELL_FRAME_H
-#define STELL_FRAME_H
+#pragma once
 
 #include "Vector3.h"
 #include "Quaternion.h"
@@ -15,10 +14,10 @@ class Frame
 {
 
     public:
-            
-        /* 
+
+        /*
         ===================================
-            Constructors/Destructors 
+            Constructors/Destructors
         ===================================
         */
 
@@ -28,11 +27,11 @@ class Frame
         * @param pos The position of the frame.
         * @param att The attitude of the frame.
         */
-        Frame(const std::string& name, const Vector3& pos = Vector3(), const Quaternion& att = Quaternion()) : _name(name), _pos(pos), _att(att) {};        
+        Frame(const std::string& name, const Vector3& pos = Vector3(), const Quaternion& att = Quaternion()) : _name(name), _pos(pos), _att(att) {};
 
-        /* 
+        /*
         ===================
-              Methods 
+              Methods
         ===================
         */
 
@@ -53,19 +52,19 @@ class Frame
         * @param pos The new position of the frame.
         */
         void setPosition(const Vector3& pos) { _pos = pos; };
-        
+
         /**
         * @brief Sets the velocity state of the frame.
         * @param vel The new velocity of the frame.
         */
         void setVelocity(const Vector3& vel) { _vel = vel; };
-        
+
         /**
         * @brief Sets the attitude state of the frame.
         * @param att The new attitude of the frame.
         */
         void setAttitude(const Quaternion& att) { _att = att.getNormalized(); };
-        
+
         /**
         * @brief Sets the angular velocity state of the frame.
         * @param ang_vel The new angular velocity of the frame.
@@ -120,27 +119,27 @@ class Frame
         * @brief The position of the frame w.r.t inertial, expressed in INERTIAL frame.
         */
         Vector3 _pos {0.0, 0.0, 0.0};
-        
+
         /**
         * @brief The velocity of the frame w.r.t inertial, expressed in INERTIAL frame.
         */
         Vector3 _vel {0.0, 0.0, 0.0};
-        
+
         /**
         * @brief The acceleration of the frame w.r.t inertial, expressed in INERTIAL frame.
         */
         Vector3 _acc {0.0, 0.0, 0.0};
-        
+
         /**
         * @brief The attitude quaternion of the frame, representing active rotation from INERTIAL to FRAME.
         */
         Quaternion _att {1.0, 0.0, 0.0, 0.0};
-        
+
         /**
         * @brief The angular velocity of the frame w.r.t inertial, expressed in this FRAME.
         */
         Vector3 _ang_vel {0.0, 0.0, 0.0};
-        
+
         /**
         * @brief The angular acceleration of the frame w.r.t inertial, expressed in this FRAME.
         */
@@ -149,5 +148,3 @@ class Frame
 };
 
 } // namespace Stellarium
-
-#endif // STELL_FRAME_H

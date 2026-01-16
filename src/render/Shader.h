@@ -1,5 +1,4 @@
-#ifndef STELL_SHADER_H
-#define STELL_SHADER_H
+#pragma once
 
 #include "Vector2.h"
 #include "Vector3.h"
@@ -33,5 +32,3 @@ class Shader
 };
 
 }
-
-#endif // STELL_SHADER_H

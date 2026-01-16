@@ -1,5 +1,4 @@
-#ifndef STELL_QUATERNION_H
-#define STELL_QUATERNION_H
+#pragma once
 
 #include <cassert>
 
@@ -13,12 +12,12 @@ namespace Stellarium
 * @brief A class representing a quaternion.
 */
 class Quaternion: public MathBase
-{    
+{
     public:
 
-        /* 
+        /*
         ===================================
-             Constructors/Desctructors 
+             Constructors/Desctructors
         ===================================
         */
 
@@ -26,7 +25,7 @@ class Quaternion: public MathBase
         * @brief Default constructor for the Quaternion object.
         */
         Quaternion() = default;
-        
+
         /**
         * @brief Constructs a Quaternion object with the given w, x, y, and z values.
         * @param w The scalar component of the quaternion.
@@ -90,41 +89,41 @@ class Quaternion: public MathBase
         * @brief The scalar component of the quaternion.
         */
         double w = 1.0;
-        
+
         /**
         * @brief The 1st vector component of the quaternion.
         */
         double x = 0.0;
-        
+
         /**
         * @brief The 2nd vector component of the quaternion.
         */
         double y = 0.0;
-        
+
         /**
         * @brief The 3rd vector component of the quaternion.
         */
         double z = 0.0;
 
-        /* 
+        /*
         ===================
-             Operators 
+             Operators
         ===================
         */
 
         Quaternion operator*(double c) const { return Quaternion(w*c, x*c, y*c, z*c, false); };
         Quaternion operator/(double c) const { return Quaternion(w/c, x/c, y/c, z/c, false); };
-    
-        bool operator==(const Quaternion& q) const { 
-            return std::abs(w - q.w) <= _epsilon 
-                    && std::abs(x - q.x) <= _epsilon 
+
+        bool operator==(const Quaternion& q) const {
+            return std::abs(w - q.w) <= _epsilon
+                    && std::abs(x - q.x) <= _epsilon
                     && std::abs(y - q.y) <= _epsilon
                     && std::abs(z - q.z) <= _epsilon;
-        }; 
+        };
 
-        bool operator==(double c) const { 
-            return std::abs(w - c) <= _epsilon 
-                    && std::abs(x) <= _epsilon 
+        bool operator==(double c) const {
+            return std::abs(w - c) <= _epsilon
+                    && std::abs(x) <= _epsilon
                     && std::abs(y) <= _epsilon
                     && std::abs(z) <= _epsilon;
         };
@@ -146,12 +145,12 @@ class Quaternion: public MathBase
         * @param v The vector.
         * @return The rotated vector.
         */
-        Vector3 operator*(const Vector3& v) const { 
+        Vector3 operator*(const Vector3& v) const {
             if (isIdentity())
             {
                 return v;
             }
-            
+
             assert(isUnit());
 
             // Reference: https://faculty.sites.iastate.edu/jia/files/inline-files/quaternion.pdf
@@ -184,7 +183,7 @@ class Quaternion: public MathBase
             {
                 return z;
             }
-            throw std::invalid_argument("invalid index"); 
+            throw std::invalid_argument("invalid index");
         }
 
         /**
@@ -209,19 +208,19 @@ class Quaternion: public MathBase
             {
                 return z;
             }
-            throw std::invalid_argument("invalid index"); 
+            throw std::invalid_argument("invalid index");
         }
 
-        /* 
+        /*
         ===================
-              Methods 
+              Methods
         ===================
         */
-        
+
         /**
         * @brief Normalizes the quaternion.
         */
-        void normalize() { 
+        void normalize() {
             if (!isUnit())
             {
                 double n = getNorm();
@@ -285,7 +284,7 @@ class Quaternion: public MathBase
         * @return The conjugate of the quaternion.
         */
         Quaternion getConjugate() const { return Quaternion(w, -x, -y, -z, false); };
-        
+
         /**
         * @brief Returns the inverse of the quaternion.
         * @return The inverse of the quaternion.
@@ -323,6 +322,3 @@ inline Quaternion operator*(double c, const Quaternion& q)
 
 
 } // end namespace Stellarium
-
-#endif // end STELL_QUATERNION_H
-
