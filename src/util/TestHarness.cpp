@@ -1,61 +1,64 @@
 #include "TestHarness.h"
 
+#include <iostream>
+#include <algorithm>
 #include <iomanip>
-#include <string>
-#include <utility>
-
 
 namespace Stellarium {
 
+Test::Test(const std::string& name)
+    : _name(name) 
+{
+    std::cerr << bold("\nRunning test: " + _name) << std::endl;
+};
 
 void Test::assertTrue(const std::string& description, bool condition)
 {
-    _results.push_back(std::make_pair(description, condition));
-}
+    _results.push_back({ description, condition } );
+    _description_width = std::max(_description_width, description.length());
 
-void Test::summarize()
-{
-    unsigned int passed = 0;
-    unsigned int failed = 0;
-    const int width = 50;
-    
-    for (auto& result : _results)
+    if (condition)
     {
-        if (result.second)
-        {
-            passed++;
-
-            if (_verbose)
-            {
-                std::cout 
-                    << std::left
-                    << std::setw(width)
-                    << green("\t" + result.first + ":")
-                    << std::right
-                    << boldGreen("PASS\n");
-            }
-        }
-        else
-        {
-            failed++;
-
-            std::cout
-                << std::left
-                << std::setw(width)
-                << red("\t" + result.first + ":")
-                << std::right
-                << boldRed("FAIL\n");
-        }
-    }
-    
-    int total = passed + failed;
-    if (failed == 0)
-    {
-        std::cout << boldGreen("SUMMARY: PASSED (" + std::to_string(passed) + " of " + std::to_string(total) + ") \u2705 \n");
+        _num_passes++;
     }
     else
     {
-        std::cout << boldRed("SUMMARY: FAILED (" + std::to_string(failed) + " of " + std::to_string(passed+failed) + ") tests failed \u274C \n");
+        _num_fails++;
+    }
+
+}
+
+void Test::assertEquals(const std::string& description, double a, double b, double epsilon)
+{
+    assertTrue(description, abs(a - b) <= epsilon);
+}
+
+void Test::summarize()
+{    
+    for (auto& result : _results)
+    {
+        if (!result.second || _verbose)
+        {
+            std::string description = result.second ? green(result.first + ":") : red(result.first + ":");
+            std::string report = result.second ? boldGreen("PASS\n") : boldRed("FAIL\n");
+
+            std::cerr
+                << std::setw(_description_width + 15)
+                << std::left
+                << description
+                << std::setw(15)
+                << std::right
+                << report;
+        }
+    }
+    
+    if (_num_fails == 0)
+    {
+        std::cerr << boldGreen("SUMMARY: PASSED (" + std::to_string(_num_passes) + " of " + std::to_string(_num_passes + _num_fails) + ") tests passed \u2705 \n");
+    }
+    else
+    {
+        std::cerr << boldRed("SUMMARY: FAILED (" + std::to_string(_num_fails) + " of " + std::to_string(_num_passes + _num_fails) + ") tests failed \u274C \n");
     }
 }
 
@@ -84,4 +87,4 @@ std::string Test::boldRed(const std::string& text)
     return "\033[01;31m" + text + "\033[0m";
 }
 
-}
+} // namespace Stellarium

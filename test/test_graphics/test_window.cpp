@@ -13,10 +13,13 @@ using namespace Stellarium;
 
 int main() { 
 
+    Test test("Graphics window");
+
     StellariumSimulation sim(true);
 
+    test.assertTrue("Sim bootup with window", true);
 
-    return 0;
+    return test.getNumFails();
 
 }
 

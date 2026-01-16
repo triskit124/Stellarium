@@ -113,7 +113,7 @@ int main() {
     Vector3 u2 = Vector3(0.3876, 1.9747, -0.9747).getNormalized();
     test.assertTrue("Quaternion rotation complicated", u1 == u2);
 
-    return 0;
+    return test.getNumFails();
 
 }
 

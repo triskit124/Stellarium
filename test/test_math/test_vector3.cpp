@@ -56,6 +56,6 @@ int main() {
     test.assertTrue("normalize 3", v2 == Vector3(4/sqrt(77), -5/sqrt(77), 6/sqrt(77)));
     test.assertTrue("normalize 4", v2.isUnit());
 
-    return 0;
+    return test.getNumFails();
 }
 

@@ -22,6 +22,22 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(assimp)
 
+# Required dependency: stb_image.h
+# =================================
+FetchContent_Declare(
+  stb_image
+  GIT_REPOSITORY https://github.com/nothings/stb.git
+  GIT_TAG        master
+  GIT_SHALLOW TRUE
+)
+
+FetchContent_MakeAvailable(stb_image)
+
+# TODO: Need to explicitly add the stb_image src directory to include path
+target_include_directories(stellarium PUBLIC
+    "${stb_image_SOURCE_DIR}"
+)
+
 # Required dependency: glfw
 # =========================
 FetchContent_Declare(
@@ -54,16 +70,15 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(glad)
 
+
+if (APPLE)
+    set(GRAPHICS_LIBS glfw glad "-framework OpenGL" "-framework Cocoa" assimp)
+else()
+    set(GRAPHICS_LIBS glfw3 glad GL X11 pthread Xrandr Xi dl assimp)
+endif()
+
 target_link_libraries(
     stellarium 
     PUBLIC 
-    glfw3
-    glad
-    GL 
-    X11 
-    pthread 
-    Xrandr 
-    Xi 
-    dl
-    assimp
+    ${GRAPHICS_LIBS}
 )
