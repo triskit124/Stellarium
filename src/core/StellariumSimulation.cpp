@@ -23,7 +23,7 @@ void StellariumSimulation::loadScenario(const std::string& filename)
     std::cout << "Loaded scenario file:  " << filename << std::endl;
 }
 
-Body* StellariumSimulation::addBody(const std::string& name, double mass, Vector3 cm, Matrix33 inertia, Vector3 pos, Vector3 vel, Quaternion att, Vector3 ang_vel)
+Body* StellariumSimulation::addBody(const std::string& name, double mass, Vector3 cm, InertiaMatrix inertia, Vector3 pos, Vector3 vel, Quaternion att, Vector3 ang_vel)
 {
     std::unique_ptr<Stellarium::Body> new_body = std::make_unique<Stellarium::Body>(name, mass, cm, inertia);
 

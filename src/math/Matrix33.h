@@ -269,8 +269,20 @@ class Matrix33: public MathBase
             return Vector3(roll, pitch, yaw);
         }
 
+        bool isSymmetric() const {
+            return *this == this->getTranspose();
+        }
+
         bool isRotationMatrix() const {
             return abs(getDeterminant() - 1.0) <= _epsilon && *this * this->getTranspose() == Matrix33();
+        }
+
+        bool isPositiveDefinite() const {
+            double det11 = x[0];
+            double det22 = x[0]*y[1] - x[1]*y[0];
+            double det33 = this->getDeterminant();
+
+            return (det11 > 0) && (det22 > 0) && (det33 > 0);
         }
 
 };

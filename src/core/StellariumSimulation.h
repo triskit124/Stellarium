@@ -1,9 +1,8 @@
 #pragma once
 
-#include "Constants.h"
 #include "Body.h"
 #include "Vector3.h"
-#include "Matrix33.h"
+#include "InertiaMatrix.h"
 #include "Quaternion.h"
 #include "Integrators.h"
 
@@ -64,7 +63,7 @@ class StellariumSimulation
         Body* addBody(const std::string& name,
                       double mass = 1.0,
                       Vector3 cm = Vector3(0,0,0),
-                      Matrix33 inertia = Matrix33(Vector3(1,0,0), Vector3(0,1,0), Vector3(0,0,1)),
+                      InertiaMatrix inertia = InertiaMatrix(Vector3(1,0,0), Vector3(0,1,0), Vector3(0,0,1)),
                       Vector3 pos = Vector3(0,0,0),
                       Vector3 vel = Vector3(0,0,0),
                       Quaternion att = Quaternion(1,0,0,0),

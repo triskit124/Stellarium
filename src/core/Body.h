@@ -5,7 +5,7 @@
 
 #include "Frame.h"
 #include "Vector3.h"
-#include "Matrix33.h"
+#include "InertiaMatrix.h"
 #include "Quaternion.h"
 
 namespace Stellarium
@@ -36,7 +36,7 @@ class Body : public Frame
         * @param cm The position of center of mass of the body.
         * @param inertia The inertia matrix of the body.
         */
-        Body(const std::string& name, double mass, const Vector3& cm, const Matrix33& inertia) : Frame(name) {
+        Body(const std::string& name, double mass, const Vector3& cm, const InertiaMatrix& inertia) : Frame(name) {
             this->setMass(mass);
             this->setCm(cm);
             this->setInertia(inertia);
@@ -81,13 +81,13 @@ class Body : public Frame
         * @brief Gets the inertia matrix of the body.
         * @return The inertia matrix of the body.
         */
-        Matrix33 getInertia() const { return _inertia; };
+        InertiaMatrix getInertia() const { return _inertia; };
 
         /**
         * @brief Sets the inertia matrix of the body.
         * @param inertia The new inertia matrix of the body.
         */
-        void setInertia(const Matrix33& inertia) { _inertia = inertia; };
+        void setInertia(const InertiaMatrix& inertia) { _inertia = inertia; };
 
         /**
         * @brief Adds a force to the body.
@@ -147,7 +147,7 @@ class Body : public Frame
         /**
         * @brief The inertia tensor for the body expressed in the body frame.
         */
-        Matrix33 _inertia = {{1.0, 0.0, 0.0} ,{0.0, 1.0, 0.0}, {0.0, 0.0, 1.0}};
+        InertiaMatrix _inertia = {{1.0, 0.0, 0.0} ,{0.0, 1.0, 0.0}, {0.0, 0.0, 1.0}};
 
 
         /**
