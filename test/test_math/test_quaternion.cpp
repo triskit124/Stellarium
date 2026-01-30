@@ -75,32 +75,32 @@ int main() {
 
     // rotate vector by +90 degrees about z-axis
     q1 = Quaternion(Vector3(0, 0, 1), M_PI/2);
-    test.assertTrue("Quaternion to rotation matrix 1", q1.getRotationMatrix() == Matrix33(Vector3(0, -1, 0), Vector3(1, 0, 0), Vector3(0, 0, 1)));
+    test.assertTrue("Quaternion to rotation matrix 1", q1.getRotationMatrix() == RotationMatrix(Vector3(0, -1, 0), Vector3(1, 0, 0), Vector3(0, 0, 1)));
     test.assertTrue("Quaternion rotation +90 z", q1 * Vector3(1,0,0) == Vector3(0, 1, 0));
 
     // rotate vector by -90 degrees about z-axis
     q1 = Quaternion(Vector3(0, 0, 1), -M_PI/2);
-    test.assertTrue("Quaternion to rotation matrix 2", q1.getRotationMatrix() == Matrix33(Vector3(0, 1, 0), Vector3(-1, 0, 0), Vector3(0, 0, 1)));
+    test.assertTrue("Quaternion to rotation matrix 2", q1.getRotationMatrix() == RotationMatrix(Vector3(0, 1, 0), Vector3(-1, 0, 0), Vector3(0, 0, 1)));
     test.assertTrue("Quaternion rotation -90 z", q1 * Vector3(1,0,0) == Vector3(0, -1, 0));
 
     // rotate vector by +90 degrees about y-axis
     q1 = Quaternion(Vector3(0, 1, 0), M_PI/2);
-    test.assertTrue("Quaternion to rotation matrix 3", q1.getRotationMatrix() == Matrix33(Vector3(0, 0, 1), Vector3(0, 1, 0), Vector3(-1, 0, 0)));
+    test.assertTrue("Quaternion to rotation matrix 3", q1.getRotationMatrix() == RotationMatrix(Vector3(0, 0, 1), Vector3(0, 1, 0), Vector3(-1, 0, 0)));
     test.assertTrue("Quaternion rotation +90 y", q1 * Vector3(1,0,0) == Vector3(0, 0, -1));
 
     // rotate vector by -90 degrees about y-axis
     q1 = Quaternion(Vector3(0, 1, 0), -M_PI/2);
-    test.assertTrue("Quaternion to rotation matrix 4", q1.getRotationMatrix() == Matrix33(Vector3(0, 0, -1), Vector3(0, 1, 0), Vector3(1, 0, 0)));
+    test.assertTrue("Quaternion to rotation matrix 4", q1.getRotationMatrix() == RotationMatrix(Vector3(0, 0, -1), Vector3(0, 1, 0), Vector3(1, 0, 0)));
     test.assertTrue("Quaternion rotation -90 y", q1 * Vector3(1,0,0) == Vector3(0, 0, 1));
 
     // rotate vector by +90 degrees about x-axis
     q1 = Quaternion(Vector3(1, 0, 0), M_PI/2);
-    test.assertTrue("Quaternion to rotation matrix 5", q1.getRotationMatrix() == Matrix33(Vector3(1, 0, 0), Vector3(0, 0, -1), Vector3(0, 1, 0)));
+    test.assertTrue("Quaternion to rotation matrix 5", q1.getRotationMatrix() == RotationMatrix(Vector3(1, 0, 0), Vector3(0, 0, -1), Vector3(0, 1, 0)));
     test.assertTrue("Quaternion rotation +90 x", q1 * Vector3(0,1,0) == Vector3(0, 0, 1));
 
     // rotate vector by -90 degrees about x-axis
     q1 = Quaternion(Vector3(1, 0, 0), -M_PI/2);
-    test.assertTrue("Quaternion to rotation matrix 6", q1.getRotationMatrix() == Matrix33(Vector3(1, 0, 0), Vector3(0, 0, 1), Vector3(0, -1, 0)));
+    test.assertTrue("Quaternion to rotation matrix 6", q1.getRotationMatrix() == RotationMatrix(Vector3(1, 0, 0), Vector3(0, 0, 1), Vector3(0, -1, 0)));
     test.assertTrue("Quaternion rotation -90 x", q1 * Vector3(0,1,0) == Vector3(0, 0, -1));
 
     // ref [1] Example 5.1

@@ -286,7 +286,7 @@ class Matrix44
         * @return The inverse transform.
         */
         Matrix44 getInverseTransform() const {
-            return Matrix44(getRotation().inverse(), -(getRotation().inverse() * getTranslation()));
+            return Matrix44(getRotation().getInverse(), -(getRotation().getInverse() * getTranslation()));
         };
 
         std::array<float, 16> getColMajorArray() const {

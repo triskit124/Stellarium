@@ -1,7 +1,5 @@
 #include "Body.h"
 
-#include <iostream>
-
 namespace Stellarium 
 {
 
@@ -43,7 +41,7 @@ std::array<double, Body::STATE_SIZE> Body::getStateDot()
     Vector3 accel = (_att.getConjugate() * _force) / _mass;
 
     // angular acceleration of body w.r.t. inertial frame, expressed in BODY frame
-    Vector3 ang_accel = _inertia.inverse() * (_torque - _ang_vel.cross(_inertia * _ang_vel));
+    Vector3 ang_accel = _inertia.getInverse() * (_torque - _ang_vel.cross(_inertia * _ang_vel));
 
     // quaternion derivative based on angular velocity
     // _att represents frame rotation from INERTIAL to BODY frame

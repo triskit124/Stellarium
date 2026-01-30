@@ -2,7 +2,7 @@
 
 #include <cassert>
 
-#include "Matrix33.h"
+#include "RotationMatrix.h"
 #include "Vector3.h"
 
 namespace Stellarium
@@ -249,7 +249,7 @@ class Quaternion: public MathBase
         * This is an active rotation. That is, it actively rotates a vector or frame from the starting pose to the end pose.
         * @return The rotation matrix representation of the quaternion.
         */
-        Matrix33 getRotationMatrix() const {
+        RotationMatrix getRotationMatrix() const {
 
             // See: https://www.mathworks.com/help/nav/ref/quaternion.rotmat.html
 
@@ -260,7 +260,7 @@ class Quaternion: public MathBase
             double c = this->y;
             double d = this->z;
 
-            return Matrix33(
+            return RotationMatrix(
                 Vector3(2*a*a - 1 + 2*b*b, 2*b*c - 2*a*d, 2*b*d + 2*a*c),
                 Vector3(2*b*c + 2*a*d, 2*a*a - 1 + 2*c*c, 2*c*d - 2*a*b),
                 Vector3(2*b*d - 2*a*c, 2*c*d + 2*a*b, 2*a*a - 1 + 2*d*d)

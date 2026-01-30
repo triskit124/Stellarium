@@ -224,7 +224,7 @@ class Matrix33: public MathBase
         * @brief Computes the inverse of the matrix.
         * @return The inverse of the matrix.
         */
-        Matrix33 inverse() const {
+        Matrix33 getInverse() const {
             if (std::abs(getDeterminant()) <= _epsilon)
             {
                 throw std::invalid_argument("Matrix is singular and cannot be inverted.");
@@ -241,40 +241,12 @@ class Matrix33: public MathBase
             z.print();
         };
 
-        Vector3 getRollPitchYaw() const {
-            // See: https://eecs.qmul.ac.uk/~gslabaugh/publications/euler.pdf
-            if (!isRotationMatrix())
-            {
-                throw std::runtime_error("Cannot get roll-pitch-yaw. Matrix is not a rotation matrix");
-            }
-
-            double roll, pitch, yaw = 0.0;
-
-            if (abs( z[0] - 1) <= _epsilon)
-            {
-                pitch = -M_PI_2;
-                roll = -yaw + atan2(-x[1], -x[2]);
-            }
-            else if (std::abs( z[0] + 1) <= _epsilon)
-            {
-                pitch = M_PI_2;
-                roll = yaw + atan2( x[1],  x[2]);
-            }
-            else
-            {
-                pitch = -asin( z[0]);
-                roll = atan2( z[1] / cos(pitch),  z[2] / cos(pitch));
-                yaw = atan2( y[0] / cos(pitch),  x[0] / cos(pitch));
-            }
-            return Vector3(roll, pitch, yaw);
-        }
-
         bool isSymmetric() const {
             return *this == this->getTranspose();
         }
 
-        bool isRotationMatrix() const {
-            return abs(getDeterminant() - 1.0) <= _epsilon && *this * this->getTranspose() == Matrix33();
+        bool isOrthogonal() const {
+            return *this * this->getTranspose() == Matrix33();
         }
 
         bool isPositiveDefinite() const {

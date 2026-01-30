@@ -26,7 +26,7 @@ int main() {
     test.assertTrue("Matrix33 adjugate 1", M1.getAdjugate() == Matrix33(Vector3(-2, 8, -5), Vector3(3, -11, 7), Vector3(9, -34, 21)));
 
     // Inverse
-    test.assertTrue("Matrix33 inverse 1", M1.inverse() == Matrix33(Vector3(-2, 8, -5), Vector3(3, -11, 7), Vector3(9, -34, 21)));
+    test.assertTrue("Matrix33 inverse 1", M1.getInverse() == Matrix33(Vector3(-2, 8, -5), Vector3(3, -11, 7), Vector3(9, -34, 21)));
 
     /* 
     =======================
@@ -45,7 +45,7 @@ int main() {
     test.assertTrue("Matrix33 adjugate 2", M2.getAdjugate() == Matrix33(Vector3(5, -3, -4), Vector3(-7, -3, 8), Vector3(-1, 3, -4)));
 
     // Inverse
-    test.assertTrue("Matrix33 inverse 2", M2.inverse() == Matrix33(Vector3(-5, 3, 4), Vector3(7, 3, -8), Vector3(1, -3, 4)) / 12);
+    test.assertTrue("Matrix33 inverse 2", M2.getInverse() == Matrix33(Vector3(-5, 3, 4), Vector3(7, 3, -8), Vector3(1, -3, 4)) / 12);
 
     return test.getNumFails();
 }
