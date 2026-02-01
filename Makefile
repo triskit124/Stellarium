@@ -1,7 +1,6 @@
 TARGET = stellarium
 BUILD_DIR = build
 DOCS_DIR = doc
-DOXY_FILE = doxygen
 
 CMAKE_FILES := $(shell find . -path ./$(BUILD_DIR) -prune -o -name "CMakeLists.txt")
 
@@ -13,9 +12,6 @@ j ?= 10
 $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
 
-$(DOCS_DIR):
-	mkdir -p $(DOCS_DIR)
-
 all: $(BUILD_DIR)/CMakeFiles
 	cd $(BUILD_DIR); \
 	cmake --build . -j ${j}
@@ -26,10 +22,11 @@ $(BUILD_DIR)/CMakeFiles: $(BUILD_DIR) $(CMAKE_FILES)
 	cmake ..
 
 clean:
-	rm -rf $(BUILD_DIR) $(DOCS_DIR)
+	rm -rf $(BUILD_DIR) $(DOCS_DIR)/build compile_commands.json
 
-docs: $(DOCS_DIR)
-	doxygen $(DOXY_FILE)
-
+docs: $(BUILD_DIR)/CMakeFiles
+	cd $(BUILD_DIR); \
+	cmake --build . --target docs -j ${j}
+	
 test:
 	test/run_tests.sh

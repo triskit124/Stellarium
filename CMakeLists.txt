@@ -21,8 +21,9 @@ enable_language(C)
 enable_language(CXX)
 
 # Build options
-option(BUILD_RENDERING "Enable building of rendering" ON)
-option(BUILD_TESTS "Enable building of tests" ON)
+option(BUILD_RENDERING "Building rendering" ON)
+option(BUILD_TESTS "Build tests" ON)
+option(BUILD_DOCS "Build documentation" ON)
 
 # Generate a compile_commands.json file for clangd
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -61,6 +62,10 @@ endif()
 if (BUILD_RENDERING)
     add_subdirectory(src/render)
     target_compile_definitions(stellarium PUBLIC STELL_BUILD_RENDERING)
+endif()
+
+if (BUILD_DOCS)
+    add_subdirectory(doc)
 endif()
 
 target_compile_options(
