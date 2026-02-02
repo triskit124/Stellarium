@@ -155,7 +155,7 @@ class Quaternion: public MathBase
 
             // Reference: https://faculty.sites.iastate.edu/jia/files/inline-files/quaternion.pdf
             // Theorem 2:
-            Quaternion p = Quaternion(0.0, v[0], v[1], v[2]);
+            Quaternion p = Quaternion(0.0, v[0], v[1], v[2], false);
             Quaternion pp = *this * p * this->getConjugate();
 
             return Vector3(pp.x, pp.y, pp.z);

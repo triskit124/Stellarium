@@ -137,6 +137,10 @@ class Vector : public MathBase
             return true;
         }
 
+        bool operator!=(const Vector& v) const {
+            return !(*this == v);
+        }
+
         Vector operator-() const {
             return (*this * -1.0);
         }
@@ -174,7 +178,7 @@ class Vector : public MathBase
         /**
         * @brief Returns the size of the vector.
         */
-        static size_t size() { return N; }
+        static constexpr size_t size() { return N; }
 
         /**
         * @brief Prints the values of the vector to stdout.

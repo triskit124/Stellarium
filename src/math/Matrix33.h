@@ -1,10 +1,9 @@
 #pragma once
 
-#include "MathBase.h"
+#include "Matrix.h"
 #include "Vector3.h"
 
 #include <cmath>
-#include <math.h>
 #include <stdexcept>
 
 namespace Stellarium
@@ -13,7 +12,7 @@ namespace Stellarium
 /**
 * @brief A class representing a 3x3 matrix.
 */
-class Matrix33: public MathBase
+class Matrix33 : public Matrix<3, Vector3>
 {
     public:
 
@@ -24,149 +23,24 @@ class Matrix33: public MathBase
         */
 
         /**
-        * @brief Default constructor for the Matrix33 object.
+        * @brief Default constructor for the Matrix33 object (identity matrix).
         */
         Matrix33() = default;
 
         /**
-        * @brief Constructs a Matrix33 object with the given x, y, and z vectors.
+        * @brief Constructs a Matrix33 object with the given row vectors.
         * @param x The 1st row of the matrix.
         * @param y The 2nd row of the matrix.
         * @param z The 3rd row of the matrix.
         */
-        Matrix33(Vector3 x, Vector3 y, Vector3 z) : x(x), y(y), z(z) {};
-
-        /*
-        ====================
-            Data Members
-        ====================
-        */
+        Matrix33(const Vector3& x, const Vector3& y, const Vector3& z)
+            : Matrix<3, Vector3>(std::array<Vector3, 3>{x, y, z}) {}
 
         /**
-        * @brief The 1st row of the matrix.
+        * @brief Converting constructor from base Matrix<3, Vector3>.
+        * @param m The base matrix to convert from.
         */
-        Vector3 x {1.0, 0.0, 0.0};
-
-        /**
-        * @brief The 2nd row of the matrix.
-        */
-        Vector3 y {0.0, 1.0, 0.0};
-
-        /**
-        * @brief The 3rd row of the matrix.
-        */
-        Vector3 z {0.0, 0.0, 1.0};
-
-        /*
-        ===================
-             Operators
-        ===================
-        */
-
-        /**
-        * @brief Operator for left-multiplying a vector by the matrix.
-        * @param v The vector to multiply by.
-        * @return The vector multiplied by the matrix.
-        */
-        Vector3 operator*(Vector3 v) const {
-            return Vector3(
-                x.dot(v),
-                y.dot(v),
-                z.dot(v)
-            );
-        };
-
-        /**
-        * @brief Operator for element-wise multiplying the matrix by a scalar.
-        * @param c The scalar to multiply by.
-        * @return The matrix multiplied element-wise by the scalar.
-        */
-        Matrix33 operator*(double c) const {
-            return Matrix33(
-                x * c,
-                y * c,
-                z * c
-            );
-        };
-
-        /**
-        * @brief Operator for element-wise dividing the matrix by a scalar.
-        * @param c The scalar to divide by.
-        * @return The matrix divided element-wise by the scalar.
-        */
-        Matrix33 operator/(double c) const {
-            return Matrix33(
-                x / c,
-                y / c,
-                z / c
-            );
-        };
-
-        /**
-        * @brief Operator for multiplying this matrix by another matrix.
-        * @param m The matrix to left-multiply by the current matrix.
-        * @return The resulting matrix.
-        */
-        Matrix33 operator*(Matrix33 m) const {
-            // TODO: check this
-            Matrix33 mat = m.getTranspose();
-            return Matrix33(
-                { x.dot(mat[0]), x.dot(mat[1]), x.dot(mat[2]) },
-                { y.dot(mat[0]), y.dot(mat[1]), y.dot(mat[2]) },
-                { z.dot(mat[0]), z.dot(mat[1]), z.dot(mat[2]) }
-            );
-        };
-
-        /**
-        * @brief Operator for accessing the 1st, 2nd, and 3rd rows of the matrix.
-        * @param idx The index of the row to access.
-        * @return The row at the given index.
-        */
-        Vector3 operator[](int idx) const {
-            if (idx == 0)
-            {
-                return x;
-            }
-            if (idx == 1)
-            {
-                return y;
-            }
-            if (idx == 2)
-            {
-                return z;
-            }
-            throw std::invalid_argument("invalid index");
-        }
-
-        /**
-        * @brief Operator for accessing the 1st, 2nd, and 3rd rows of the matrix.
-        * @param idx The index of the row to access.
-        * @return The row at the given index.
-        */
-        Vector3& operator[](int idx) {
-            if (idx == 0)
-            {
-                return x;
-            }
-            if (idx == 1)
-            {
-                return y;
-            }
-            if (idx == 2)
-            {
-                return z;
-            }
-            throw std::invalid_argument("invalid index");
-        }
-
-        /**
-        * @brief Operator testing equality of two matrices.
-        * @param m The matrix to compare to.
-        * @return True if the matrices are equal, false otherwise.
-        */
-        bool operator==(const Matrix33& m) const {
-            return x == m[0] && y == m[1] && z == m[2];
-        };
+        Matrix33(const Matrix<3, Vector3>& m) : Matrix<3, Vector3>(m) {}
 
         /*
         ===================
@@ -179,22 +53,10 @@ class Matrix33: public MathBase
         * @return The determinant of the matrix.
         */
         double getDeterminant() const {
-            return x[0]*(y[1]*z[2] - y[2]*z[1])
-                   - x[1]*(y[0]*z[2] - y[2]*z[0])
-                   + x[2]*(y[0]*z[1] - y[1]*z[0]);
-        };
-
-        /**
-        * @brief Computes the transpose of the matrix.
-        * @return The transpose of the matrix.
-        */
-        Matrix33 getTranspose() const {
-            return Matrix33(
-                Vector3(x[0], y[0], z[0]),
-                Vector3(x[1], y[1], z[1]),
-                Vector3(x[2], y[2], z[2])
-            );
-        };
+            return _rows[0][0]*(_rows[1][1]*_rows[2][2] - _rows[1][2]*_rows[2][1])
+                   - _rows[0][1]*(_rows[1][0]*_rows[2][2] - _rows[1][2]*_rows[2][0])
+                   + _rows[0][2]*(_rows[1][0]*_rows[2][1] - _rows[1][1]*_rows[2][0]);
+        }
 
         /**
         * @brief Computes the adjugate of the matrix.
@@ -203,55 +65,43 @@ class Matrix33: public MathBase
         Matrix33 getAdjugate() const {
             return Matrix33(
                 Vector3(
-                    ((y[1] * z[2]) - (z[1] * y[2])),
-                    -((x[1] * z[2]) - (z[1] * x[2])),
-                    ((x[1] * y[2]) - (y[1] * x[2]))
+                    ((_rows[1][1] * _rows[2][2]) - (_rows[2][1] * _rows[1][2])),
+                    -((_rows[0][1] * _rows[2][2]) - (_rows[2][1] * _rows[0][2])),
+                    ((_rows[0][1] * _rows[1][2]) - (_rows[1][1] * _rows[0][2]))
                 ),
                 Vector3(
-                    -((y[0] * z[2]) - (z[0] * y[2])),
-                    ((x[0] * z[2]) - (z[0] * x[2])),
-                    -((x[0] * y[2]) - (y[0] * x[2]))
+                    -((_rows[1][0] * _rows[2][2]) - (_rows[2][0] * _rows[1][2])),
+                    ((_rows[0][0] * _rows[2][2]) - (_rows[2][0] * _rows[0][2])),
+                    -((_rows[0][0] * _rows[1][2]) - (_rows[1][0] * _rows[0][2]))
                 ),
                 Vector3(
-                    ((y[0] * z[1]) - (z[0] * y[1])),
-                    -((x[0] * z[1]) - (z[0] * x[1])),
-                    ((x[0] * y[1]) - (y[0] * x[1]))
+                    ((_rows[1][0] * _rows[2][1]) - (_rows[2][0] * _rows[1][1])),
+                    -((_rows[0][0] * _rows[2][1]) - (_rows[2][0] * _rows[0][1])),
+                    ((_rows[0][0] * _rows[1][1]) - (_rows[1][0] * _rows[0][1]))
                 )
             );
-        };
+        }
 
         /**
         * @brief Computes the inverse of the matrix.
         * @return The inverse of the matrix.
         */
         Matrix33 getInverse() const {
+            // TODO: implement an efficient method that works for any sized matrix
             if (std::abs(getDeterminant()) <= _epsilon)
             {
                 throw std::invalid_argument("Matrix is singular and cannot be inverted.");
             }
             return getAdjugate() / getDeterminant();
-        };
+        }
 
         /**
-        * @brief Prints the matrix to stdout.
+        * @brief Checks if the matrix is positive definite.
+        * @return True if the matrix is positive definite, false otherwise.
         */
-        void print() const {
-            x.print();
-            y.print();
-            z.print();
-        };
-
-        bool isSymmetric() const {
-            return *this == this->getTranspose();
-        }
-
-        bool isOrthogonal() const {
-            return *this * this->getTranspose() == Matrix33();
-        }
-
         bool isPositiveDefinite() const {
-            double det11 = x[0];
-            double det22 = x[0]*y[1] - x[1]*y[0];
+            double det11 = _rows[0][0];
+            double det22 = _rows[0][0]*_rows[1][1] - _rows[0][1]*_rows[1][0];
             double det33 = this->getDeterminant();
 
             return (det11 > 0) && (det22 > 0) && (det33 > 0);
@@ -259,27 +109,4 @@ class Matrix33: public MathBase
 
 };
 
-/**
-* @brief Global operator for element-wise multiplying a matrix by a scalar on the lefthand side.
-* @param c The scalar to multiply by.
-* @param m The matrix to multiply by.
-* @return The matrix multiplied element-wise by the scalar.
-*/
-inline Matrix33 operator*(double c, const Matrix33& m)
-{
-    return m*c;
-};
-
-/**
-* @brief Global operator for element-wise dividing a matrix by a scalar on the lefthand side.
-* @param c The scalar to divide by.
-* @param m The matrix to divide.
-* @return The matrix divided element-wise by the scalar.
-*/
-inline Matrix33 operator/(double c, const Matrix33& m)
-{
-    return m/c;
-};
-
-
-} // end namespace Stellarium
+} // namespace Stellarium

@@ -2,7 +2,7 @@
 
 #include "Vector3.h"
 #include "Quaternion.h"
-#include "Matrix44.h"
+#include "HomTransform.h"
 
 namespace Stellarium
 {
@@ -99,14 +99,14 @@ class Frame
         * @brief Get the pose of the frame with respect to its parent.
         * @return The pose of the frame with respect to its parent.
         */
-        Matrix44 getPose() const { return Matrix44(_att, _pos); };
+        HomTransform getPose() const { return HomTransform(_att, _pos); };
 
         /**
         * @brief Returns a transformation matrix from this frame to a target frame.
         * @param target The target frame.
         * @return The transformation matrix from this frame to the target frame.
         */
-        Matrix44 getTransformTo(const Frame& target) const { return getPose().getInverseTransform() * target.getPose(); };
+        HomTransform getTransformTo(const Frame& target) const { return getPose().getInverse() * target.getPose(); };
 
     protected:
 

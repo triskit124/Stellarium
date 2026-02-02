@@ -19,12 +19,17 @@ class Vector3 : public Vector<3>
         */
 
         /**
+        * @brief Default constructor - initializes to zero vector.
+        */
+        Vector3() = default;
+
+        /**
         * @brief Constructs a Vector3 object with the given x, y, and z values.
         * @param x The x value of the vector.
         * @param y The y value of the vector.
         * @param z The z value of the vector.
         */
-        Vector3(double x = 0, double y = 0, double z = 0) : Vector<3>({x, y, z}) { }
+        Vector3(double x, double y, double z) : Vector<3>({x, y, z}) { }
 
         /**
         * @brief Converting constructor from base Vector<3>.

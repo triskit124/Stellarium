@@ -57,21 +57,21 @@ class RotationMatrix: public Matrix33
 
             double roll, pitch, yaw = 0.0;
 
-            if (abs( z[0] - 1) <= _epsilon)
+            if (abs((*this)[2][0] - 1) <= _epsilon)
             {
                 pitch = -M_PI_2;
-                roll = -yaw + atan2(-x[1], -x[2]);
+                roll = -yaw + atan2(-(*this)[0][1], -(*this)[0][2]);
             }
-            else if (std::abs( z[0] + 1) <= _epsilon)
+            else if (std::abs((*this)[2][0] + 1) <= _epsilon)
             {
                 pitch = M_PI_2;
-                roll = yaw + atan2( x[1],  x[2]);
+                roll = yaw + atan2((*this)[0][1], (*this)[0][2]);
             }
             else
             {
-                pitch = -asin( z[0]);
-                roll = atan2( z[1] / cos(pitch),  z[2] / cos(pitch));
-                yaw = atan2( y[0] / cos(pitch),  x[0] / cos(pitch));
+                pitch = -asin((*this)[2][0]);
+                roll = atan2((*this)[2][1] / cos(pitch), (*this)[2][2] / cos(pitch));
+                yaw = atan2((*this)[1][0] / cos(pitch), (*this)[0][0] / cos(pitch));
             }
 
             return Vector3(roll, pitch, yaw);

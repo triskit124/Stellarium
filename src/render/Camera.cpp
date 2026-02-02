@@ -1,4 +1,5 @@
 #include "Camera.h"
+#include "Matrix44.h"
 #include "Quaternion.h"
 #include "Vector4.h"
 
@@ -22,7 +23,7 @@ Matrix44 Camera::getProjectionMatrix()
 
 Matrix44 Camera::getViewMatrix()
 {
-    return Matrix44(_att, _pos).getInverseTransform();
+    return getPose().getInverse().toMatrix();
 }
 
 void Camera::processKeyboardInput(Camera_Movement direction, double delta_time)

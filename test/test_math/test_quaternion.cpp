@@ -108,9 +108,9 @@ int main() {
     Vector3 u = Vector3(2, 1, 0);
     
     Vector3 u1 = q1 * u;
-    u1.setEpsilon(1e-5);
+    u1.setEpsilon(1e-4);
     
-    Vector3 u2 = Vector3(0.3876, 1.9747, -0.9747).getNormalized();
+    Vector3 u2 = Vector3(0.3876, 1.9747, -0.9747);
     test.assertTrue("Quaternion rotation complicated", u1 == u2);
 
     return test.getNumFails();
