@@ -15,7 +15,7 @@ class InertiaMatrix : public Matrix33
         /**
          * @brief Default constructor for the InertiaMatrix object.
          */
-        InertiaMatrix() : Matrix33() { } // no need to validate identity matrix
+        InertiaMatrix() = default;
 
         /**
          * @brief Constructs an InertiaMatrix object with the given x, y, and z vectors.
@@ -23,7 +23,7 @@ class InertiaMatrix : public Matrix33
          * @param y The 2nd row of the matrix.
          * @param z The 3rd row of the matrix.
          */
-        InertiaMatrix(Vector3 x, Vector3 y, Vector3 z) : Matrix33(x, y, z) {
+        InertiaMatrix(const Vector3& x, const Vector3& y, const Vector3& z) : Matrix33(x, y, z) {
             validate();
         }
 

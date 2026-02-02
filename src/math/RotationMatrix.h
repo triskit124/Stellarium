@@ -33,7 +33,7 @@ class RotationMatrix: public Matrix33
         * @param y The 2nd row of the matrix.
         * @param z The 3rd row of the matrix.
         */
-        RotationMatrix(Vector3 x, Vector3 y, Vector3 z) : Matrix33(x, y, z) { 
+        RotationMatrix(const Vector3& x, const Vector3& y, const Vector3& z) : Matrix33(x, y, z) { 
             validate();
         };
 
@@ -80,10 +80,10 @@ class RotationMatrix: public Matrix33
         private:
 
             void validate() const {
-                if ( abs(getDeterminant() - 1.0) > _epsilon ) {
+                if (abs(getDeterminant() - 1.0) > _epsilon ) {
                     throw std::invalid_argument("Rotation matrix must have a determinant of +1. Got: " + std::to_string(getDeterminant()));
                 }
-                if ( !isOrthogonal() ) {
+                if (!isOrthogonal()) {
                     throw std::invalid_argument("Rotation matrix must be orthogonal.");
                 }
             }
