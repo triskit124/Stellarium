@@ -11,8 +11,8 @@ namespace Stellarium
 {
 
 /**
-* @brief A class representing an NxN matrix.
-* @tparam N The dimension of the square matrix.
+* @brief A class representing an NxM matrix.
+* @tparam N The number of rows of the matrix.
 * @tparam VecType The vector type used for rows (defaults to Vector<N>).
 */
 template <size_t N, typename VecType = Vector<N>>
@@ -68,6 +68,7 @@ class Matrix : public MathBase
         /**
         * @brief Scalar division.
         * @param c The scalar to divide by.
+        * @throws std::invalid_argument if c is less than epsilon.
         * @return The matrix divided element-wise by the scalar.
         */
         Matrix operator/(double c) const {
@@ -113,6 +114,7 @@ class Matrix : public MathBase
         /**
         * @brief Row access (const).
         * @param idx The index of the row to access.
+        * @throws std::invalid_argument if idx >= N
         * @return The row at the given index.
         */
         const VecType& operator[](size_t idx) const {
@@ -125,6 +127,7 @@ class Matrix : public MathBase
         /**
         * @brief Row access (non-const).
         * @param idx The index of the row to access.
+        * @throws std::invalid_argument if idx >= N
         * @return Reference to the row at the given index.
         */
         VecType& operator[](size_t idx) {

@@ -11,12 +11,20 @@ namespace Stellarium
     {
         public:
 
+            /**
+            * @brief Default constructor.
+            */
             MathBase() = default;
+
+            /**
+            * @brief Default destructor.
+            */
             virtual ~MathBase() = default;
 
             /**
             * @brief Sets the epsilon value for floating point comparisons.
-            * @param e The new epsilon value.
+            * @param e The new epsilon value. Must be non-negative.
+            * @throws std::invalid_argument if e is negative.
             */
             void setEpsilon(double e) {
                 if (e < 0.0) {

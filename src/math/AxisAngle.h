@@ -20,16 +20,21 @@ class AxisAngle: public MathBase
         */
 
         /**
-        * @brief Default constructor for the AxisAngle object.
+        * @brief Default constructor
         */
         AxisAngle() = default;
+
+        /**
+        * @brief Default destructor
+        */
+        ~AxisAngle() = default;
 
         /**
         * @brief Constructs an AxisAngle object with the given axis and angle.
         * @param axis The axis of rotation.
         * @param angle The angle of rotation in radians.
         */
-        AxisAngle(Vector3 axis, double angle) {
+        AxisAngle(const Vector3& axis, double angle) {
             this->setAxis(axis);
             this->setAngle(angle);
         };
@@ -90,7 +95,7 @@ class AxisAngle: public MathBase
         /**
         * @brief The angle of rotation in radians.
         */
-        double _angle = 0.0;
+        double _angle { 0.0 };
 
 };
 

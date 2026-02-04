@@ -9,8 +9,6 @@ namespace Stellarium
 
 /**
 * @brief A class representing a rigid body transformation using quaternion and vector storage.
-*
-* This is a compact representation storing rotation as a Quaternion and translation as a Vector3.
 */
 class HomTransform
 {
@@ -28,7 +26,12 @@ class HomTransform
         HomTransform() = default;
 
         /**
-        * @brief Constructs from a quaternion rotation and translation vector.
+        * @brief Default destructor
+        */
+        ~HomTransform() = default;
+
+        /**
+        * @brief Constructs from a quaternion and translation vector.
         * @param rotation The rotation quaternion.
         * @param translation The translation vector.
         */
@@ -48,11 +51,6 @@ class HomTransform
         */
         explicit HomTransform(const Vector3& translation)
             : _rotation(Quaternion(1.0, 0.0, 0.0, 0.0)), _translation(translation) {}
-
-        /** 
-        * @brief Default destructor.
-        */
-        virtual ~HomTransform() = default;
 
         /*
         ===================
@@ -94,7 +92,7 @@ class HomTransform
         void setTranslation(const Vector3& translation) { _translation = translation; }
 
         /**
-        * @brief Transforms a Vector3 by this transformation.
+        * @brief Transforms a Vector3 by this transformation. Order of operations is rotation followed by translation.
         * @param v The vector to transform.
         * @return The transformed vector (rotation * v + translation).
         */
@@ -123,6 +121,10 @@ class HomTransform
             );
         }
 
+        /**
+        * @brief Returns a 4x4 homogeneous transform matrix equivalent to this transform.
+        * @return A 4x4 homogeneous transform matrix.
+        */
         Matrix44 toMatrix() const {
             RotationMatrix rotMat = _rotation.getRotationMatrix();
             Matrix44 mat;
@@ -135,8 +137,8 @@ class HomTransform
 
     private:
 
-        Quaternion _rotation { 1.0, 0.0, 0.0, 0.0 };
-        Vector3 _translation { 0.0, 0.0, 0.0 };
+        Quaternion _rotation { 1.0, 0.0, 0.0, 0.0 }; // The quaternion portion of the transform
+        Vector3 _translation { 0.0, 0.0, 0.0 }; // The translation portion of the transform
 
 };
 

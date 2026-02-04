@@ -277,7 +277,7 @@ class Quaternion: public MathBase
         * @brief Checks if the quaternion is the identity quaternion.
         * @return Whether the quaternion is the identity quaternion.
         */
-        bool isIdentity() const { return *this == Quaternion(1.0, 0.0, 0.0, 0.0); };
+        bool isIdentity() const { return *this == Quaternion(); };
 
         /**
         * @brief Returns the conjugate of the quaternion.

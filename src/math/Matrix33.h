@@ -23,9 +23,14 @@ class Matrix33 : public Matrix<3, Vector3>
         */
 
         /**
-        * @brief Default constructor for the Matrix33 object (identity matrix).
+        * @brief Default constructor (identity matrix).
         */
         Matrix33() = default;
+
+        /**
+        * @brief Default destructor.
+        */
+        ~Matrix33() = default;
 
         /**
         * @brief Constructs a Matrix33 object with the given row vectors.
@@ -34,13 +39,13 @@ class Matrix33 : public Matrix<3, Vector3>
         * @param z The 3rd row of the matrix.
         */
         Matrix33(const Vector3& x, const Vector3& y, const Vector3& z)
-            : Matrix<3, Vector3>(std::array<Vector3, 3>{x, y, z}) {}
+            : Matrix(std::array<Vector3, 3>{x, y, z}) {}
 
         /**
         * @brief Converting constructor from base Matrix<3, Vector3>.
         * @param m The base matrix to convert from.
         */
-        Matrix33(const Matrix<3, Vector3>& m) : Matrix<3, Vector3>(m) {}
+        Matrix33(const Matrix<3, Vector3>& m) : Matrix(m) {}
 
         /*
         ===================
