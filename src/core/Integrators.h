@@ -27,7 +27,7 @@ class Integrator
         * @brief Default constructor.
         * @param dt The integration step size.
         */
-        Integrator(const double dt = 1.0) {
+        explicit Integrator(const double dt = 1.0) {
             if (dt <= STELL_EPSILON)
             {
                 throw std::invalid_argument("dt must be positive.");
@@ -87,7 +87,7 @@ class RK4 : public Integrator
         /**
         * @brief Default constructor.
         */
-        RK4(const double dt = 1.0) : Integrator(dt) {};
+        explicit RK4(const double dt = 1.0) : Integrator(dt) {};
 
         /**
         * @brief Integrates the state of the system.

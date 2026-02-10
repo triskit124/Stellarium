@@ -43,7 +43,7 @@ class AxisAngle: public MathBase
         * brief Constructs an AxisAngle object based on a quaternion.
         * @param q The quaternion to convert to an axis-angle representation.
         */
-        AxisAngle(const Quaternion& q) {
+        explicit AxisAngle(const Quaternion& q) {
             Quaternion qq = q.getNormalized();
             _angle = 2 * std::acos(qq[0]);
             double s = std::sqrt(1 - pow(qq[0], 2));

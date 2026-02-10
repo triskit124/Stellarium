@@ -31,7 +31,7 @@ class InertiaMatrix : public Matrix33
          * @brief Converting constructor from a Matrix33.
          * @param m The Matrix33 object.
          */
-        InertiaMatrix(const Matrix33& m) : Matrix33(m) {
+        explicit InertiaMatrix(const Matrix33& m) : Matrix33(m) {
             validate();
         }
 

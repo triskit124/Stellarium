@@ -20,7 +20,7 @@ class Camera : public Frame
             RIGHT
         };
 
-        Camera(const std::string& name, const Vector3& pos = Vector3(0, 0, 0), const Quaternion& att = Quaternion(1, 0, 0, 0), double movement_speed = 2.5, double mouse_sensitivity = 0.001, unsigned int width = 1920, unsigned int height = 1080) : Frame(name, pos, att) {
+        explicit Camera(const std::string& name, const Vector3& pos = Vector3(0, 0, 0), const Quaternion& att = Quaternion(1, 0, 0, 0), double movement_speed = 2.5, double mouse_sensitivity = 0.001, unsigned int width = 1920, unsigned int height = 1080) : Frame(name, pos, att) {
             setMovementSpeed(movement_speed);
             setMouseSensitivity(mouse_sensitivity);
             setScreenWidth(width);

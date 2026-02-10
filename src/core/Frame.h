@@ -27,7 +27,7 @@ class Frame
         * @param pos The position of the frame.
         * @param att The attitude of the frame.
         */
-        Frame(const std::string& name, const Vector3& pos = Vector3(), const Quaternion& att = Quaternion()) : _name(name), _pos(pos), _att(att) {};
+        explicit Frame(const std::string& name, const Vector3& pos = Vector3(), const Quaternion& att = Quaternion()) : _name(name), _pos(pos), _att(att) {};
 
         /*
         ===================

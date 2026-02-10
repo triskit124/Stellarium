@@ -26,7 +26,7 @@ class StellariumSimulation
         /**
          * @brief Constructs a StellariumSimulation object.
          */
-        StellariumSimulation(bool graphics = false) {
+        explicit StellariumSimulation(bool graphics = false) {
             if (graphics) {
 #ifdef STELL_BUILD_RENDERING
                 _graphics = std::make_unique<GraphicsEngine>();
