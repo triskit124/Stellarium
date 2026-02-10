@@ -45,9 +45,9 @@ int main() {
     test.assertTrue("cross product identity", v1.cross(v2) == -v2.cross(v1));
     test.assertTrue("cross product zero 1", v1.cross(v1) == Vector3(0, 0, 0));
     test.assertTrue("cross product zero 2", v2.cross(v2) == Vector3(0, 0, 0));
-    test.assertTrue("norm 1", v1.norm() == sqrt(14));
-    test.assertTrue("norm 2", v2.norm() == sqrt(77));
-    test.assertTrue("norm 3", v3.norm() == sqrt(194));
+    test.assertTrue("norm 1", v1.getNorm() == sqrt(14));
+    test.assertTrue("norm 2", v2.getNorm() == sqrt(77));
+    test.assertTrue("norm 3", v3.getNorm() == sqrt(194));
     
     v1.normalize();
     v2.normalize();

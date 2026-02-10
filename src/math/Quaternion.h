@@ -4,14 +4,16 @@
 
 #include "RotationMatrix.h"
 #include "Vector3.h"
+#include "Vector4.h"
 
 namespace Stellarium
 {
 
 /**
 * @brief A class representing a quaternion.
+* Stored as a Vector4(w, x, y, z) where w is the scalar component and (x, y, z) is the vector component.
 */
-class Quaternion: public MathBase
+class Quaternion: public Vector4
 {
     public:
 
@@ -22,9 +24,9 @@ class Quaternion: public MathBase
         */
 
         /**
-        * @brief Default constructor for the Quaternion object.
+        * @brief Default constructor for the Quaternion object. Initializes to identity (1, 0, 0, 0).
         */
-        Quaternion() = default;
+        Quaternion() : Vector4(1.0, 0.0, 0.0, 0.0) {}
 
         /**
         * @brief Constructs a Quaternion object with the given w, x, y, and z values.
@@ -34,16 +36,36 @@ class Quaternion: public MathBase
         * @param z The 3rd vector component the quaternion.
         * @param normalize Whether to normalize the quaternion.
         */
-        Quaternion(double w, double x, double y, double z, bool normalize = true) {
-            this->w = w;
-            this->x = x;
-            this->y = y;
-            this->z = z;
+        Quaternion(double w, double x, double y, double z, bool normalize = true) : Vector4(w, x, y, z) {
             if (normalize)
             {
                 this->normalize();
             }
         };
+
+        /**
+        * @brief Converting constructor from base Vector4.
+        * @param v The Vector4 to convert from.
+        * @param normalize Whether to normalize the quaternion.
+        */
+        explicit Quaternion(const Vector4& v, bool normalize = true) : Vector4(v) {
+            if (normalize)
+            {
+                this->normalize();
+            }
+        }
+
+        /**
+        * @brief Converting constructor from base Vector<4>.
+        * @param v The Vector<4> to convert from.
+        * @param normalize Whether to normalize the quaternion.
+        */
+        explicit Quaternion(const Vector<4>& v, bool normalize = true) : Vector4(v) {
+            if (normalize)
+            {
+                this->normalize();
+            }
+        }
 
         /**
         * @brief Constructs a Quaternion based on an axis-angle rotation.
@@ -53,10 +75,10 @@ class Quaternion: public MathBase
         Quaternion(const Vector3& axis, double angle) {
             Vector3 ax = axis.getNormalized();
             double s = std::sin(angle/2);
-            this->w = std::cos(angle/2);
-            this->x = ax[0]*s;
-            this->y = ax[1]*s;
-            this->z = ax[2]*s;
+            (*this)[0] = std::cos(angle/2);
+            (*this)[1] = ax[0]*s;
+            (*this)[2] = ax[1]*s;
+            (*this)[3] = ax[2]*s;
             this->normalize();
         };
 
@@ -72,38 +94,14 @@ class Quaternion: public MathBase
             Quaternion q_pitch = Quaternion(Vector3(0, 1, 0), pitch);
             Quaternion qyaw = Quaternion(Vector3(0, 0, 1), yaw);
             Quaternion q = qyaw * q_pitch * q_roll;
-            this->w = q.w;
-            this->x = q.x;
-            this->y = q.y;
-            this->z = q.z;
+            (*this)[0] = q[0];
+            (*this)[1] = q[1];
+            (*this)[2] = q[2];
+            (*this)[3] = q[3];
             this->normalize();
         };
 
-        /*
-        ====================
-            Data Members
-        ====================
-        */
 
-        /**
-        * @brief The scalar component of the quaternion.
-        */
-        double w = 1.0;
-
-        /**
-        * @brief The 1st vector component of the quaternion.
-        */
-        double x = 0.0;
-
-        /**
-        * @brief The 2nd vector component of the quaternion.
-        */
-        double y = 0.0;
-
-        /**
-        * @brief The 3rd vector component of the quaternion.
-        */
-        double z = 0.0;
 
         /*
         ===================
@@ -111,32 +109,27 @@ class Quaternion: public MathBase
         ===================
         */
 
-        Quaternion operator*(double c) const { return Quaternion(w*c, x*c, y*c, z*c, false); };
-        Quaternion operator/(double c) const { return Quaternion(w/c, x/c, y/c, z/c, false); };
+        Quaternion operator*(double c) const { return Quaternion(Vector4::operator*(c), false); };
+        Quaternion operator/(double c) const { return Quaternion(Vector4::operator/(c), false); };
 
         bool operator==(const Quaternion& q) const {
-            return std::abs(w - q.w) <= _epsilon
-                    && std::abs(x - q.x) <= _epsilon
-                    && std::abs(y - q.y) <= _epsilon
-                    && std::abs(z - q.z) <= _epsilon;
+            return Vector4::operator==(q);
         };
 
         bool operator==(double c) const {
-            return std::abs(w - c) <= _epsilon
-                    && std::abs(x) <= _epsilon
-                    && std::abs(y) <= _epsilon
-                    && std::abs(z) <= _epsilon;
+            return std::abs(getScalarTerm() - c) <= _epsilon && getVectorTerm().getNorm() <= _epsilon;
         };
 
-        // Hamiltom product
+        // Hamilton product
         Quaternion operator*(const Quaternion& q) const {
-            bool normalize = this->isUnit() && q.isUnit();
+            bool do_normalize = this->isUnit() && q.isUnit();
+            double w = (*this)[0], x = (*this)[1], y = (*this)[2], z = (*this)[3];
             return Quaternion(
-                w*q.w - x*q.x - y*q.y - z*q.z,
-                w*q.x + x*q.w + y*q.z - z*q.y,
-                w*q.y - x*q.z + y*q.w + z*q.x,
-                w*q.z + x*q.y - y*q.x + z*q.w,
-                normalize
+                w*q[0] - x*q[1] - y*q[2] - z*q[3],
+                w*q[1] + x*q[0] + y*q[3] - z*q[2],
+                w*q[2] - x*q[3] + y*q[0] + z*q[1],
+                w*q[3] + x*q[2] - y*q[1] + z*q[0],
+                do_normalize
             );
         }
 
@@ -151,98 +144,24 @@ class Quaternion: public MathBase
                 return v;
             }
 
-            assert(isUnit());
+            if (!isUnit())
+            {
+                throw std::runtime_error("Quaternion must be a unit quaternion to rotate a vector.");
+            }
 
             // Reference: https://faculty.sites.iastate.edu/jia/files/inline-files/quaternion.pdf
             // Theorem 2:
             Quaternion p = Quaternion(0.0, v[0], v[1], v[2], false);
             Quaternion pp = *this * p * this->getConjugate();
 
-            return Vector3(pp.x, pp.y, pp.z);
+            return pp.getVectorTerm();
         };
-
-        /**
-        * @brief Operator for accessing the w, x, y, and z values of the quaternion.
-        * @param idx The index of the value to access.
-        * @return The value at the given index.
-        */
-        double operator[](int idx) const {
-            if (idx == 0)
-            {
-                return w;
-            }
-            if (idx == 1)
-            {
-                return x;
-            }
-            if (idx == 2)
-            {
-                return y;
-            }
-            if (idx == 3)
-            {
-                return z;
-            }
-            throw std::invalid_argument("invalid index");
-        }
-
-        /**
-        * @brief Operator for accessing the w, x, y, and z values of the quaternion.
-        * @param idx The index of the value to access.
-        * @return The value at the given index.
-        */
-        double& operator[](int idx) {
-            if (idx == 0)
-            {
-                return w;
-            }
-            if (idx == 1)
-            {
-                return x;
-            }
-            if (idx == 2)
-            {
-                return y;
-            }
-            if (idx == 3)
-            {
-                return z;
-            }
-            throw std::invalid_argument("invalid index");
-        }
 
         /*
         ===================
               Methods
         ===================
         */
-
-        /**
-        * @brief Normalizes the quaternion.
-        */
-        void normalize() {
-            if (!isUnit())
-            {
-                double n = getNorm();
-                if (n > _epsilon)
-                {
-                    this->w /= n;
-                    this->x /= n;
-                    this->y /= n;
-                    this->z /= n;
-                }
-            }
-        }
-
-        /**
-        * @brief Returns a copy of this quaternion that is normalized. Does not modify the existing quaternion.
-        * @return The normalized quaternion.
-        */
-        Quaternion getNormalized() const {
-            Quaternion q = *this;
-            q.normalize();
-            return q;
-        }
 
         /**
         * @brief Gets the rotation matrix representation of the quaternion.
@@ -253,12 +172,20 @@ class Quaternion: public MathBase
 
             // See: https://www.mathworks.com/help/nav/ref/quaternion.rotmat.html
 
-            assert(isUnit());
+            if (isIdentity())
+            {
+                return RotationMatrix();
+            }
 
-            double a = this->w;
-            double b = this->x;
-            double c = this->y;
-            double d = this->z;
+            if (!isUnit())
+            {
+                throw std::runtime_error("Quaternion must be a unit quaternion to get a rotation matrix.");
+            }
+
+            double a = (*this)[0];
+            double b = (*this)[1];
+            double c = (*this)[2];
+            double d = (*this)[3];
 
             return RotationMatrix(
                 Vector3(2*a*a - 1 + 2*b*b, 2*b*c - 2*a*d, 2*b*d + 2*a*c),
@@ -266,12 +193,6 @@ class Quaternion: public MathBase
                 Vector3(2*b*d - 2*a*c, 2*c*d + 2*a*b, 2*a*a - 1 + 2*d*d)
             );
         }
-
-        /**
-        * @brief Checks if the quaternion is a unit quaternion.
-        * @return Whether the quaternion is a unit quaternion.
-        */
-        bool isUnit() const { return std::abs(getNorm() - 1.0) <= _epsilon; };
 
         /**
         * @brief Checks if the quaternion is the identity quaternion.
@@ -283,7 +204,7 @@ class Quaternion: public MathBase
         * @brief Returns the conjugate of the quaternion.
         * @return The conjugate of the quaternion.
         */
-        Quaternion getConjugate() const { return Quaternion(w, -x, -y, -z, false); };
+        Quaternion getConjugate() const { return Quaternion((*this)[0], -(*this)[1], -(*this)[2], -(*this)[3], false); };
 
         /**
         * @brief Returns the inverse of the quaternion.
@@ -292,19 +213,28 @@ class Quaternion: public MathBase
         Quaternion getInverse() const { return getConjugate() / pow(getNorm(), 2); };
 
         /**
-        * @brief Returns the norm of the quaternion.
-        * @return The norm of the quaternion.
+        * @brief Returns the Roll-Pitch-Yaw Euler angle sequence for the rotation encoded by the quaternion.
+        * @return The Roll-Pitch-Yaw Euler angle sequence.
         */
-        double getNorm() const { return std::sqrt(pow(w, 2) + pow(x, 2) + pow(y, 2) + pow(z, 2)); };
-
         Vector3 getRollPitchYaw() const { return this->getRotationMatrix().getRollPitchYaw(); };
 
         /**
-        * @brief Prints the w, x, y, and z values of the quaternion to stdout.
+        * @brief Returns the scalar portion (w) of the quaternion.
+        * @return The scalar portion of the quaternion.
         */
-        void print(const std::string& s) const {
-            std::cout << "s: " << s << "w: " << w << " x: " << x << " y: " << y << " z: " << z << std::endl;
-        }
+        double getScalarTerm() const { return (*this)[0]; };
+
+        /**
+        * @brief Returns the vector portion (x, y, z) of the quaternion.
+        * @return The vector portion of the quaternion.
+        */
+        Vector3 getVectorTerm() const { return Vector3((*this)[1], (*this)[2], (*this)[3]); };
+
+        /**
+        * @brief Returns a normalized copy of the quaternion
+        * @return The normalized quaternion.
+        */
+        Quaternion getNormalized() const { return Quaternion(Vector4::getNormalized(), false); };
 
 };
 

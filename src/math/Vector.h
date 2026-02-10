@@ -208,7 +208,7 @@ class Vector : public MathBase
         /**
         * @brief Returns the norm of the vector.
         */
-        double norm() const {
+        double getNorm() const {
             return std::sqrt(this->dot(*this));
         }
 
@@ -216,7 +216,7 @@ class Vector : public MathBase
         * @brief Normalizes the vector in place.
         */
         void normalize() {
-            double n = norm();
+            double n = getNorm();
             if (!isUnit() && n > _epsilon) {
                 *this /= n;
             }
@@ -237,7 +237,7 @@ class Vector : public MathBase
         * @return Whether the vector is a unit vector.
         */
         bool isUnit() const {
-            return std::abs(norm() - 1.0) <= _epsilon;
+            return std::abs(getNorm() - 1.0) <= _epsilon;
         }
 
         protected:
