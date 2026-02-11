@@ -39,7 +39,7 @@ void Camera::processKeyboardInput(Camera_Movement direction, double delta_time)
         _pos += _att * Vector3(1, 0, 0) * velocity; // X points right in camera frame
 }
 
-void Camera::processMouseMovement(double x_offset, double y_offset, bool /* constrain_pitch = true */)
+void Camera::processMouseMovement(double x_offset, double y_offset)
 {
     x_offset *= _mouse_sensitivity;
     y_offset *= _mouse_sensitivity;
