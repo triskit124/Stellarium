@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Matrix.h"
+#include "SquareMatrix.h"
 #include "Vector3.h"
 
 #include <cmath>
@@ -12,7 +12,7 @@ namespace Stellarium
 /**
 * @brief A class representing a 3x3 matrix.
 */
-class Matrix33 : public Matrix<3, Vector3>
+class Matrix33 : public SquareMatrix<3>
 {
     public:
 
@@ -39,13 +39,19 @@ class Matrix33 : public Matrix<3, Vector3>
         * @param z The 3rd row of the matrix.
         */
         Matrix33(const Vector3& x, const Vector3& y, const Vector3& z)
-            : Matrix(std::array<Vector3, 3>{x, y, z}) {}
+            : SquareMatrix(std::array<Vector<3>, 3>{x, y, z}) {}
 
         /**
-        * @brief Converting constructor from base Matrix<3, Vector3>.
+        * @brief Converting constructor from base SquareMatrix
         * @param m The base matrix to convert from.
         */
-        Matrix33(const Matrix<3, Vector3>& m) : Matrix(m) {}
+        Matrix33(const SquareMatrix& m) : SquareMatrix(m) {}
+
+        /**
+        * @brief Converting constructor from base Matrix
+        * @param m The base matrix to convert from.
+        */
+        Matrix33(const Matrix& m) : SquareMatrix(m) {}
 
         /*
         ===================

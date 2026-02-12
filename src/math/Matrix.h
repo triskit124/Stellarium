@@ -2,6 +2,8 @@
 
 #include <array>
 #include <cmath>
+#include <cstddef>
+#include <initializer_list>
 #include <stdexcept>
 
 #include "MathBase.h"
@@ -11,11 +13,11 @@ namespace Stellarium
 {
 
 /**
-* @brief A class representing an NxM matrix.
-* @tparam N The number of rows of the matrix.
-* @tparam VecType The vector type used for rows (defaults to Vector<N>).
+* @brief A class representing an MxN matrix.
+* @tparam M The number of rows of the matrix.
+* @tparam N The number of columns of the matrix.
 */
-template <size_t N, typename VecType = Vector<N>>
+template <size_t M, size_t N>
 class Matrix : public MathBase
 {
     public:
@@ -27,19 +29,15 @@ class Matrix : public MathBase
         */
 
         /**
-        * @brief Default constructor - initializes to identity matrix.
+        * @brief Default constructor. Initializes all elements to 0.
         */
-        Matrix() {
-            for (size_t i = 0; i < N; ++i) {
-                _rows[i][i] = 1.0;
-            }
-        }
+        Matrix() = default;
 
         /**
         * @brief Constructs a Matrix with the given row vectors.
         * @param rows Array of row vectors.
         */
-        Matrix(const std::array<VecType, N>& rows) : _rows(rows) {}
+        Matrix(const std::array<Vector<N>, M>& rows) : _rows(rows) {}
 
         /**
         * @brief Default destructor.
@@ -59,7 +57,7 @@ class Matrix : public MathBase
         */
         Matrix operator*(double c) const {
             Matrix result;
-            for (size_t i = 0; i < N; ++i) {
+            for (size_t i = 0; i < M; ++i) {
                 result[i] = _rows[i] * c;
             }
             return result;
@@ -76,7 +74,7 @@ class Matrix : public MathBase
                 throw std::invalid_argument("Division by zero");
             }
             Matrix result;
-            for (size_t i = 0; i < N; ++i) {
+            for (size_t i = 0; i < M; ++i) {
                 result[i] = _rows[i] / c;
             }
             return result;
@@ -87,9 +85,9 @@ class Matrix : public MathBase
         * @param v The vector to multiply by.
         * @return The resulting vector.
         */
-        VecType operator*(const VecType& v) const {
-            VecType result;
-            for (size_t i = 0; i < N; ++i) {
+        Vector<M> operator*(const Vector<N>& v) const {
+            Vector<M> result;
+            for (size_t i = 0; i < M; ++i) {
                 result[i] = _rows[i].dot(v);
             }
             return result;
@@ -100,11 +98,12 @@ class Matrix : public MathBase
         * @param m The matrix to multiply by.
         * @return The resulting matrix product.
         */
-        Matrix operator*(const Matrix& m) const {
-            Matrix transposed = m.getTranspose();
-            Matrix result;
-            for (size_t i = 0; i < N; ++i) {
-                for (size_t j = 0; j < N; ++j) {
+        template<size_t P>
+        Matrix<M, P>  operator*(const Matrix<N, P>& m) const {
+            Matrix<P, N> transposed = m.getTranspose();
+            Matrix<M, P> result;
+            for (size_t i = 0; i < M; ++i) {
+                for (size_t j = 0; j < P; ++j) {
                     result[i][j] = _rows[i].dot(transposed[j]);
                 }
             }
@@ -117,8 +116,8 @@ class Matrix : public MathBase
         * @throws std::invalid_argument if idx >= N
         * @return The row at the given index.
         */
-        const VecType& operator[](size_t idx) const {
-            if (idx >= N) {
+        const Vector<N>& operator[](size_t idx) const {
+            if (idx >= M) {
                 throw std::invalid_argument("invalid index: " + std::to_string(idx));
             }
             return _rows[idx];
@@ -130,8 +129,8 @@ class Matrix : public MathBase
         * @throws std::invalid_argument if idx >= N
         * @return Reference to the row at the given index.
         */
-        VecType& operator[](size_t idx) {
-            if (idx >= N) {
+        Vector<N>& operator[](size_t idx) {
+            if (idx >= M) {
                 throw std::invalid_argument("invalid index: " + std::to_string(idx));
             }
             return _rows[idx];
@@ -144,7 +143,7 @@ class Matrix : public MathBase
         */
         bool operator==(const Matrix& m) const {
             // TODO: is there a better way to compare matrices?
-            for (size_t i = 0; i < N; ++i) {
+            for (size_t i = 0; i < M; ++i) {
                 if (_rows[i] != m[i]) {
                     return false;
                 }
@@ -159,18 +158,13 @@ class Matrix : public MathBase
         */
 
         /**
-        * @brief Returns the size (dimension) of the matrix.
-        */
-        static constexpr size_t size() { return N; }
-
-        /**
         * @brief Computes the transpose of the matrix.
         * @return The transpose of the matrix.
         */
-        Matrix getTranspose() const {
-            Matrix result;
+        Matrix<N, M> getTranspose() const {
+            Matrix<N, M> result;
             for (size_t i = 0; i < N; ++i) {
-                for (size_t j = 0; j < N; ++j) {
+                for (size_t j = 0; j < M; ++j) {
                     result[i][j] = _rows[j][i];
                 }
             }
@@ -178,26 +172,10 @@ class Matrix : public MathBase
         }
 
         /**
-        * @brief Checks if the matrix is symmetric.
-        * @return True if the matrix is symmetric, false otherwise.
-        */
-        bool isSymmetric() const {
-            return *this == this->getTranspose();
-        }
-
-        /**
-        * @brief Checks if the matrix is orthogonal.
-        * @return True if the matrix is orthogonal, false otherwise.
-        */
-        bool isOrthogonal() const {
-            return (*this * this->getTranspose()) == Matrix();
-        }
-
-        /**
         * @brief Prints the matrix to stdout.
         */
         void print() const {
-            for (size_t i = 0; i < N; ++i) {
+            for (size_t i = 0; i < M; ++i) {
                 _rows[i].print();
             }
         }
@@ -206,12 +184,11 @@ class Matrix : public MathBase
         * @brief Returns the matrix as a column-major array for GPU use.
         * @return The matrix as a column-major float array.
         */
-        std::array<float, N * VecType::size()> getColMajorArray() const {
-            constexpr size_t M = VecType::size();
-            std::array<float, N * M> array;
-            for (size_t col = 0; col < M; ++col) {
-                for (size_t row = 0; row < N; ++row) {
-                    array[col * N + row] = static_cast<float>(_rows[row][col]);
+        std::array<float, M * N> getColMajorArray() const {
+            std::array<float, M * N> array;
+            for (size_t col = 0; col < N; ++col) {
+                for (size_t row = 0; row < M; ++row) {
+                    array[col * M + row] = static_cast<float>(_rows[row][col]);
                 }
             }
             return array;
@@ -220,7 +197,7 @@ class Matrix : public MathBase
     protected:
 
         // The rows of the matrix
-        std::array<VecType, N> _rows {};
+        std::array<Vector<N>, M> _rows {};
 
 };
 
@@ -230,8 +207,8 @@ class Matrix : public MathBase
 * @param m The matrix to multiply.
 * @return The matrix multiplied element-wise by the scalar.
 */
-template <size_t N, typename VecType>
-inline Matrix<N, VecType> operator*(double c, const Matrix<N, VecType>& m)
+template <size_t M, size_t N>
+inline Matrix<M, N> operator*(double c, const Matrix<M, N>& m)
 {
     return m * c;
 }
@@ -242,8 +219,8 @@ inline Matrix<N, VecType> operator*(double c, const Matrix<N, VecType>& m)
 * @param m The matrix denominator.
 * @return The result of c divided by each element.
 */
-template <size_t N, typename VecType>
-inline Matrix<N, VecType> operator/(double c, const Matrix<N, VecType>& m)
+template <size_t M, size_t N>
+inline Matrix<M, N> operator/(double c, const Matrix<M, N>& m)
 {
     return m / c;
 }
