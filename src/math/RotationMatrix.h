@@ -25,20 +25,22 @@ class RotationMatrix: public Matrix33
         /**
         * @brief Default constructor for the RotationMatrix object.
         */
-        RotationMatrix() = default;
+        RotationMatrix() : Matrix33() { };
 
         /**
-        * @brief Constructs a RotationMatrix object with the given x, y, and z vectors.
+        * @brief Constructs a RotationMatrix object with the given x, y, and z vectors. Performs validation to ensure resulting Matrix is a valid RotationMatrix.
         * @param x The 1st row of the matrix.
         * @param y The 2nd row of the matrix.
         * @param z The 3rd row of the matrix.
+        * @throws std::invalid_argument if the resulting Matrix is not a valid Rotation matrix (orthogonal with determinant of +1).
         */
         RotationMatrix(const Vector3& x, const Vector3& y, const Vector3& z) : Matrix33(x, y, z) { 
             validate();
         };
 
         /**
-        * @brief Converting constructor from a Matrix33.
+        * @brief Converting constructor from a Matrix33. Performs validation to ensure provided Matrix is a valid RotationMatrix.
+        * @throws std::inalid_argument if the Matrix33 is not a valid Rotation matrix (orthogonal with determinant of +1).
         * @param m The Matrix33 object.
         */
         explicit RotationMatrix(const Matrix33& m) : Matrix33(m) {

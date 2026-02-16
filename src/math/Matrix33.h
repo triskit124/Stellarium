@@ -1,6 +1,7 @@
 #pragma once
 
 #include "SquareMatrix.h"
+#include "Vector.h"
 #include "Vector3.h"
 
 #include <cmath>
@@ -12,7 +13,7 @@ namespace Stellarium
 /**
 * @brief A class representing a 3x3 matrix.
 */
-class Matrix33 : public SquareMatrix<3>
+class Matrix33 : public SquareMatrix
 {
     public:
 
@@ -25,7 +26,7 @@ class Matrix33 : public SquareMatrix<3>
         /**
         * @brief Default constructor (identity matrix).
         */
-        Matrix33() = default;
+        Matrix33() : SquareMatrix(3) { };
 
         /**
         * @brief Default destructor.
@@ -39,19 +40,27 @@ class Matrix33 : public SquareMatrix<3>
         * @param z The 3rd row of the matrix.
         */
         Matrix33(const Vector3& x, const Vector3& y, const Vector3& z)
-            : SquareMatrix(std::array<Vector<3>, 3>{x, y, z}) {}
+            : SquareMatrix({x, y, z}) {}
 
         /**
         * @brief Converting constructor from base SquareMatrix
         * @param m The base matrix to convert from.
         */
-        Matrix33(const SquareMatrix& m) : SquareMatrix(m) {}
+        Matrix33(const SquareMatrix& m) : SquareMatrix(m) {
+            if (m.getNumRows() != 3 || m.getNumCols() != 3) {
+                throw std::invalid_argument("Cannot convert non-3x3 SquareMatrix to Matrix33. Matrix has " + std::to_string(m.getNumRows()) + " rows and " + std::to_string(m.getNumCols()) + " columns.");
+            }
+        }
 
         /**
         * @brief Converting constructor from base Matrix
         * @param m The base matrix to convert from.
         */
-        Matrix33(const Matrix& m) : SquareMatrix(m) {}
+        Matrix33(const Matrix& m) : SquareMatrix(m) { 
+            if (m.getNumRows() != 3 || m.getNumCols() != 3) {
+                throw std::invalid_argument("Cannot convert non-3x3 Matrix to Matrix33. Matrix has " + std::to_string(m.getNumRows()) + " rows and " + std::to_string(m.getNumCols()) + " columns.");
+            }
+        }
 
         /*
         ===================
@@ -64,9 +73,9 @@ class Matrix33 : public SquareMatrix<3>
         * @return The determinant of the matrix.
         */
         double getDeterminant() const {
-            return _rows[0][0]*(_rows[1][1]*_rows[2][2] - _rows[1][2]*_rows[2][1])
-                   - _rows[0][1]*(_rows[1][0]*_rows[2][2] - _rows[1][2]*_rows[2][0])
-                   + _rows[0][2]*(_rows[1][0]*_rows[2][1] - _rows[1][1]*_rows[2][0]);
+            return (*this)[0][0]*((*this)[1][1]*(*this)[2][2] - (*this)[1][2]*(*this)[2][1])
+                   - (*this)[0][1]*((*this)[1][0]*(*this)[2][2] - (*this)[1][2]*(*this)[2][0])
+                   + (*this)[0][2]*((*this)[1][0]*(*this)[2][1] - (*this)[1][1]*(*this)[2][0]);
         }
 
         /**
@@ -76,19 +85,19 @@ class Matrix33 : public SquareMatrix<3>
         Matrix33 getAdjugate() const {
             return Matrix33(
                 Vector3(
-                    ((_rows[1][1] * _rows[2][2]) - (_rows[2][1] * _rows[1][2])),
-                    -((_rows[0][1] * _rows[2][2]) - (_rows[2][1] * _rows[0][2])),
-                    ((_rows[0][1] * _rows[1][2]) - (_rows[1][1] * _rows[0][2]))
+                    (((*this)[1][1] * (*this)[2][2]) - ((*this)[2][1] * (*this)[1][2])),
+                    -(((*this)[0][1] * (*this)[2][2]) - ((*this)[2][1] * (*this)[0][2])),
+                    (((*this)[0][1] * (*this)[1][2]) - ((*this)[1][1] * (*this)[0][2]))
                 ),
                 Vector3(
-                    -((_rows[1][0] * _rows[2][2]) - (_rows[2][0] * _rows[1][2])),
-                    ((_rows[0][0] * _rows[2][2]) - (_rows[2][0] * _rows[0][2])),
-                    -((_rows[0][0] * _rows[1][2]) - (_rows[1][0] * _rows[0][2]))
+                    -(((*this)[1][0] * (*this)[2][2]) - ((*this)[2][0] * (*this)[1][2])),
+                    (((*this)[0][0] * (*this)[2][2]) - ((*this)[2][0] * (*this)[0][2])),
+                    -(((*this)[0][0] * (*this)[1][2]) - ((*this)[1][0] * (*this)[0][2]))
                 ),
                 Vector3(
-                    ((_rows[1][0] * _rows[2][1]) - (_rows[2][0] * _rows[1][1])),
-                    -((_rows[0][0] * _rows[2][1]) - (_rows[2][0] * _rows[0][1])),
-                    ((_rows[0][0] * _rows[1][1]) - (_rows[1][0] * _rows[0][1]))
+                    (((*this)[1][0] * (*this)[2][1]) - ((*this)[2][0] * (*this)[1][1])),
+                    -(((*this)[0][0] * (*this)[2][1]) - ((*this)[2][0] * (*this)[0][1])),
+                    (((*this)[0][0] * (*this)[1][1]) - ((*this)[1][0] * (*this)[0][1]))
                 )
             );
         }
@@ -111,8 +120,8 @@ class Matrix33 : public SquareMatrix<3>
         * @return True if the matrix is positive definite, false otherwise.
         */
         bool isPositiveDefinite() const {
-            double det11 = _rows[0][0];
-            double det22 = _rows[0][0]*_rows[1][1] - _rows[0][1]*_rows[1][0];
+            double det11 = (*this)[0][0];
+            double det22 = (*this)[0][0]*(*this)[1][1] - (*this)[0][1]*(*this)[1][0];
             double det33 = this->getDeterminant();
 
             return (det11 > 0) && (det22 > 0) && (det33 > 0);

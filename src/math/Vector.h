@@ -1,10 +1,12 @@
 #pragma once
 
-#include <array>
 #include <cmath>
+#include <cstddef>
 #include <initializer_list>
 #include <iostream>
 #include <stdexcept>
+#include <string>
+#include <vector>
 
 #include "MathBase.h"
 
@@ -12,28 +14,40 @@ namespace Stellarium
 {
 
 /**
-* @brief A class representing an N-dimensional vector.
+* @brief A class representing an N-dimensional vector. Size must be given at construction time. Cannot be resized after construction.
 */
-template <size_t N>
 class Vector : public MathBase
 {
     public:
 
         /*
         ===================================
-             Constructors/Desctructors
+             Constructors/Destructors
         ===================================
         */
 
         /**
-        * @brief Default constructor for the Vector object.
+        * @brief Constructs a Vector object with the given size. Optionally initialize all elements to a value.
+        * @param size The size of the vector.
+        * @param val Value to assign to all elements. Defaults to 0.
         */
-        Vector() = default;
+        Vector(size_t size, double val = 0.0) : MathBase(), _size(size), _data(size, val) { };
 
         /**
-        * @brief Constructs a Vector with the given values.
+        * @brief Constructs a Vector with the given values. The size of the vector is determined by the number of values given.
+         * @param values The values to initialize the vector with.
         */
-        Vector(const std::array<double, N>& values) : _data(values) {}
+        Vector(const std::initializer_list<double>& values) : MathBase(), _size(values.size()), _data(values) { };
+
+        /**
+        * @brief Copy constructor. Explicitly defaulted because we have a user-defined copy-assignment operator.
+        */
+        Vector(const Vector& other) = default; 
+
+        /**
+        * @brief Move constructor. Explicitly defaulted because we have a user-defined copy-assignment operator.
+        */
+        Vector(Vector&& other) noexcept = default;
 
         /**
         * @brief Default destructor for the Vector object.
@@ -47,9 +61,37 @@ class Vector : public MathBase
         ===================
         */
 
+        /**
+        * @brief Copy assignment operator. Performs a size check before copying.
+        * @param rhs The vector to copy from.
+        * @throws std::invalid_argument if the sizes of the vectors do not match.
+        * @return Reference to this vector after assignment.
+        */
+        Vector& operator=(const Vector& rhs) {
+            if (rhs.getSize() != _size) {
+                throw std::invalid_argument("Cannot assign vector of size " + std::to_string(rhs.getSize()) + " to vector of size " + std::to_string(_size));
+            }
+            _data = rhs._data;
+            return *this;
+        }
+
+        /**
+        * @brief Move assignment operator. Performs a size check before moving.
+        * @param rhs The vector to move from.
+        * @throws std::invalid_argument if the sizes of the vectors do not match.
+        * @return Reference to this vector after assignment.
+        */
+        Vector& operator=(Vector&& rhs) {
+            if (rhs.getSize() != _size) {
+                throw std::invalid_argument("Cannot assign vector of size " + std::to_string(rhs.getSize()) + " to vector of size " + std::to_string(_size));
+            }
+            _data = rhs._data;
+            return *this;
+        } 
+
         Vector operator*(double c) const {
             Vector result = *this;
-            for (size_t i = 0; i < N; ++i) {
+            for (size_t i = 0; i < _size; ++i) {
                 result[i] *= c;
             }
             return result;
@@ -60,7 +102,7 @@ class Vector : public MathBase
                 throw std::invalid_argument("Division by zero");
             }
             Vector result = *this;
-            for (size_t i = 0; i < N; ++i) {
+            for (size_t i = 0; i < _size; ++i) {
                 result[i] /= c;
             }
             return result;
@@ -68,7 +110,7 @@ class Vector : public MathBase
 
         Vector operator+(double c) const {
             Vector result = *this;
-            for (size_t i = 0; i < N; ++i) {
+            for (size_t i = 0; i < _size; ++i) {
                 result[i] += c;
             }
             return result;
@@ -76,7 +118,7 @@ class Vector : public MathBase
 
         Vector operator-(double c) const {
             Vector result = *this;
-            for (size_t i = 0; i < N; ++i) {
+            for (size_t i = 0; i < _size; ++i) {
                 result[i] -= c;
             }
             return result;
@@ -87,16 +129,24 @@ class Vector : public MathBase
         }
 
         Vector operator+(const Vector& v) const {
+            if (_size != v.getSize())
+            {
+                throw std::invalid_argument("Cannot add two Vectors of different size. Got " + std::to_string(getSize()) + " and " + std::to_string(v.getSize()));
+            }
             Vector result = *this;
-            for (size_t i = 0; i < N; ++i) {
+            for (size_t i = 0; i < _size; ++i) {
                 result[i] += v[i];
             }
             return result;
         }
 
         Vector operator-(const Vector& v) const {
+            if (_size != v.getSize())
+            {
+                throw std::invalid_argument("Cannot subtract two Vectors of different size. Got " + std::to_string(getSize()) + " and " + std::to_string(v.getSize()));
+            }
             Vector result = *this;
-            for (size_t i = 0; i < N; ++i) {
+            for (size_t i = 0; i < _size; ++i) {
                 result[i] -= v[i];
             }
             return result;
@@ -130,7 +180,11 @@ class Vector : public MathBase
         }
 
         bool operator==(const Vector& v) const {
-            for (size_t i = 0; i < N; ++i) {
+            if (_size != v.getSize())
+            {
+                throw std::invalid_argument("Cannot equate two Vectors of different size. Got " + std::to_string(getSize()) + " and " + std::to_string(v.getSize()));
+            }
+            for (size_t i = 0; i < _size; ++i) {
                 if (std::abs((*this)[i] - v[i]) > _epsilon) {
                     return false;
                 }
@@ -152,7 +206,7 @@ class Vector : public MathBase
         * @return The value at the given index.
         */
         double operator[](size_t idx) const {
-            if (idx >= N) {
+            if (idx >= _size) {
                 throw std::invalid_argument("invalid index: " + std::to_string(idx));
             }
             return _data[idx];
@@ -164,7 +218,7 @@ class Vector : public MathBase
         * @return The value at the given index.
         */
         double& operator[](size_t idx) {
-            if (idx >= N) {
+            if (idx >= _size) {
                 throw std::invalid_argument("invalid index: " + std::to_string(idx));
             }
             return _data[idx];
@@ -179,16 +233,16 @@ class Vector : public MathBase
         /**
         * @brief Returns the size of the vector.
         */
-        static constexpr size_t size() { return N; }
+        size_t getSize() const { return _size; }
 
         /**
         * @brief Prints the values of the vector to stdout.
         */
         void print(const std::string& s = "") const {
             std::cout << s << "(";
-            for (size_t i = 0; i < N; ++i) {
+            for (size_t i = 0; i < _size; ++i) {
                 std::cout << _data[i];
-                if (i < N - 1) std::cout << ", ";
+                if (i < _size - 1) std::cout << ", ";
             }
             std::cout << ")" << std::endl;
         }
@@ -199,8 +253,12 @@ class Vector : public MathBase
         * @return The dot product of the two vectors.
         */
         double dot(const Vector& v) const {
+            if (_size != v.getSize())
+            {
+                throw std::invalid_argument("Cannot dot two Vectors of different size. Got " + std::to_string(getSize()) + " and " + std::to_string(v.getSize()));
+            }
             double result = 0.0;
-            for (size_t i = 0; i < N; ++i) {
+            for (size_t i = 0; i < _size; ++i) {
                 result += (*this)[i] * v[i];
             }
             return result;
@@ -241,9 +299,10 @@ class Vector : public MathBase
             return std::abs(getNorm() - 1.0) <= _epsilon;
         }
 
-        protected:
+        private:
 
-            std::array<double, N> _data { 0.0 };
+            size_t _size; // number of elements in the vector
+            std::vector<double> _data; // the values of the vector
 
 };
 
@@ -254,8 +313,7 @@ class Vector : public MathBase
 * @param c The scalar to multiply by.
 * @return The vector multiplied element-wise by the scalar.
 */
-template <size_t N>
-inline Vector<N> operator*(double c, const Vector<N>& v)
+inline Vector operator*(double c, const Vector& v)
 {
     return v * c;
 };
@@ -266,8 +324,7 @@ inline Vector<N> operator*(double c, const Vector<N>& v)
 * @param c The scalar to add.
 * @return The vector added element-wise by the scalar.
 */
-template <size_t N>
-inline Vector<N> operator+(double c, const Vector<N>& v)
+inline Vector operator+(double c, const Vector& v)
 {
     return v + c;
 };

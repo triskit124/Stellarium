@@ -1,16 +1,16 @@
 #pragma once
 
 #include "Matrix.h"
+#include <cstddef>
+#include <initializer_list>
 
 namespace Stellarium
 {
 
 /**
 * @brief A class representing an NxN square matrix.
-* @tparam N The number of rows/columns of the matrix.
 */
-template <size_t N>
-class SquareMatrix : public Matrix<N, N>
+class SquareMatrix : public Matrix
 {
     public:
 
@@ -21,25 +21,35 @@ class SquareMatrix : public Matrix<N, N>
         */
 
         /**
-        * @brief Default constructor, initializes to identity matrix.
+        * @brief Constructs an identity SquareMatrix of the given size.
+        * @param size The number of rows and columns in the matrix.
         */
-        SquareMatrix() {
-            for (size_t i = 0; i < N; ++i) {
+        SquareMatrix(size_t size) : Matrix(size, size) {
+            for (size_t i = 0; i < getNumRows(); ++i) {
                 (*this)[i][i] = 1.0;
             }
         };
 
         /**
         * @brief Constructs a SquareMatrix with the given row vectors.
-        * @param rows Array of row vectors.
+        * @param rows Initializer list of row vectors.
         */
-        SquareMatrix(const std::array<Vector<N>, N>& rows) : Matrix<N, N>(rows) {}
+        SquareMatrix(const std::initializer_list<Vector>& rows) : Matrix(rows) {
+            if (getNumRows() != getNumCols()) {
+                throw std::invalid_argument("Cannot construct SquareMatrix with non-square row vectors. Matrix has " + std::to_string(getNumRows()) + " rows and " + std::to_string(getNumCols()) + " columns.");
+            }
+        }
 
         /**
         * Converting constructor from base Matrix class.
         * @param m The matrix to convert.
+        * @throws std::invalid_argument if m is not square (num rows != num cols)
         */
-        SquareMatrix(const Matrix<N, N>& m) : Matrix<N, N>(m) {}
+        SquareMatrix(const Matrix& m) : Matrix(m) {
+            if (m.getNumRows() != m.getNumCols()) {
+                throw std::invalid_argument("Cannot convert non-square matrix to SquareMatrix. Matrix has " + std::to_string(m.getNumRows()) + " rows and " + std::to_string(m.getNumCols()) + " columns.");
+            }
+        }
 
         /**
         * @brief Default destructor.
@@ -66,7 +76,7 @@ class SquareMatrix : public Matrix<N, N>
         * @return True if the matrix is orthogonal, false otherwise.
         */
         bool isOrthogonal() const {
-            return (*this * this->getTranspose()) == SquareMatrix();
+            return (*this * this->getTranspose()) == SquareMatrix(getNumRows());
         }
 
 };

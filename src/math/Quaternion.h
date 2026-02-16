@@ -56,11 +56,14 @@ class Quaternion: public Vector4
         }
 
         /**
-        * @brief Converting constructor from base Vector<4>.
-        * @param v The Vector<4> to convert from.
+        * @brief Converting constructor from base Vector.
+        * @param v The Vector to convert from.
         * @param normalize Whether to normalize the quaternion.
         */
-        explicit Quaternion(const Vector<4>& v, bool normalize = true) : Vector4(v) {
+        explicit Quaternion(const Vector& v, bool normalize = true) : Vector4(v) {
+            if (v.getSize() != 4) {
+                throw std::invalid_argument("Cannot convert Vector to Quaternion. Vector has size " + std::to_string(v.getSize()) + " but expected 4.");
+            }
             if (normalize)
             {
                 this->normalize();

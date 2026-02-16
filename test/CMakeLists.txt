@@ -1,6 +1,7 @@
 
 set(
     STELL_TESTS
+    test_math/test_vector.cpp
     test_math/test_matrix.cpp
     test_math/test_matrix33.cpp
     test_math/test_quaternion.cpp
