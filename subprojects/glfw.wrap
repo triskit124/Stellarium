@@ -1,0 +1,4 @@
+[wrap-git]
+url      = https://github.com/glfw/glfw.git
+revision = 7b6aead9fb88b3623e3b3725ebb42670cbe4c579
+depth    = 1

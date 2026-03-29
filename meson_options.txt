@@ -1,0 +1,8 @@
+option('build_rendering', type: 'boolean', value: true,
+  description: 'Build the rendering subsystem')
+
+option('build_tests', type: 'boolean', value: true,
+  description: 'Build test executables')
+
+option('build_docs', type: 'boolean', value: true,
+  description: 'Build Doxygen documentation')

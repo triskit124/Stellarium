@@ -1,0 +1,4 @@
+[wrap-git]
+url      = https://github.com/assimp/assimp.git
+revision = fb375dd8c0a032106a2122815fb18dffe0283721
+depth    = 1
