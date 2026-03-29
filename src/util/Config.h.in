@@ -13,7 +13,7 @@ See Config.h.in for the template.
 namespace Stellarium
 {
 
-const std::string STELL_PROJECT_ROOT = "@CMAKE_CURRENT_SOURCE_DIR@";
+const std::string STELL_PROJECT_ROOT = "@MESON_PROJECT_SOURCE_ROOT@";
 
 } // end namespace Stellarium
 
