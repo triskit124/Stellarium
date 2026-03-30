@@ -1,32 +1,20 @@
-TARGET = stellarium
+TARGET    = stellarium
 BUILD_DIR = build
-DOCS_DIR = doc
 
-CMAKE_FILES := $(shell find . -path ./$(BUILD_DIR) -prune -o -name "CMakeLists.txt")
+.DEFAULT_GOAL := all
+.PHONY: all setup clean test
 
-# number of parallel jobs for builds
-j ?= 10
-
-.PHONY: all clean docs test
-
-$(BUILD_DIR):
-	mkdir -p $(BUILD_DIR)
-
-all: $(BUILD_DIR)/CMakeFiles
-	cd $(BUILD_DIR); \
-	cmake --build . -j ${j}
+all: setup
+	meson compile -C $(BUILD_DIR)
 	cp $(BUILD_DIR)/compile_commands.json .
 
-$(BUILD_DIR)/CMakeFiles: $(BUILD_DIR) $(CMAKE_FILES)
-	cd $(BUILD_DIR); \
-	cmake ..
+setup: $(BUILD_DIR)/build.ninja
+
+$(BUILD_DIR)/build.ninja:
+	meson setup $(BUILD_DIR)
 
 clean:
-	rm -rf $(BUILD_DIR) $(DOCS_DIR)/build compile_commands.json
+	rm -rf $(BUILD_DIR) compile_commands.json
 
-docs: $(BUILD_DIR)/CMakeFiles
-	cd $(BUILD_DIR); \
-	cmake --build . --target docs -j ${j}
-	
-test:
-	test/run_tests.sh
+test: setup
+	meson test -C $(BUILD_DIR) --print-errorlogs
