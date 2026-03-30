@@ -20,9 +20,9 @@ build_rendering = get_option('build_rendering')
 build_tests     = get_option('build_tests')
 build_docs      = get_option('build_docs')
 
-# Used by src/util/meson.build to generate Config.h.
+# Confiuguration data
 conf = configuration_data()
-conf.set('MESON_PROJECT_SOURCE_ROOT', meson.project_source_root())
+conf.set('PROJECT_ROOT', meson.project_source_root())
 
 stell_includes = include_directories(
   'src/core', 

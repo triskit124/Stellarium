@@ -31,7 +31,6 @@
 *.app
 
 build/
-doc/build/
 .vscode
 .cache
 

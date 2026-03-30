@@ -13,7 +13,7 @@ See Config.h.in for the template.
 namespace Stellarium
 {
 
-const std::string STELL_PROJECT_ROOT = "@MESON_PROJECT_SOURCE_ROOT@";
+const std::string STELL_PROJECT_ROOT = "@PROJECT_ROOT@";
 
 } // end namespace Stellarium
 
