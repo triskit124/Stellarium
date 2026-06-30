@@ -1,11 +1,9 @@
 #include "GraphicsEngine.h"
 #include "Camera.h"
-#include "Matrix44.h"
+#include "HomTransform.h"
 #include "Mesh.h"
-#include "Quaternion.h"
 #include "Model.h"
 #include "Shader.h"
-#include "Vector3.h"
 #include "Config.h"
 #include "import/assimp_importer.h"
 
@@ -20,21 +18,21 @@
 namespace Stellarium
 {
 
-/* 
+/*
 TODO: These global definitions are absolutely heinous.
 Glfw doesn't support std::function type callbacks for glfwSetCursorPosCallback
-and the like. The result of this is that we cannot use lambda functions and must use 
+and the like. The result of this is that we cannot use lambda functions and must use
 honest-to-goodness raw function pointers.
 */
 GraphicsEngine* _global_graphics_ptr = nullptr;
 
 void _mouse_callback_wrap(GLFWwindow* window, double mouse_x, double mouse_y)
-{ 
+{
     _global_graphics_ptr->mouse_callback(window, mouse_x, mouse_y);
 }
 
 void _scroll_callback_wrap(GLFWwindow* window, double mouse_x, double mouse_y)
-{ 
+{
     _global_graphics_ptr->scroll_callback(window, mouse_x, mouse_y);
 }
 
@@ -53,28 +51,28 @@ GraphicsEngine::GraphicsEngine()
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     // Create main window
-    GLFWwindow* window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "stellarium", NULL, NULL);
-    if (!window)
+    _window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "stellarium", NULL, NULL);
+    if (!_window)
     {
         std::cout << "Failed to create GLFW window" << std::endl;
         glfwTerminate();
         return;
     }
-    glfwMakeContextCurrent(window);
+    glfwMakeContextCurrent(_window);
 
     // Window callbacks
 
     // Resize viewport every time window is resized by user
-    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+    glfwSetFramebufferSizeCallback(_window, framebuffer_size_callback);
 
     // Mouse input
-    glfwSetCursorPosCallback(window, _mouse_callback_wrap);
+    glfwSetCursorPosCallback(_window, _mouse_callback_wrap);
 
     // Scroll input
-    glfwSetScrollCallback(window, _scroll_callback_wrap);
+    glfwSetScrollCallback(_window, _scroll_callback_wrap);
 
     // Tell GLFW to capture our mouse
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    glfwSetInputMode(_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     // Initialize GLAD
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
@@ -90,55 +88,82 @@ GraphicsEngine::GraphicsEngine()
     glEnable(GL_DEPTH_TEST);
 
     // Load shaders
-    Shader shader(
-        (std::filesystem::path(STELL_PROJECT_ROOT) / std::filesystem::path("src/render/shader/shader.vert")).string(), 
+    _shader = std::make_unique<Shader>(
+        (std::filesystem::path(STELL_PROJECT_ROOT) / std::filesystem::path("src/render/shader/shader.vert")).string(),
         (std::filesystem::path(STELL_PROJECT_ROOT) / std::filesystem::path("src/render/shader/shader.frag")).string()
     );
+}
 
-    // Load model
+GraphicsEngine::~GraphicsEngine()
+{
+    glfwTerminate();
+}
+
+Model* GraphicsEngine::loadModel(const std::string& path, Frame& frame)
+{
     AssimpImporter importer;
-    Model model = importer.loadModel((std::filesystem::path(STELL_PROJECT_ROOT) / std::filesystem::path("assets/backpack/backpack.obj")).string());
-    setupModel(model);
+    auto model = std::make_unique<Model>(importer.loadModel(path));
+    model->setFrame(&frame);
+    setupModel(*model);
+    _models.push_back(std::move(model));
+    return _models.back().get();
+}
 
-    // Main render loop
-    while(!glfwWindowShouldClose(window))
+void GraphicsEngine::run()
+{
+    _should_render.store(true);
+
+    while (!glfwWindowShouldClose(_window) && shouldRender())
     {
         // Per-frame time logic
-        _current_frame_time = static_cast<float>(glfwGetTime());
+        _current_frame_time = static_cast<double>(glfwGetTime());
         _delta_frame_time = _current_frame_time - _prev_frame_time;
         _prev_frame_time = _current_frame_time;
 
         // User input
-        processInput(window);
+        processInput(_window);
 
         // Render
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // Activate shader
-        shader.use();
+        _shader->use();
 
         // Camera projection matrix
         Matrix44 projection = _camera->getProjectionMatrix();
-        shader.setMat4("projection", projection);
+        _shader->setMat4("projection", projection);
 
         // Camera view transformation
         Matrix44 view = _camera->getViewMatrix();
-        shader.setMat4("view", view);
+        _shader->setMat4("view", view);
 
-        // Render models
-        Matrix44 model_matrix = Matrix44();
-        shader.setMat4("model", model_matrix);
-        drawModel(model, shader);
-        
+        // Snapshot transforms under the pose lock so the physics thread cannot write
+        // Frame state concurrently. Rendering itself happens outside the lock.
+        std::vector<Matrix44> transforms(_models.size());
+        {
+            std::lock_guard<std::mutex> lock(_pose_mutex);
+            for (size_t i = 0; i < _models.size(); ++i)
+            {
+                if (Frame* frame = _models[i]->getFrame())
+                {
+                    transforms[i] = frame->getPose().toMatrix();
+                }
+            }
+        }
+
+        for (size_t i = 0; i < _models.size(); ++i)
+        {
+            _shader->setMat4("model", transforms[i]);
+            drawModel(*_models[i], *_shader);
+        }
+
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
-        glfwSwapBuffers(window);
-        glfwPollEvents();    
+        glfwSwapBuffers(_window);
+        glfwPollEvents();
     }
 
-    // Clean up
-    glfwTerminate();
-
+    stopRendering();
 }
 
 void GraphicsEngine::setupModel(Model& model)
@@ -178,13 +203,13 @@ void GraphicsEngine::setupMesh(Mesh& mesh)
 
     // set the vertex attribute pointers
     // vertex Positions
-    glEnableVertexAttribArray(0);	
+    glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 3, GL_DOUBLE, GL_FALSE, sizeof(Vertex), (void*)0);
     // vertex normals
-    glEnableVertexAttribArray(1);	
+    glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 3, GL_DOUBLE, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, normal));
     // vertex texture coords
-    glEnableVertexAttribArray(2);	
+    glEnableVertexAttribArray(2);
     glVertexAttribPointer(2, 2, GL_DOUBLE, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, tex_coords));
 
     glBindVertexArray(0);
@@ -203,7 +228,7 @@ unsigned int GraphicsEngine::loadTextureFromFile(const std::string& path)
     {
         return _textures[path];
     }
-    
+
     unsigned int texture_id;
     glGenTextures(1, &texture_id);
 
@@ -230,7 +255,7 @@ unsigned int GraphicsEngine::loadTextureFromFile(const std::string& path)
     {
         format = GL_RGBA;
     }
-    else 
+    else
     {
         std::cout << "Unsupported number of channels: " << num_channels << std::endl;
         stbi_image_free(data);
@@ -271,7 +296,7 @@ void GraphicsEngine::drawMesh(const Mesh& mesh, const Shader& shader) const
     unsigned int num_specular_textures = 1;
     unsigned int num_normal_textures = 1;
     unsigned int num_height_textures = 1;
-    
+
     for (size_t i = 0; i < mesh.textures.size(); i++)
     {
         glActiveTexture(GL_TEXTURE0 + i); // active proper texture unit before binding
@@ -294,7 +319,7 @@ void GraphicsEngine::drawMesh(const Mesh& mesh, const Shader& shader) const
         {
             number = std::to_string(num_height_textures++);
         }
-        else 
+        else
         {
             throw std::runtime_error("Unknown texture type: " + name);
         }
@@ -305,7 +330,7 @@ void GraphicsEngine::drawMesh(const Mesh& mesh, const Shader& shader) const
         glBindTexture(GL_TEXTURE_2D, mesh.textures[i].id);
     }
     glActiveTexture(GL_TEXTURE0);
-    
+
     // draw mesh
     glBindVertexArray(_mesh_buffer_objects.at(&mesh).VAO);
     glDrawElements(GL_TRIANGLES, static_cast<unsigned int>(mesh.indices.size()), GL_UNSIGNED_INT, 0);

@@ -2,9 +2,9 @@
 #include "Body.h"
 #include "Integrators.h"
 
-#include <cstddef>
+#include <mutex>
+#include <thread>
 #include <iostream>
-#include <array>
 #include <memory>
 #include <cassert>
 #include <vector>
@@ -12,8 +12,17 @@
 // #include "yaml-cpp/yaml.h"
 
 
-namespace Stellarium 
+namespace Stellarium
 {
+
+void StellariumSimulation::addGraphics()
+{
+#ifdef STELL_BUILD_RENDERING
+    _graphics = std::make_unique<GraphicsEngine>();
+#else
+    throw std::invalid_argument("Graphics was enabled but stellarium has been built without rendering. Cannot continue.");
+#endif
+}
 
 void StellariumSimulation::loadScenario(const std::string& filename)
 
@@ -71,24 +80,46 @@ void StellariumSimulation::_step()
 
 void StellariumSimulation::run(double t)
 {
-    const double t_f = time() + t;
-    // std::cout << "Running simulation for " << t << " seconds\n";
-    while (time() < t_f)
-    {
-        _step();
 
-#if 0
-        std::cout << "Time: " << time() << " sec\n";
-        for (auto& body : _bodies)
+    const double t_f = time() + t;
+
+    if (_graphics)
+    {
+        std::thread physics_thread([&]()
         {
-            std::cout << "Body: " << body->name() << " Position: ";
-            body->getPosition().print();
-            std::cout << "Body: " << body->name() << " Velocity: ";
-            body->getVelocity().print();
+            while (time() < t_f && _graphics->shouldRender())
+            {
+                {
+                    std::lock_guard<std::mutex> lock(_graphics->poseMutex());
+                    _step();
+                }
+            }
+            
+            _graphics->stopRendering();
+        });
+
+        _graphics->run();      // blocks on the main thread until the window closes
+        physics_thread.join();
+    }
+    else 
+    {
+        while (time() < t_f)
+        {
+            _step();
         }
-#endif
     }
 }
+
+#ifdef STELL_BUILD_RENDERING
+Model* StellariumSimulation::loadModel(const std::string& path, Frame& frame)
+{
+    if (!_graphics)
+    {
+        throw std::runtime_error("Cannot load model: please call addGraphics() before loadModel().");
+    }
+    return _graphics->loadModel(path, frame);
+}
+#endif
 
 StellariumSimulation::~StellariumSimulation()
 {

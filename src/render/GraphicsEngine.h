@@ -3,11 +3,15 @@
 #include "Camera.h"
 #include "Mesh.h"
 #include "Model.h"
-#include <functional>
+#include "Shader.h"
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <memory>
 #include <map>
+#include <mutex>
+#include <string>
+#include <vector>
+#include <atomic>
 
 
 namespace Stellarium
@@ -25,6 +29,7 @@ class GraphicsEngine
     public:
 
         GraphicsEngine();
+        ~GraphicsEngine();
 
         static const unsigned int WINDOW_WIDTH = 800;
         static const unsigned int WINDOW_HEIGHT = 600;
@@ -33,6 +38,19 @@ class GraphicsEngine
         {
             glViewport(0, 0, width, height);
         };
+
+        // Loads a model from a file, associates it with a frame, uploads GPU resources, and stores
+        // the model. Returns a raw pointer to the stored model. Must be called before run().
+        Model* loadModel(const std::string& path, Frame& frame);
+
+        // Run the render loop. Blocks until the window is closed or requestStop() is called.
+        // Must be called from the main thread.
+        void run();
+
+        // Mutex that must be held when reading or writing Frame pose data.
+        // The physics thread holds it during each _step(); the render loop holds it
+        // while snapshotting transforms.
+        std::mutex& poseMutex() { return _pose_mutex; }
 
         void setupModel(Model& model);
         void setupMesh(Mesh& mesh);
@@ -73,6 +91,9 @@ class GraphicsEngine
             _camera->processMouseScroll(mouse_y);
         }
 
+        void stopRendering() { this->_should_render.store(false); };
+        bool shouldRender() { return this->_should_render.load(); };
+
     protected:
 
         double _current_frame_time { 0.0 };
@@ -82,10 +103,17 @@ class GraphicsEngine
         double _prev_mouse_x { 0.0 };
         double _prev_mouse_y { 0.0 };
 
+        GLFWwindow* _window = nullptr;
         std::unique_ptr<Camera> _camera = nullptr;
+        std::unique_ptr<Shader> _shader;
         std::map<std::string, unsigned int> _textures { };
         std::map<const Mesh*, MeshBufferObjectIds> _mesh_buffer_objects { };
 
+        std::vector<std::unique_ptr<Model>> _models;
+
+        std::atomic<bool> _should_render { true };
+
+        std::mutex _pose_mutex;
 };
 
 }

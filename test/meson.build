@@ -14,7 +14,10 @@ test_sources = files(
 )
 
 if get_option('build_rendering')
-  test_sources += files('test_graphics/test_window.cpp')
+  test_sources += files(
+    'test_graphics/test_window.cpp',
+    'test_graphics/test_model_rendering.cpp'
+  )
 endif
 
 # Add an executable for each test source file, and add a test for it.

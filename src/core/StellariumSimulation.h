@@ -8,6 +8,7 @@
 
 #ifdef STELL_BUILD_RENDERING
 #include "GraphicsEngine.h"
+#include "Model.h"
 #endif
 
 #include <memory>
@@ -26,20 +27,17 @@ class StellariumSimulation
         /**
          * @brief Constructs a StellariumSimulation object.
          */
-        explicit StellariumSimulation(bool graphics = false) {
-            if (graphics) {
-#ifdef STELL_BUILD_RENDERING
-                _graphics = std::make_unique<GraphicsEngine>();
-#else
-                throw std::invalid_argument("graphics was enabled but stellarium has been built without rendering. Cannot continue.");
-#endif
-            }
-        };
+        StellariumSimulation() = default;
 
         /**
          * @brief Destroys the StellariumSimulation object.
          */
         ~StellariumSimulation();
+
+        /**
+         * @brief Initializes the graphics engine.
+         */
+        void addGraphics();
 
         /**
          * @brief Loads a scenario from a file.
@@ -90,6 +88,20 @@ class StellariumSimulation
          */
         void run(double t);
 
+#ifdef STELL_BUILD_RENDERING
+        /**
+         * @brief Loads a 3D model from a file and associates it with a frame so its transform is
+         *        driven by the frame's pose each physics step.
+         *
+         * @param path  Path to the model file.
+         * @param frame The frame whose pose drives this model's world transform.
+         * @return Pointer to the stored Model.
+         */
+        Model* loadModel(const std::string& path, Frame& frame);
+
+        GraphicsEngine* getGraphics() { return this->_graphics.get(); };
+#endif
+
     protected:
 
     private:
@@ -109,10 +121,7 @@ class StellariumSimulation
         double _t = 0.0;
 
 #ifdef STELL_BUILD_RENDERING
-        /**
-        * @brief Pointer to the graphics engine.
-        */
-        std::unique_ptr<GraphicsEngine> _graphics = nullptr;
+        std::unique_ptr<GraphicsEngine> _graphics { };
 #endif
 
         /**
