@@ -102,6 +102,12 @@ GraphicsEngine::GraphicsEngine()
         (std::filesystem::path(STELL_PROJECT_ROOT) / std::filesystem::path("src/render/shader/shader.vert")).string(),
         (std::filesystem::path(STELL_PROJECT_ROOT) / std::filesystem::path("src/render/shader/shader.frag")).string()
     );
+    _grid_shader = std::make_unique<Shader>(
+        (std::filesystem::path(STELL_PROJECT_ROOT) / std::filesystem::path("src/render/shader/grid.vert")).string(),
+        (std::filesystem::path(STELL_PROJECT_ROOT) / std::filesystem::path("src/render/shader/grid.frag")).string()
+    );
+
+    createGrid();
 }
 
 GraphicsEngine::~GraphicsEngine()
@@ -140,7 +146,7 @@ void GraphicsEngine::run()
         processInput(_window);
 
         // Render
-        glClearColor(0.10f, 0.37f, 0.60f, 1.0f);
+        glClearColor(0.20f, 0.20f, 0.20f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // Activate shader
@@ -173,6 +179,8 @@ void GraphicsEngine::run()
             _shader->setMat4("model", transforms[i]);
             drawModel(*_models[i], *_shader);
         }
+
+        drawGrid();
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         glfwSwapBuffers(_window);
@@ -367,6 +375,58 @@ void GraphicsEngine::drawMesh(const Mesh& mesh, const Shader& shader) const
     glBindVertexArray(_mesh_buffer_objects.at(&mesh).VAO);
     glDrawElements(GL_TRIANGLES, static_cast<unsigned int>(mesh.indices.size()), GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
+}
+
+void GraphicsEngine::createGrid(double extent)
+{
+    // A single quad on the world XY plane. Normals/tex coords are unused by grid.vert/frag
+    // but are still populated so this can go through the same VAO layout as textured meshes.
+    std::vector<Vertex> vertices = {
+        { {-extent, -extent, 0.0}, {0.0, 0.0, 1.0}, {0.0, 0.0} },
+        { { extent, -extent, 0.0}, {0.0, 0.0, 1.0}, {1.0, 0.0} },
+        { { extent,  extent, 0.0}, {0.0, 0.0, 1.0}, {1.0, 1.0} },
+        { {-extent,  extent, 0.0}, {0.0, 0.0, 1.0}, {0.0, 1.0} },
+    };
+    std::vector<unsigned int> indices = { 0, 1, 2, 2, 3, 0 };
+    std::vector<Mesh> meshes { Mesh(vertices, indices, {}) };
+
+    _grid_model = std::make_unique<Model>(std::filesystem::path("<procedural:grid>"), meshes);
+    _grid_model->setFrame(&_grid_frame);
+    setupMesh(_grid_model->meshes[0]);
+}
+
+void GraphicsEngine::drawGrid() const
+{
+    if (!_grid_model)
+        return;
+
+    _grid_shader->use();
+    _grid_shader->setMat4("projection", _camera->getProjectionMatrix());
+    _grid_shader->setMat4("view", _camera->getViewMatrix());
+    _grid_shader->setMat4("model", _grid_frame.getPose().toMatrix());
+    _grid_shader->setVec3("cameraPos", _camera->getPosition());
+    _grid_shader->setFloat("cellSize", 1.0f);
+    _grid_shader->setInt("cellsPerMajor", 10);
+    _grid_shader->setVec3("minorColor", Vector3(0.45, 0.45, 0.45));
+    _grid_shader->setVec3("majorColor", Vector3(0.85, 0.85, 0.85));
+    _grid_shader->setVec3("axisColorX", Vector3(0.85, 0.2, 0.2));
+    _grid_shader->setVec3("axisColorY", Vector3(0.2, 0.85, 0.2));
+    _grid_shader->setFloat("fadeDistance", 80.0f);
+
+    // Blend so the line/fade anti-aliasing composites over whatever was already drawn, and
+    // disable depth writes so the transparent-between-lines fragments don't punch holes in
+    // the depth buffer; the depth *test* stays on so the grid is still occluded by models.
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glDepthMask(GL_FALSE);
+
+    const Mesh& mesh = _grid_model->meshes[0];
+    glBindVertexArray(_mesh_buffer_objects.at(&mesh).VAO);
+    glDrawElements(GL_TRIANGLES, static_cast<unsigned int>(mesh.indices.size()), GL_UNSIGNED_INT, 0);
+    glBindVertexArray(0);
+
+    glDepthMask(GL_TRUE);
+    glDisable(GL_BLEND);
 }
 
 }

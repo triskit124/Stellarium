@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Camera.h"
+#include "Frame.h"
 #include "Mesh.h"
 #include "Model.h"
 #include "Shader.h"
@@ -57,6 +58,16 @@ class GraphicsEngine
 
         void drawModel(const Model& model, const Shader& shader) const;
         void drawMesh(const Mesh& mesh, const Shader& shader) const;
+
+        // Builds a single large quad on the world XY plane (Z=0) and uploads it to the GPU.
+        // The quad itself is a normal perspective-projected mesh; the grid.frag shader draws
+        // the actual line pattern procedurally with screen-space-derivative anti-aliasing, so
+        // line width stays ~1px regardless of camera distance. Must be called before run().
+        void createGrid(double extent = 500.0);
+
+        // Draws the ground grid with alpha blending (for anti-aliased/fading lines) and
+        // depth writes disabled, so it composites correctly against already-drawn models.
+        void drawGrid() const;
 
         unsigned int loadTextureFromFile(const std::string& path);
 
@@ -141,6 +152,12 @@ class GraphicsEngine
         std::map<const Mesh*, MeshBufferObjectIds> _mesh_buffer_objects { };
 
         std::vector<std::unique_ptr<Model>> _models;
+
+        // Ground grid. Kept separate from _models since it uses its own shader and draw
+        // state (alpha blending, no depth write) rather than the standard textured-mesh path.
+        std::unique_ptr<Shader> _grid_shader;
+        std::unique_ptr<Model> _grid_model;
+        Frame _grid_frame { "world_grid" }; // stays at the identity pose (world origin)
 
         std::atomic<bool> _should_render { true };
 
