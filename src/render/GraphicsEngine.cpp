@@ -9,6 +9,7 @@
 
 #include <filesystem>
 #include <memory>
+#include <chrono>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -113,8 +114,14 @@ void GraphicsEngine::run()
 {
     _should_render.store(true);
 
+    double time_counter = 0.0;
+    int step_counter = 0;
+
     while (!glfwWindowShouldClose(_window) && shouldRender())
     {
+
+        auto tic = std::chrono::steady_clock::now();
+
         // Per-frame time logic
         _current_frame_time = static_cast<double>(glfwGetTime());
         _delta_frame_time = _current_frame_time - _prev_frame_time;
@@ -161,6 +168,16 @@ void GraphicsEngine::run()
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         glfwSwapBuffers(_window);
         glfwPollEvents();
+
+        auto toc = std::chrono::steady_clock::now();
+        double seconds = std::chrono::duration<double>(toc - tic).count();
+        time_counter += seconds;
+        step_counter++;
+        if (time_counter >= 1.0) {
+            std::cout << "graphics thread: " << step_counter / time_counter << " fps\n";
+            time_counter = 0.0;
+            step_counter = 0;
+        }
     }
 
     stopRendering();

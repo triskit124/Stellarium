@@ -8,6 +8,7 @@
 #include <memory>
 #include <cassert>
 #include <vector>
+#include <chrono>
 
 // #include "yaml-cpp/yaml.h"
 
@@ -83,18 +84,42 @@ void StellariumSimulation::run(double t)
 
     const double t_f = time() + t;
 
+    double time_counter = 0.0;
+    int step_counter = 0;
+
     if (_graphics)
     {
         std::thread physics_thread([&]()
         {
+            // Cap the physics thread's real-time rate so it can't win every mutex
+            // re-lock race against the render thread (non-fair std::mutex barging).
+            constexpr double PHYSICS_RATE_HZ = 100.0;
+            const auto target_period = std::chrono::duration<double>(1.0 / PHYSICS_RATE_HZ);
+            auto next_tick = std::chrono::steady_clock::now();
+
             while (time() < t_f && _graphics->shouldRender())
             {
+                auto tic = std::chrono::steady_clock::now();
+
                 {
                     std::lock_guard<std::mutex> lock(_graphics->poseMutex());
                     _step();
                 }
+
+                next_tick += std::chrono::duration_cast<std::chrono::steady_clock::duration>(target_period);
+                std::this_thread::sleep_until(next_tick);
+
+                auto toc = std::chrono::steady_clock::now();
+                double seconds = std::chrono::duration<double>(toc - tic).count();
+                time_counter += seconds;
+                step_counter++;
+                if (time_counter >= 1.0) {
+                    std::cout << "physics thread: " << step_counter / time_counter << " fps\n";
+                    time_counter = 0.0;
+                    step_counter = 0;
+                }
             }
-            
+
             _graphics->stopRendering();
         });
 
