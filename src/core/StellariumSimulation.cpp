@@ -93,8 +93,7 @@ void StellariumSimulation::run(double t)
         {
             // Cap the physics thread's real-time rate so it can't win every mutex
             // re-lock race against the render thread (non-fair std::mutex barging).
-            constexpr double PHYSICS_RATE_HZ = 100.0;
-            const auto target_period = std::chrono::duration<double>(1.0 / PHYSICS_RATE_HZ);
+            const auto target_period = std::chrono::duration<double>(_integrator->getDeltaT());
             auto next_tick = std::chrono::steady_clock::now();
 
             while (time() < t_f && _graphics->shouldRender())
@@ -113,8 +112,9 @@ void StellariumSimulation::run(double t)
                 double seconds = std::chrono::duration<double>(toc - tic).count();
                 time_counter += seconds;
                 step_counter++;
-                if (time_counter >= 1.0) {
-                    std::cout << "physics thread: " << step_counter / time_counter << " fps\n";
+                if (step_counter * target_period.count() >= 1.0) {
+                    std::cout << "sim time: " << time() << "\n";
+                    std::cout << "physics thread: " << std::round(step_counter / time_counter) << " fps\n";
                     time_counter = 0.0;
                     step_counter = 0;
                 }

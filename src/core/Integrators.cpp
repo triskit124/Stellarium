@@ -2,6 +2,8 @@
 #include "Body.h"
 
 #include <cstddef>
+#include <stdexcept>
+#include <string>
 #include <vector>
 
 namespace Stellarium 
@@ -39,6 +41,14 @@ void Integrator::_computeStateDotVector(std::vector<Body*> bodies)
     }
 };
 
+void Integrator::setDeltaT(double dt)
+{
+    if (dt <= 0)
+    {
+        throw std::invalid_argument("Cannot set dt of " + std::to_string(dt) + ". Must be positive.");
+    }
+    _dt = dt;
+}
 
 void RK4::integrate(std::vector<Body*> bodies, double& t)
 {

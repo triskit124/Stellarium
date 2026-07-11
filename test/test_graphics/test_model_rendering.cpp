@@ -5,6 +5,7 @@
 #include "InertiaMatrix.h"
 #include "Quaternion.h"
 
+#include <cmath>
 #include <filesystem>
 
 using namespace Stellarium;
@@ -27,7 +28,7 @@ int main() {
         Vector3(0, 0, 0),
         Vector3(),
         Quaternion(),
-        Vector3(0, 0, 10)
+        Vector3(0, 0, M_PI)
     );
 
     test.assertTrue("Body created", body != nullptr);

@@ -140,7 +140,7 @@ void GraphicsEngine::run()
         processInput(_window);
 
         // Render
-        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+        glClearColor(0.10f, 0.37f, 0.60f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // Activate shader
@@ -183,7 +183,7 @@ void GraphicsEngine::run()
         time_counter += seconds;
         step_counter++;
         if (time_counter >= 1.0) {
-            std::cout << "graphics thread: " << step_counter / time_counter << " fps\n";
+            std::cout << "graphics thread: " << std::round(step_counter / time_counter) << " fps\n";
             time_counter = 0.0;
             step_counter = 0;
         }

@@ -47,6 +47,10 @@ class Integrator
         */
         virtual void integrate(std::vector<Body*> bodies, double& t) = 0;
 
+        void setDeltaT(double dt);
+        
+        double getDeltaT() { return _dt; };
+
     protected:
         /**
         * @brief Collects the state vector for each body and stores the total simulation state in this->_state.
