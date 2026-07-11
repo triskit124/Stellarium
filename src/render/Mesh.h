@@ -34,12 +34,14 @@ class Mesh
 {
     public:
 
-        Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<Texture> textures)
-            : vertices(vertices), indices(indices), textures(textures) { }
+        Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<Texture> textures, Vector3 diffuse_color = Vector3(1.0, 1.0, 1.0))
+            : vertices(vertices), indices(indices), textures(textures), diffuse_color(diffuse_color) { }
 
         std::vector<Vertex> vertices {};
         std::vector<unsigned int> indices {};
         std::vector<Texture> textures {};
+        // Fallback flat color (material's Kd) used when the material has no diffuse texture map.
+        Vector3 diffuse_color { 1.0, 1.0, 1.0 };
 
     };
 

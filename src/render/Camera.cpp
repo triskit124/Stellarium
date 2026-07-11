@@ -1,4 +1,5 @@
 #include "Camera.h"
+#include "HomTransform.h"
 #include "Matrix44.h"
 #include "Quaternion.h"
 #include "Vector4.h"
@@ -6,6 +7,8 @@
 
 namespace Stellarium
 {
+
+const Quaternion Camera::WORLD_UP_TO_EYE_BASIS = Quaternion(Vector3(1, 0, 0), M_PI / 2.0);
 
 Matrix44 Camera::getProjectionMatrix()
 {
@@ -23,48 +26,79 @@ Matrix44 Camera::getProjectionMatrix()
 
 Matrix44 Camera::getViewMatrix()
 {
-    return getPose().getInverse().toMatrix();
+    return HomTransform(getEyeOrientation(), _pos).getInverse().toMatrix();
 }
 
 void Camera::processKeyboardInput(Camera_Movement direction, double delta_time)
 {
     double velocity = _movement_speed * delta_time;
+    Quaternion orientation = getEyeOrientation();
+    Vector3 delta;
     if (direction == FORWARD)
-        _pos += _att * Vector3(0, 0, -1) * velocity; // Z points backwards in camera frame
+        delta = orientation * Vector3(0, 0, -1) * velocity; // Z points backwards in eye frame
     if (direction == BACKWARD)
-        _pos -= _att * Vector3(0, 0, -1) * velocity; // Z points backwards in camera frame
+        delta = orientation * Vector3(0, 0, -1) * -velocity; // Z points backwards in eye frame
     if (direction == LEFT)
-        _pos -= _att * Vector3(1, 0, 0) * velocity; // X points right in camera frame
+        delta = orientation * Vector3(1, 0, 0) * -velocity; // X points right in eye frame
     if (direction == RIGHT)
-        _pos += _att * Vector3(1, 0, 0) * velocity; // X points right in camera frame
+        delta = orientation * Vector3(1, 0, 0) * velocity; // X points right in eye frame
+
+    // Translate the camera and its orbit target together, so distance/orientation
+    // (and therefore future orbit/zoom behavior) stay consistent.
+    _pos += delta;
+    _target += delta;
 }
 
-void Camera::processMouseMovement(double x_offset, double y_offset)
+void Camera::orbit(double x_offset, double y_offset)
 {
     x_offset *= _mouse_sensitivity;
     y_offset *= _mouse_sensitivity;
 
-    Vector3 curr_rpy = _att.getRollPitchYaw();
+    _yaw -= x_offset;
+    _pitch += y_offset;
 
-    double roll = curr_rpy[0] + y_offset;
-    double pitch = curr_rpy[1] - x_offset;
-    double yaw = curr_rpy[2];
+    // Clamp pitch just short of vertical so the camera can't flip over the top.
+    constexpr double kMaxPitch = M_PI_2 - 0.01;
+    if (_pitch > kMaxPitch) _pitch = kMaxPitch;
+    if (_pitch < -kMaxPitch) _pitch = -kMaxPitch;
 
-    setAttitude(Quaternion(roll, pitch, yaw));
+    // Rebuilt fresh from persistent yaw/pitch every time (never decomposed from _att),
+    // so this is immune to the Euler-angle singularities in Quaternion::getRollPitchYaw().
+    //
+    // _att is composed as the outer factor in getEyeOrientation() (_att * WORLD_UP_TO_EYE_BASIS),
+    // so its own rotation axes act directly in world space, not eye space: yaw must therefore use
+    // the true world up axis (0,0,1), while pitch uses (1,0,0) since eye/world X coincide at rest.
+    setAttitude(Quaternion(Vector3(0, 0, 1), _yaw) * Quaternion(Vector3(1, 0, 0), _pitch));
+    updatePositionFromOrbit();
 }
 
-void Camera::processMouseScroll(double y_offset )
+void Camera::pan(double x_offset, double y_offset)
 {
-    _fov += y_offset;
+    // Scale by distance so panning feels consistent whether zoomed in or out, matching Blender.
+    double scale = _pan_speed * _distance;
+    Quaternion orientation = getEyeOrientation();
+    Vector3 right = orientation * Vector3(1, 0, 0);
+    Vector3 up = orientation * Vector3(0, 1, 0);
 
-    if (_fov < 10)
+    Vector3 delta = (right * -x_offset + up * y_offset) * scale;
+    _target += delta;
+    _pos += delta;
+}
+
+void Camera::zoom(double y_offset)
+{
+    // Multiplicative dolly so zooming feels consistent at any distance, matching Blender.
+    double factor = 1.0 - y_offset * _zoom_speed;
+    if (factor < 0.1) factor = 0.1;
+    if (factor > 10.0) factor = 10.0;
+    _distance *= factor;
+
+    if (_distance < _near_clip * 2.0)
     {
-        _fov = 10;
+        _distance = _near_clip * 2.0;
     }
-    if (_fov > 80)
-    {
-        _fov = 80;
-    }
+
+    updatePositionFromOrbit();
 }
 
 }

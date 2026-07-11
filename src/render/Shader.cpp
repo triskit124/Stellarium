@@ -121,6 +121,11 @@ namespace Stellarium
         glUniform1f(glGetUniformLocation(ID, name.c_str()), value);
     }
 
+    void Shader::setVec3(const std::string &name, const Vector3 &value) const
+    {
+        glUniform3f(glGetUniformLocation(ID, name.c_str()), (float)value[0], (float)value[1], (float)value[2]);
+    }
+
     void Shader::setMat4(const std::string &name, const Matrix44 &mat) const
     {
         glUniformMatrix4fv(glGetUniformLocation(ID, name.c_str()), 1, GL_FALSE, mat.getColMajorArray().data());

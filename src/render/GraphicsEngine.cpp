@@ -37,6 +37,11 @@ void _scroll_callback_wrap(GLFWwindow* window, double mouse_x, double mouse_y)
     _global_graphics_ptr->scroll_callback(window, mouse_x, mouse_y);
 }
 
+void _mouse_button_callback_wrap(GLFWwindow* window, int button, int action, int mods)
+{
+    _global_graphics_ptr->mouse_button_callback(window, button, action, mods);
+}
+
 
 GraphicsEngine::GraphicsEngine()
 {
@@ -69,11 +74,15 @@ GraphicsEngine::GraphicsEngine()
     // Mouse input
     glfwSetCursorPosCallback(_window, _mouse_callback_wrap);
 
+    // Middle-mouse-button drag (Blender-style orbit/pan)
+    glfwSetMouseButtonCallback(_window, _mouse_button_callback_wrap);
+
     // Scroll input
     glfwSetScrollCallback(_window, _scroll_callback_wrap);
 
-    // Tell GLFW to capture our mouse
-    glfwSetInputMode(_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    // Cursor stays visible and free; orbit/pan only apply while the middle mouse
+    // button is held (see mouse_button_callback).
+    glfwSetInputMode(_window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 
     // Initialize GLAD
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
@@ -313,6 +322,7 @@ void GraphicsEngine::drawMesh(const Mesh& mesh, const Shader& shader) const
     unsigned int num_specular_textures = 1;
     unsigned int num_normal_textures = 1;
     unsigned int num_height_textures = 1;
+    bool has_diffuse_texture = false;
 
     for (size_t i = 0; i < mesh.textures.size(); i++)
     {
@@ -323,6 +333,7 @@ void GraphicsEngine::drawMesh(const Mesh& mesh, const Shader& shader) const
         if (name == "texture_diffuse")
         {
             number = std::to_string(num_diffuse_textures++);
+            has_diffuse_texture = true;
         }
         else if (name == "texture_specular")
         {
@@ -347,6 +358,10 @@ void GraphicsEngine::drawMesh(const Mesh& mesh, const Shader& shader) const
         glBindTexture(GL_TEXTURE_2D, mesh.textures[i].id);
     }
     glActiveTexture(GL_TEXTURE0);
+
+    // Fall back to the material's flat Kd color when there's no diffuse image map.
+    shader.setBool("hasDiffuseTexture", has_diffuse_texture);
+    shader.setVec3("diffuseColor", mesh.diffuse_color);
 
     // draw mesh
     glBindVertexArray(_mesh_buffer_objects.at(&mesh).VAO);

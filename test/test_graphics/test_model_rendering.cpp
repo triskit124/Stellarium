@@ -24,10 +24,10 @@ int main() {
         1.0,
         Vector3(),
         InertiaMatrix(),
-        Vector3(0, 0, -5),
+        Vector3(0, 0, 0),
         Vector3(),
         Quaternion(),
-        Vector3(1, 1, 0)
+        Vector3(0, 0, 10)
     );
 
     test.assertTrue("Body created", body != nullptr);
@@ -43,11 +43,11 @@ int main() {
 
     // Load a second model at a different position with no frame (static)
     Body* body2 = sim.addBody(
-        "static_body",
+        "static_body_1",
         1.0,
         Vector3(),
         InertiaMatrix(),
-        Vector3(5, 0, -5),
+        Vector3(5, 0, 0),
         Vector3(),
         Quaternion(),
         Vector3()
@@ -57,6 +57,23 @@ int main() {
 
     test.assertTrue("Second model loaded", model2);
     test.assertTrue("Second model has frame", model2->getFrame() == body2);
+
+    // Load a third model at a different position with no frame (static)
+    Body* body3 = sim.addBody(
+        "static_body_2",
+        1.0,
+        Vector3(),
+        InertiaMatrix(),
+        Vector3(0, 10, 0),
+        Vector3(),
+        Quaternion(),
+        Vector3()
+    );
+
+    Model* model3 = sim.loadModel(sphere_model_path, *body3);
+
+    test.assertTrue("third model loaded", body3);
+    test.assertTrue("third model has frame", model3->getFrame() == body3);
 
     // Run the simulation for a while to visually inspect the rendering
     sim.run(3000);

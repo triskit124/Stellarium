@@ -75,12 +75,41 @@ class GraphicsEngine
                  _camera->processKeyboardInput(Camera::RIGHT, _delta_frame_time);
         }
 
+        // Blender-style navigation: drag with the middle mouse button to orbit, hold Shift
+        // while dragging with the middle mouse button to pan. The cursor stays visible and
+        // free otherwise, so drags only apply between a button press and release.
+        void mouse_button_callback(GLFWwindow* window, int button, int action, int /* mods */)
+        {
+            if (button != GLFW_MOUSE_BUTTON_MIDDLE)
+                return;
+
+            if (action == GLFW_PRESS)
+            {
+                bool shift_held = glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS
+                                || glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS;
+                _panning = shift_held;
+                _orbiting = !shift_held;
+
+                // Sync the drag origin to the cursor's current position so the first
+                // mouse_callback delta of this drag doesn't jump from a stale position.
+                glfwGetCursorPos(window, &_prev_mouse_x, &_prev_mouse_y);
+            }
+            else if (action == GLFW_RELEASE)
+            {
+                _panning = false;
+                _orbiting = false;
+            }
+        }
+
         void mouse_callback(GLFWwindow* /* window */, double mouse_x, double mouse_y)
         {
-            float delta_mouse_x = mouse_x - _prev_mouse_x;
-            float delta_mouse_y = _prev_mouse_y - mouse_y; // reversed since y-coordinates go from bottom to top
+            double delta_mouse_x = mouse_x - _prev_mouse_x;
+            double delta_mouse_y = _prev_mouse_y - mouse_y; // reversed since y-coordinates go from bottom to top
 
-             _camera->processMouseMovement(delta_mouse_x, delta_mouse_y);
+            if (_orbiting)
+                _camera->orbit(delta_mouse_x, delta_mouse_y);
+            else if (_panning)
+                _camera->pan(delta_mouse_x, -delta_mouse_y);
 
             _prev_mouse_x = mouse_x;
             _prev_mouse_y = mouse_y;
@@ -88,7 +117,7 @@ class GraphicsEngine
 
         void scroll_callback(GLFWwindow* /* window */, double /* mouse_x */, double mouse_y)
         {
-            _camera->processMouseScroll(mouse_y);
+            _camera->zoom(mouse_y);
         }
 
         void stopRendering() { this->_should_render.store(false); };
@@ -102,6 +131,8 @@ class GraphicsEngine
 
         double _prev_mouse_x { 0.0 };
         double _prev_mouse_y { 0.0 };
+        bool _orbiting { false };
+        bool _panning { false };
 
         GLFWwindow* _window = nullptr;
         std::unique_ptr<Camera> _camera = nullptr;
