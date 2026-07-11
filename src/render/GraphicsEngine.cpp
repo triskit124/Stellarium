@@ -8,6 +8,7 @@
 #include "import/assimp_importer.h"
 
 #include <filesystem>
+#include <format>
 #include <memory>
 #include <chrono>
 
@@ -108,10 +109,21 @@ GraphicsEngine::GraphicsEngine()
     );
 
     createGrid();
+
+    _text_renderer = std::make_unique<TextRenderer>(
+        (std::filesystem::path(STELL_PROJECT_ROOT) / std::filesystem::path("assets/fonts/DejaVuSans.ttf")).string(),
+        (std::filesystem::path(STELL_PROJECT_ROOT) / std::filesystem::path("src/render/shader/text.vert")).string(),
+        (std::filesystem::path(STELL_PROJECT_ROOT) / std::filesystem::path("src/render/shader/text.frag")).string()
+    );
 }
 
 GraphicsEngine::~GraphicsEngine()
 {
+    // Release GL-owning members before the context they belong to is torn down --
+    // glfwTerminate() destroys the window's GL context immediately, and any GL calls
+    // issued after that (e.g. TextRenderer's glDelete* cleanup, which would otherwise
+    // run automatically as a member destructor below) are undefined behavior.
+    _text_renderer.reset();
     glfwTerminate();
 }
 
@@ -182,6 +194,16 @@ void GraphicsEngine::run()
 
         drawGrid();
 
+        drawText("stellarium", 10.0f, 30.0f);
+
+        {
+            std::lock_guard<std::mutex> lock(_hud_text_mutex);
+            for (const auto& [key, entry] : _hud_text)
+            {
+                drawText(entry.text, entry.x, entry.y, entry.color, entry.scale);
+            }
+        }
+
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         glfwSwapBuffers(_window);
         glfwPollEvents();
@@ -191,7 +213,7 @@ void GraphicsEngine::run()
         time_counter += seconds;
         step_counter++;
         if (time_counter >= 1.0) {
-            std::cout << "graphics thread: " << std::round(step_counter / time_counter) << " fps\n";
+            setHudText("graphics_fps", std::format("graphics: {:.2f} fps", step_counter / time_counter), 10.0, 90.0, Vector3(1, 1, 1), 0.5f);
             time_counter = 0.0;
             step_counter = 0;
         }
@@ -427,6 +449,25 @@ void GraphicsEngine::drawGrid() const
 
     glDepthMask(GL_TRUE);
     glDisable(GL_BLEND);
+}
+
+void GraphicsEngine::drawText(const std::string& text, float x, float y, const Vector3& color, float scale)
+{
+    int fb_width, fb_height;
+    glfwGetFramebufferSize(_window, &fb_width, &fb_height);
+    _text_renderer->drawText(text, x, y, color, fb_width, fb_height, scale);
+}
+
+void GraphicsEngine::setHudText(const std::string& key, const std::string& text, float x, float y, const Vector3& color, float scale)
+{
+    std::lock_guard<std::mutex> lock(_hud_text_mutex);
+    _hud_text[key] = { text, x, y, color, scale };
+}
+
+void GraphicsEngine::clearHudText(const std::string& key)
+{
+    std::lock_guard<std::mutex> lock(_hud_text_mutex);
+    _hud_text.erase(key);
 }
 
 }

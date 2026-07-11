@@ -2,6 +2,7 @@ stell_sources += files(
   'Camera.cpp',
   'GraphicsEngine.cpp',
   'Shader.cpp',
+  'TextRenderer.cpp',
   'Window.cpp',
   'import/assimp_importer.cpp',
 )

@@ -5,6 +5,7 @@
 #include "Mesh.h"
 #include "Model.h"
 #include "Shader.h"
+#include "TextRenderer.h"
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <memory>
@@ -68,6 +69,23 @@ class GraphicsEngine
         // Draws the ground grid with alpha blending (for anti-aliased/fading lines) and
         // depth writes disabled, so it composites correctly against already-drawn models.
         void drawGrid() const;
+
+        // Draws a string in screen space for the current frame. (x, y) is the text baseline
+        // in framebuffer pixels (origin top-left, y down -- see TextRenderer::drawText).
+        // scale multiplies glyph size/spacing (1.0 = the atlas's baked pixelHeight; see
+        // TextRenderer::drawText for why large values look blurry). Issues GL calls
+        // directly, so must be called from the render thread (the thread executing run()),
+        // same as drawModel/drawGrid.
+        void drawText(const std::string& text, float x, float y, const Vector3& color = Vector3(1.0, 1.0, 1.0), float scale = 1.0f);
+
+        // Thread-safe: sets (or replaces) a named HUD text entry, redrawn every frame until
+        // cleared via clearHudText(). Unlike drawText(), this issues no GL calls itself --
+        // it only stores the string under a lock -- so it's safe to call from the physics
+        // thread. The render thread draws all entries once per frame from inside run().
+        void setHudText(const std::string& key, const std::string& text, float x, float y, const Vector3& color = Vector3(1.0, 1.0, 1.0), float scale = 1.0f);
+
+        // Removes a previously set HUD text entry. Thread-safe.
+        void clearHudText(const std::string& key);
 
         unsigned int loadTextureFromFile(const std::string& path);
 
@@ -158,6 +176,18 @@ class GraphicsEngine
         std::unique_ptr<Shader> _grid_shader;
         std::unique_ptr<Model> _grid_model;
         Frame _grid_frame { "world_grid" }; // stays at the identity pose (world origin)
+
+        std::unique_ptr<TextRenderer> _text_renderer;
+
+        struct HudTextEntry
+        {
+            std::string text;
+            float x, y;
+            Vector3 color;
+            float scale;
+        };
+        std::map<std::string, HudTextEntry> _hud_text;
+        std::mutex _hud_text_mutex;
 
         std::atomic<bool> _should_render { true };
 
