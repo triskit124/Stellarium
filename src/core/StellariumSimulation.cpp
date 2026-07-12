@@ -115,8 +115,8 @@ void StellariumSimulation::run(double t)
                 time_counter += seconds;
                 step_counter++;
                 if (step_counter * target_period.count() >= 1.0) {
-                    _graphics->setHudText("sim_time", std::format("time: {:.2f} s", time()), 10.0, 50.0, Vector3(1, 1, 1), 0.5);
-                    _graphics->setHudText("physics_fps", std::format("physics: {:.2f} fps", step_counter / time_counter), 10.0, 70.0, Vector3(1, 1, 1), 0.5f);
+                    _graphics->setHudText("sim_time", std::format("time: {:.2f} s", time()), 10.0, 50.0, Vector3(1, 1, 1), 0.6);
+                    _graphics->setHudText("physics_fps", std::format("physics: {:.2f} fps", step_counter / time_counter), 10.0, 70.0, Vector3(1, 1, 1), 0.6f);
                     time_counter = 0.0;
                     step_counter = 0;
                 }

@@ -111,7 +111,7 @@ GraphicsEngine::GraphicsEngine()
     createGrid();
 
     _text_renderer = std::make_unique<TextRenderer>(
-        (std::filesystem::path(STELL_PROJECT_ROOT) / std::filesystem::path("assets/fonts/DejaVuSans.ttf")).string(),
+        (std::filesystem::path(STELL_PROJECT_ROOT) / std::filesystem::path("assets/fonts/FiraCode-Regular.ttf")).string(),
         (std::filesystem::path(STELL_PROJECT_ROOT) / std::filesystem::path("src/render/shader/text.vert")).string(),
         (std::filesystem::path(STELL_PROJECT_ROOT) / std::filesystem::path("src/render/shader/text.frag")).string()
     );
@@ -213,7 +213,7 @@ void GraphicsEngine::run()
         time_counter += seconds;
         step_counter++;
         if (time_counter >= 1.0) {
-            setHudText("graphics_fps", std::format("graphics: {:.2f} fps", step_counter / time_counter), 10.0, 90.0, Vector3(1, 1, 1), 0.5f);
+            setHudText("graphics_fps", std::format("graphics: {:.2f} fps", step_counter / time_counter), 10.0, 90.0, Vector3(1, 1, 1), 0.6f);
             time_counter = 0.0;
             step_counter = 0;
         }
