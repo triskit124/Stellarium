@@ -6,13 +6,10 @@
 #include <mutex>
 #include <string>
 #include <thread>
-#include <iostream>
 #include <memory>
 #include <cassert>
 #include <vector>
 #include <chrono>
-
-// #include "yaml-cpp/yaml.h"
 
 
 namespace Stellarium
@@ -25,14 +22,6 @@ void StellariumSimulation::addGraphics()
 #else
     throw std::invalid_argument("Graphics was enabled but stellarium has been built without rendering. Cannot continue.");
 #endif
-}
-
-void StellariumSimulation::loadScenario(const std::string& filename)
-
-{
-    // YAML::Node config = YAML::LoadFile(filename);
-
-    std::cout << "Loaded scenario file:  " << filename << std::endl;
 }
 
 Body* StellariumSimulation::addBody(const std::string& name, double mass, Vector3 cm, InertiaMatrix inertia, Vector3 pos, Vector3 vel, Quaternion att, Vector3 ang_vel)

@@ -40,13 +40,6 @@ class StellariumSimulation
         void addGraphics();
 
         /**
-         * @brief Loads a scenario from a file.
-         *
-         * @param filename The name of the file to load the scenario from.
-         */
-        void loadScenario(const std::string& filename);
-
-        /**
          * @brief Adds a body to the simulation.
          *
          * @param name The name of the body.
