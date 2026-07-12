@@ -3,7 +3,6 @@ stell_sources += files(
   'GraphicsEngine.cpp',
   'Shader.cpp',
   'TextRenderer.cpp',
-  'Window.cpp',
   'import/assimp_importer.cpp',
 )
 
