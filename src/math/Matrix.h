@@ -164,6 +164,22 @@ class Matrix : public MathBase
             return true;
         }
 
+        /**
+        * @brief negation operator
+        * @param m The matrix to concatenate onto the right of this matrix.
+        */
+        Matrix operator-() const {
+            return *this * -1.0;
+        }
+
+        /**
+        * @brief horizontal concatenation operator
+        * @param m The matrix to concatenate onto the right of this matrix.
+        */
+        Matrix operator|(const Matrix& m) const {
+            return this->horizontalConcatenate(m);
+        }
+
         /*
         ===================
               Methods
@@ -217,6 +233,37 @@ class Matrix : public MathBase
                 }
             }
             return array;
+        }
+
+        /**
+        * @brief horizontal concatenation
+        * @param m The matrix to concatenate onto the right of this matrix.
+        */
+        Matrix horizontalConcatenate(const Matrix& m) const {
+            if (_num_rows != m.getNumRows()) {
+                throw std::invalid_argument("Cannot right-concatenate matrices with different numbers of rows. Got " + std::to_string(_num_rows) + " and " + std::to_string(m.getNumRows()));
+            }
+            Matrix concatenated = Matrix(_num_rows, _num_cols + m.getNumCols());
+            for (size_t i = 0; i < _num_rows; ++i) {
+                concatenated[i] = _rows[i] | m[i];
+            }
+            return concatenated;
+        }
+
+        /**
+        * @brief vertical concatenation
+        * @param m The matrix to concatenate onto the bottom of this matrix.
+        */
+        Matrix verticalConcatenate(const Matrix& m) const {
+            if (_num_cols != m.getNumCols()) {
+                throw std::invalid_argument("Cannot vertical-concatenate matrices with different numbers of cols. Got " + std::to_string(_num_cols) + " and " + std::to_string(m.getNumCols()));
+            }
+            return (this->getTranspose() | m.getTranspose()).getTranspose();
+        }
+
+        static Matrix zeros(int num) {
+            // mxn constructor initializes to zeros
+            return Matrix(num, num);
         }
 
     private:

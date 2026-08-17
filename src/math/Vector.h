@@ -224,6 +224,14 @@ class Vector : public MathBase
             return _data[idx];
         }
 
+        /**
+        * @brief concatenation operator
+        * @param m The vector to concatenate onto the end of this vector.
+        */
+        Vector operator|(const Vector& m) const {
+            return this->concatenate(m);
+        }
+
         /*
         ===================
               Methods
@@ -297,6 +305,22 @@ class Vector : public MathBase
         */
         bool isUnit() const {
             return std::abs(getNorm() - 1.0) <= _epsilon;
+        }
+
+
+        /**
+        * @brief concatenate this vector with another vector
+        * @param m The vector to concatenate onto the end of this vector.
+        */
+        Vector concatenate(const Vector& m) const {
+            Vector concatenated = Vector(_size + m.getSize());
+            for (size_t i = 0; i < _size; ++i) {
+                concatenated[i] = _data[i];
+            }
+            for (size_t i = 0; i < m.getSize(); ++i) {
+                concatenated[i + _size] = m[i];
+            }
+            return concatenated;
         }
 
         private:

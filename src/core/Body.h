@@ -1,12 +1,18 @@
 #pragma once
 
 #include <array>
+#include <memory>
+#include <stdexcept>
 #include <string>
+#include <vector>
 
 #include "Frame.h"
+#include "SpatialInertia.h"
+#include "SpatialVector.h"
 #include "Vector3.h"
 #include "InertiaMatrix.h"
 #include "Quaternion.h"
+#include "Joint.h"
 
 namespace Stellarium
 {
@@ -14,13 +20,10 @@ namespace Stellarium
 /**
  * @brief A class representing a rigid body.
  */
-class Body : public Frame
+class Body
 {
 
     public:
-
-        /**< The size of the state vector for a body. */
-        constexpr static unsigned int STATE_SIZE { 13 };
 
         /*
         ===================================
@@ -36,10 +39,13 @@ class Body : public Frame
         * @param cm The position of center of mass of the body.
         * @param inertia The inertia matrix of the body.
         */
-        Body(const std::string& name, double mass, const Vector3& cm, const InertiaMatrix& inertia) : Frame(name) {
-            this->setMass(mass);
-            this->setCm(cm);
-            this->setInertia(inertia);
+        Body(const std::string& name, SpatialInertia spatial_inertia, Joint::Info joint_info = { Joint::Type::Free, nullptr, { } }) 
+        : _name(name), 
+        _spatial_inertia(spatial_inertia), 
+        _body_frame(name), 
+        _center_of_mass_frame(name + "_center_of_mass", spatial_inertia.getCenterOfMass()) 
+        {
+            attachToParent(joint_info);
         };
 
         /*
@@ -48,117 +54,89 @@ class Body : public Frame
         ==============
         */
 
-        /**
-        * @brief Gets the mass of the body.
-        * @return The mass of the body.
-        */
-        double getMass() const { return _mass; };
-
-        /**
-        * @brief Sets the mass of the body.
-        * @param mass The new mass of the body.
-        */
-        void setMass(double mass) {
-            if (mass < 0.0) {
-                throw std::invalid_argument("Mass must be a non-negative value");
-            }
-            _mass = mass;
-        };
-
-        /**
-        * @brief Gets the center of mass of the body.
-        * @return The center of mass of the body.
-        */
-        Vector3 getCm() const { return _cm; };
-
-        /**
-        * @brief Sets the center of mass of the body.
-        * @param cm The new center of mass of the body.
-        */
-        void setCm(const Vector3& cm) { _cm = cm; };
-
-        /**
-        * @brief Gets the inertia matrix of the body.
-        * @return The inertia matrix of the body.
-        */
-        InertiaMatrix getInertia() const { return _inertia; };
-
-        /**
-        * @brief Sets the inertia matrix of the body.
-        * @param inertia The new inertia matrix of the body.
-        */
-        void setInertia(const InertiaMatrix& inertia) { _inertia = inertia; };
+        const std::string getName() const { return _name; };
 
         /**
         * @brief Adds a force to the body.
         * @param force The force to be added, expressed in the body frame.
         */
-        void addBodyFrameForce(const Vector3& force) { _force += force; };
+        void addBodyFrameForce(const Vector3& force) { _external_force.setForce(_external_force.getForce() + force); };
 
         /**
         * @brief Adds a torque to the body.
         * @param torque The torque to be added, expressed in the body frame.
         */
-        void addBodyFrameTorque(const Vector3& torque) { _torque += torque; };
+        void addBodyFrameTorque(const Vector3& torque) { _external_force.setTorque(_external_force.getTorque() + torque); };
 
         /**
         * @brief Adds a force to the body.
         * @param force The force to be added, expressed in the inertial frame.
         */
-        void addInertialFrameForce(const Vector3& force) { _force += _att * force; };
+        void addInertialFrameForce(const Vector3& force) { this->addBodyFrameForce(_att * force); };
 
         /**
         * @brief Adds a torque to the body.
         * @param torque The torque to be added, expressed in the inertial frame.
         */
-        void addInertialFrameTorque(const Vector3& torque) { _torque += _att * torque; };
+        void addInertialFrameTorque(const Vector3& torque) { this->addBodyFrameTorque(_att * torque); };
 
         /**
         * @brief Clears all forces and torques acting on the body.
         */
-        void clearForces() { _force = {0.0, 0.0, 0.0}; _torque = {0.0, 0.0, 0.0}; };
+        void clearForces() { _external_force = SpatialForce(); };
 
-        /**
-        * @brief Gets the state of the body.
-        * @return The state of the body as an array of doubles.
-        */
-        std::array<double*, Body::STATE_SIZE> getState();
+        Frame& getBodyFrame() { return _body_frame; };
 
-        /**
-        * @brief Gets the derivative of the state of the body via rigid-body equations of motion.
-        * @return The derivative of the state of the body as an array of doubles.
-        */
-        std::array<double, Body::STATE_SIZE> getStateDot();
+        Frame& getCenterOfMassFrame() { return _center_of_mass_frame; };
 
-    protected:
+        Joint* getJoint() { return _joint.get(); };
+
+        void attachToParent(Joint::Info joint_info) { 
+            if (_joint) {
+                throw std::runtime_error("Cannot attach to body " + joint_info.parent->getName() + ". Parent already exists.");
+            }
+            switch (joint_info.type) {
+                case Joint::Type::Pin:
+                    _joint = std::make_unique<PinJoint>(*joint_info.parent, *this, joint_info.axes);
+                    break;
+                default:
+                    throw std::invalid_argument("Not yet implemented...");
+            }
+
+            // register this body as a child with the parent
+            // this is mostly for reference purposes. This body owns the joint object.
+            joint_info.parent->_addChild(this);
+        }
 
     private:
 
-        /**
-        * @brief The mass of the body
-        */
-        double _mass { 1.0 };
+        const std::string _name;
 
-        /**
-        * @brief The location of the center of mass of the body w.r.t the body frame, expressed in the body frame.
-        */
-        Vector3 _cm {0.0, 0.0, 0.0};
+        SpatialInertia _spatial_inertia;
+        SpatialForce _external_force { };
 
-        /**
-        * @brief The inertia tensor for the body expressed in the body frame.
-        */
-        InertiaMatrix _inertia = {{1.0, 0.0, 0.0} ,{0.0, 1.0, 0.0}, {0.0, 0.0, 1.0}};
+        Frame _body_frame;
+        Frame _center_of_mass_frame;
 
+        std::unique_ptr<Joint> _joint = nullptr;
+        std::vector<Body*> _children { };
 
-        /**
-        * @brief The total external force acting on the body, expressed in the BODY frame.
-        */
-        Vector3 _force {0.0, 0.0, 0.0};
+        void _addChild(Body* new_child) {
 
-        /**
-        * @brief The total external torque acting on the body, expressed in the BODY frame.
-        */
-        Vector3 _torque {0.0, 0.0, 0.0};
+            // verify that the new child isn't already a child of this body
+            for (Body* child : _children) {
+                if (child == new_child) {
+                    throw std::runtime_error("Body is already registered as a child of this body.");
+                }
+            }
+
+            // verify that the new child has a joint that lists this body as a parent
+            if (&new_child->getJoint()->getParent() != this) {
+                throw std::invalid_argument("Tried to call addChild on this body but the child's joint does not list this body as its parent.");
+            }
+
+            _children.push_back(new_child);
+        }
 
 };
 
