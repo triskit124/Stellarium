@@ -31,7 +31,7 @@ class Vector : public MathBase
         * @param size The size of the vector.
         * @param val Value to assign to all elements. Defaults to 0.
         */
-        Vector(size_t size, double val = 0.0) : MathBase(), _size(size), _data(size, val) { };
+        Vector(size_t size = 0, double val = 0.0) : MathBase(), _size(size), _data(size, val) { };
 
         /**
         * @brief Constructs a Vector with the given values. The size of the vector is determined by the number of values given.

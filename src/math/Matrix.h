@@ -29,7 +29,7 @@ class Matrix : public MathBase
         /**
         * @brief Default constructor. Initializes all elements to 0.
         */
-        Matrix(size_t num_rows, size_t num_cols) : MathBase(), _num_rows(num_rows), _num_cols(num_cols), _rows(num_rows, Vector(num_cols, 0.0)) {}
+        Matrix(size_t num_rows = 0, size_t num_cols = 0) : MathBase(), _num_rows(num_rows), _num_cols(num_cols), _rows(num_rows, Vector(num_cols, 0.0)) {}
 
         /**
         * @brief Constructs a Matrix with the given rows.
@@ -81,6 +81,38 @@ class Matrix : public MathBase
             Matrix result(_num_rows, _num_cols);
             for (size_t i = 0; i < _num_rows; ++i) {
                 result[i] = _rows[i] / c;
+            }
+            return result;
+        }
+
+        /**
+        * @brief Matrix-matrix addition.
+        * @param m The matrix to add.
+        * @return The elementwise sum of the two matrices.
+        */
+        Matrix operator+(const Matrix& m) const {
+            if (_num_rows != m.getNumRows() || _num_cols != m.getNumCols()) {
+                throw std::invalid_argument("Cannot add matrices of different size. Got " + std::to_string(_num_rows) + "x" + std::to_string(_num_cols) + " and " + std::to_string(m.getNumRows()) + "x" + std::to_string(m.getNumCols()));
+            }
+            Matrix result(_num_rows, _num_cols);
+            for (size_t i = 0; i < _num_rows; ++i) {
+                result[i] = _rows[i] + m[i];
+            }
+            return result;
+        }
+
+        /**
+        * @brief Matrix-matrix subtraction.
+        * @param m The matrix to subtract.
+        * @return The elementwise difference of the two matrices.
+        */
+        Matrix operator-(const Matrix& m) const {
+            if (_num_rows != m.getNumRows() || _num_cols != m.getNumCols()) {
+                throw std::invalid_argument("Cannot subtract matrices of different size. Got " + std::to_string(_num_rows) + "x" + std::to_string(_num_cols) + " and " + std::to_string(m.getNumRows()) + "x" + std::to_string(m.getNumCols()));
+            }
+            Matrix result(_num_rows, _num_cols);
+            for (size_t i = 0; i < _num_rows; ++i) {
+                result[i] = _rows[i] - m[i];
             }
             return result;
         }

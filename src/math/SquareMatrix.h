@@ -1,8 +1,10 @@
 #pragma once
 
 #include "Matrix.h"
+#include <cmath>
 #include <cstddef>
 #include <initializer_list>
+#include <utility>
 
 namespace Stellarium
 {
@@ -77,6 +79,56 @@ class SquareMatrix : public Matrix
         */
         bool isOrthogonal() const {
             return (*this * this->getTranspose()) == SquareMatrix(getNumRows());
+        }
+
+        /**
+        * @brief Computes the inverse of the matrix via Gauss-Jordan elimination with partial pivoting.
+        * @throws std::invalid_argument if the matrix is singular.
+        * @return The inverse of the matrix.
+        */
+        SquareMatrix getInverse() const {
+            const size_t n = getNumRows();
+            Matrix work = *this;
+            SquareMatrix result(n); // identity
+
+            for (size_t col = 0; col < n; ++col) {
+                // partial pivot: find the largest-magnitude entry in this column at or below the diagonal
+                size_t pivot_row = col;
+                double pivot_val = std::abs(work[col][col]);
+                for (size_t row = col + 1; row < n; ++row) {
+                    if (std::abs(work[row][col]) > pivot_val) {
+                        pivot_row = row;
+                        pivot_val = std::abs(work[row][col]);
+                    }
+                }
+
+                if (pivot_val <= _epsilon) {
+                    throw std::invalid_argument("Matrix is singular and cannot be inverted.");
+                }
+
+                if (pivot_row != col) {
+                    std::swap(work[col], work[pivot_row]);
+                    std::swap(result[col], result[pivot_row]);
+                }
+
+                double pivot = work[col][col];
+                work[col] = work[col] / pivot;
+                result[col] = result[col] / pivot;
+
+                for (size_t row = 0; row < n; ++row) {
+                    if (row == col) {
+                        continue;
+                    }
+                    double factor = work[row][col];
+                    if (std::abs(factor) <= _epsilon) {
+                        continue;
+                    }
+                    work[row] = work[row] - work[col] * factor;
+                    result[row] = result[row] - result[col] * factor;
+                }
+            }
+
+            return result;
         }
 
 };

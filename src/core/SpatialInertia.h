@@ -2,6 +2,7 @@
 
 #include "InertiaMatrix.h"
 #include "Matrix.h"
+#include "SpatialVector.h"
 #include "Vector3.h"
 #include "Matrix33.h"
 #include <stdexcept>
@@ -58,14 +59,31 @@ class SpatialInertia
         void setCenterOfMassInertia(const InertiaMatrix& cm_inertia) { _cm_inertia = cm_inertia; };
 
         Matrix getMatrix() const {
-            return ((_cm_inertia | Matrix::zeros(3)).verticalConcatenate(Matrix::zeros(3) | _mass * Matrix33()));
+            // See Featherstone, Rigid Body Dynamics Algorithms, 2008, eq. 2.63
+            Matrix33 c_cross = Matrix33::skew(_center_of_mass);
+            Matrix33 c_cross_sq = c_cross * c_cross;
+
+            Matrix33 top_left(
+                Vector3(_cm_inertia[0] - _mass * c_cross_sq[0]),
+                Vector3(_cm_inertia[1] - _mass * c_cross_sq[1]),
+                Vector3(_cm_inertia[2] - _mass * c_cross_sq[2])
+            );
+            Matrix33 top_right = _mass * c_cross;
+            Matrix33 bottom_left = -top_right; // == _mass * c_cross.getTranspose()
+
+            return ((top_left | top_right).verticalConcatenate(bottom_left | (_mass * Matrix33())));
         }
 
         Matrix operator*(const Matrix& mat) {
-            if (mat.getNumRows() != 6) {
-                throw std::invalid_argument("Cannot multiply SpatialInertia matrix with another matrix that has" + std::to_string(mat.getNumRows()) + " rows. Must have 6.");
-            }
             return  this->getMatrix() * mat;
+        }
+
+        SpatialForce operator*(const SpatialVelocity& v) const {
+            // See Featherstone, Rigid Body Dynamics Algorithms, 2008, eq. 2.63.
+            // p is the linear momentum, h is the angular momentum about the reference point (not the center of mass).
+            Vector3 p = _mass * (v.getLinearVelocity() + v.getAngularVelocity().cross(_center_of_mass));
+            Vector3 h = _cm_inertia * v.getAngularVelocity() + _center_of_mass.cross(p);
+            return SpatialForce(h, p);
         }
 
     private:

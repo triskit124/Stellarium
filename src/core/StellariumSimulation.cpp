@@ -1,8 +1,18 @@
 #include "StellariumSimulation.h"
 #include "Body.h"
 #include "Integrators.h"
+#include "Joint.h"
+#include "Matrix.h"
+#include "Matrix33.h"
+#include "SpatialInertia.h"
+#include "SpatialTransform.h"
+#include "SpatialVector.h"
+#include "SquareMatrix.h"
+#include "Vector.h"
 #include "Vector3.h"
 
+#include <cstddef>
+#include <map>
 #include <mutex>
 #include <string>
 #include <thread>
@@ -24,16 +34,9 @@ void StellariumSimulation::addGraphics()
 #endif
 }
 
-Body* StellariumSimulation::addBody(const std::string& name, double mass, Vector3 cm, InertiaMatrix inertia, Vector3 pos, Vector3 vel, Quaternion att, Vector3 ang_vel)
+Body* StellariumSimulation::addBody(const std::string& name, const SpatialInertia& spatial_inertia, const Joint::Info& joint_info)
 {
-    std::unique_ptr<Stellarium::Body> new_body = std::make_unique<Stellarium::Body>(name, mass, cm, inertia);
-
-    new_body->setPosition(pos);
-    new_body->setVelocity(vel);
-    new_body->setAttitude(att);
-    new_body->setAngularVelocity(ang_vel);
-
-    _bodies.emplace_back(std::move(new_body));
+    _bodies.emplace_back(std::make_unique<Stellarium::Body>(name, spatial_inertia, joint_info));
 
     // std::cout << "Added body " << name << " to the simulation\n";
 
@@ -68,6 +71,100 @@ void StellariumSimulation::_step()
     }
     _integrator->integrate(bodies, _t);
 
+}
+
+Vector StellariumSimulation::_computeForwardDynamics()
+{
+    // Forward dynamics via the Articulated Body Algorithm
+    // See: Featherstone, Rigid Body Dynamics Algorithms, 2008, table 7.1
+    //
+    // _bodies[0] is the fixed base (no joint, zero velocity/acceleration). All other bodies are assumed
+    // to appear after their parent in _bodies (i.e. parents are always processed before their children).
+
+    std::map<Body*, SpatialVelocity> v { };
+    std::map<Body*, SpatialTransform> i_X_p { };
+    std::map<Body*, SpatialTransform> i_X_0 { };
+    std::map<Body*, SpatialVelocity> c { };
+    std::map<Body*, Matrix> I_A { };   // articulated-body inertia, size [6 x 6]
+    std::map<Body*, Vector> p_A { };   // articulated-body bias force, size [6 x 1]
+    std::map<Body*, Matrix> U { };     // size [6 x dof]
+    std::map<Body*, Matrix> D_inv { }; // size [dof x dof]
+    std::map<Body*, Vector> u { };     // size [dof x 1]
+    std::map<Body*, Vector> a { };
+
+    Body* base = _bodies[0].get();
+    v[base] = SpatialVelocity();
+    i_X_0[base] = SpatialTransform();
+
+    // first pass: outward, root to tip
+    for (size_t i = 1; i < _bodies.size(); ++i)
+    {
+        Body* body = _bodies[i].get();
+        Joint* joint = body->getJoint();
+        Body* parent = joint->getInfo().parent;
+
+        SpatialTransform X_J = joint->getJointTransform();
+        SpatialVelocity v_J = joint->getJointVelocity();
+
+        i_X_p[body] = X_J * joint->getInfo().parent_to_joint;
+        i_X_0[body] = i_X_p[body] * i_X_0[parent];
+
+        v[body] = i_X_p[body] * v[parent] + v_J;
+        c[body] = v[body].cross(v_J);
+
+        I_A[body] = body->getSpatialInertia().getMatrix();
+
+        SpatialForce f_ext = SpatialForce(); // TODO: zero for now
+        p_A[body] = (v[body].cross(body->getSpatialInertia() * v[body]) - i_X_0[body] * f_ext).getVector();
+    }
+
+    // second pass: inward, tip to root -- fold each body's articulated inertia/bias force into its parent's
+    for (size_t i = _bodies.size(); i-- > 1; )
+    {
+        Body* body = _bodies[i].get();
+        Joint* joint = body->getJoint();
+        Body* parent = joint->getInfo().parent;
+        Matrix S = joint->getMotionSubspace();
+
+        U[body] = I_A[body] * S;
+        Matrix D = S.getTranspose() * U[body];
+        u[body] = joint->getGeneralizedForce() - S.getTranspose() * p_A[body];
+        D_inv[body] = SquareMatrix(D).getInverse();
+
+        if (parent != base)
+        {
+            Matrix I_a = I_A[body] - U[body] * D_inv[body] * U[body].getTranspose();
+            Vector p_a = p_A[body] + I_a * c[body].getVector() + U[body] * (D_inv[body] * u[body]);
+
+            // Both propagate into the parent frame via the same congruence matrix X = i_X_p[body].getMotionMatrix():
+            // I_parent += X^T I_a X (eq. 2.66-2.67), p_parent += X^T p_a (force-type quantities transform via X^-T = X*,
+            // and going child->parent is the inverse direction, so it's X^T applied directly).
+            I_A[parent] = I_A[parent] + i_X_p[body].transformInertiaToParent(I_a);
+            Matrix X = i_X_p[body].getMotionMatrix();
+            p_A[parent] = p_A[parent] + X.getTranspose() * p_a;
+        }
+    }
+
+    // third pass: outward, root to tip
+    a[base] = Vector(6, 0.0); // base is fixed and gravity isn't modeled yet, so this is zero
+
+    Vector qdd(0);
+    for (size_t i = 1; i < _bodies.size(); ++i)
+    {
+        Body* body = _bodies[i].get();
+        Joint* joint = body->getJoint();
+        Body* parent = joint->getInfo().parent;
+        Matrix S = joint->getMotionSubspace();
+
+        Vector a_prime = (i_X_p[body] * SpatialVelocity(a[parent] + c[body].getVector())).getVector();
+
+        Vector qdd_i = D_inv[body] * (u[body] - U[body].getTranspose() * a_prime);
+        qdd = qdd | qdd_i;
+
+        a[body] = a_prime + S * qdd_i;
+    }
+
+    return qdd;
 }
 
 void StellariumSimulation::run(double t)

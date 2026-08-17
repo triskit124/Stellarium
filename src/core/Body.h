@@ -39,7 +39,7 @@ class Body
         * @param cm The position of center of mass of the body.
         * @param inertia The inertia matrix of the body.
         */
-        Body(const std::string& name, SpatialInertia spatial_inertia, Joint::Info joint_info = { Joint::Type::Free, nullptr, { } }) 
+        Body(const std::string& name, SpatialInertia spatial_inertia, Joint::Info joint_info = { Joint::Type::Free, nullptr, { }, { }, { }, { } })
         : _name(name), 
         _spatial_inertia(spatial_inertia), 
         _body_frame(name), 
@@ -72,13 +72,13 @@ class Body
         * @brief Adds a force to the body.
         * @param force The force to be added, expressed in the inertial frame.
         */
-        void addInertialFrameForce(const Vector3& force) { this->addBodyFrameForce(_att * force); };
+        void addInertialFrameForce(const Vector3& force) { this->addBodyFrameForce(_body_frame.getAttitude() * force); };
 
         /**
         * @brief Adds a torque to the body.
         * @param torque The torque to be added, expressed in the inertial frame.
         */
-        void addInertialFrameTorque(const Vector3& torque) { this->addBodyFrameTorque(_att * torque); };
+        void addInertialFrameTorque(const Vector3& torque) { this->addBodyFrameTorque(_body_frame.getAttitude() * torque); };
 
         /**
         * @brief Clears all forces and torques acting on the body.
@@ -91,13 +91,19 @@ class Body
 
         Joint* getJoint() { return _joint.get(); };
 
-        void attachToParent(Joint::Info joint_info) { 
+        SpatialInertia getSpatialInertia() const { return _spatial_inertia; };
+
+        void attachToParent(Joint::Info joint_info) {
+            if (joint_info.parent == nullptr) {
+                // fixed base/root body (e.g. the world body at the head of a kinematic chain): no joint.
+                return;
+            }
             if (_joint) {
                 throw std::runtime_error("Cannot attach to body " + joint_info.parent->getName() + ". Parent already exists.");
             }
             switch (joint_info.type) {
                 case Joint::Type::Pin:
-                    _joint = std::make_unique<PinJoint>(*joint_info.parent, *this, joint_info.axes);
+                    _joint = std::make_unique<PinJoint>(this, joint_info);
                     break;
                 default:
                     throw std::invalid_argument("Not yet implemented...");
@@ -131,7 +137,7 @@ class Body
             }
 
             // verify that the new child has a joint that lists this body as a parent
-            if (&new_child->getJoint()->getParent() != this) {
+            if (new_child->getJoint()->getInfo().parent != this) {
                 throw std::invalid_argument("Tried to call addChild on this body but the child's joint does not list this body as its parent.");
             }
 
