@@ -18,6 +18,8 @@ class SpatialInertia
 {
     public:
 
+        SpatialInertia() = default;
+
         SpatialInertia(double mass, Vector3 center_of_mass, InertiaMatrix cm_inertia)
         : _center_of_mass(center_of_mass), _cm_inertia(cm_inertia)
         {
@@ -88,9 +90,9 @@ class SpatialInertia
 
     private:
 
-        double _mass;
-        Vector3 _center_of_mass;
-        InertiaMatrix _cm_inertia;
+        double _mass { };
+        Vector3 _center_of_mass { };
+        InertiaMatrix _cm_inertia { };
 
 
 

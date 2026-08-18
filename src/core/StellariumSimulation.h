@@ -3,6 +3,7 @@
 #include "Body.h"
 #include "Joint.h"
 #include "SpatialInertia.h"
+#include "Vector.h"
 #include "Vector3.h"
 #include "InertiaMatrix.h"
 #include "Quaternion.h"
@@ -29,7 +30,7 @@ class StellariumSimulation
         /**
          * @brief Constructs a StellariumSimulation object.
          */
-        StellariumSimulation() = default;
+        StellariumSimulation();
 
         /**
          * @brief Destroys the StellariumSimulation object.
@@ -73,6 +74,9 @@ class StellariumSimulation
          */
         void run(double t);
 
+        void addConstantGravity(const Vector3& g) { _gravity = g; };
+        Vector3 getConstantGravity() const { return _gravity; };
+
 #ifdef STELL_BUILD_RENDERING
         /**
          * @brief Loads a 3D model from a file and associates it with a frame so its transform is
@@ -105,6 +109,8 @@ class StellariumSimulation
         */
         double _t = 0.0;
 
+        Vector3 _gravity { };
+
 #ifdef STELL_BUILD_RENDERING
         std::unique_ptr<GraphicsEngine> _graphics { };
 #endif
@@ -114,7 +120,12 @@ class StellariumSimulation
         */
         void _step();
 
-        Vector _computeForwardDynamics();
+        Vector _computeForwardDynamics() const;
+
+        Vector _getState() const;
+        Vector _getStateDot() const;
+        void _setState(const Vector& s);
+
 
 };
 

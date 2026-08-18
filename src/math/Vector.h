@@ -307,6 +307,7 @@ class Vector : public MathBase
             return std::abs(getNorm() - 1.0) <= _epsilon;
         }
 
+        std::vector<double> getData() const { return _data; };
 
         /**
         * @brief concatenate this vector with another vector

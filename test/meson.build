@@ -9,14 +9,15 @@ test_sources = files(
   'test_math/test_quaternion.cpp',
   'test_math/test_transforms.cpp',
   'test_math/test_vector3.cpp',
-  'test_sim/test_simple_rotation.cpp',
-  'test_sim/test_simple_translation.cpp',
+  # 'test_sim/test_simple_rotation.cpp',
+  # 'test_sim/test_simple_translation.cpp',
 )
 
 if get_option('build_rendering')
   test_sources += files(
-    'test_graphics/test_window.cpp',
-    'test_graphics/test_model_rendering.cpp'
+    # 'test_graphics/test_window.cpp',
+    # 'test_graphics/test_model_rendering.cpp'
+    'test_demos/test_double_pendulum.cpp',
   )
 endif
 

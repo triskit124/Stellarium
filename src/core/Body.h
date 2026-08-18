@@ -56,29 +56,29 @@ class Body
 
         const std::string getName() const { return _name; };
 
-        /**
-        * @brief Adds a force to the body.
-        * @param force The force to be added, expressed in the body frame.
-        */
-        void addBodyFrameForce(const Vector3& force) { _external_force.setForce(_external_force.getForce() + force); };
+        // /**
+        // * @brief Adds a force to the body.
+        // * @param force The force to be added, expressed in the body frame.
+        // */
+        // void addBodyFrameForce(const Vector3& force) { _external_force.setForce(_external_force.getForce() + force); };
 
-        /**
-        * @brief Adds a torque to the body.
-        * @param torque The torque to be added, expressed in the body frame.
-        */
-        void addBodyFrameTorque(const Vector3& torque) { _external_force.setTorque(_external_force.getTorque() + torque); };
+        // /**
+        // * @brief Adds a torque to the body.
+        // * @param torque The torque to be added, expressed in the body frame.
+        // */
+        // void addBodyFrameTorque(const Vector3& torque) { _external_force.setTorque(_external_force.getTorque() + torque); };
 
         /**
         * @brief Adds a force to the body.
         * @param force The force to be added, expressed in the inertial frame.
         */
-        void addInertialFrameForce(const Vector3& force) { this->addBodyFrameForce(_body_frame.getAttitude() * force); };
+        void addInertialFrameForce(const Vector3& force) { _external_force.setForce(_external_force.getForce() + force); };
 
         /**
         * @brief Adds a torque to the body.
         * @param torque The torque to be added, expressed in the inertial frame.
         */
-        void addInertialFrameTorque(const Vector3& torque) { this->addBodyFrameTorque(_body_frame.getAttitude() * torque); };
+        void addInertialFrameTorque(const Vector3& torque) { _external_force.setTorque(_external_force.getTorque() + torque); };
 
         /**
         * @brief Clears all forces and torques acting on the body.
@@ -92,6 +92,8 @@ class Body
         Joint* getJoint() { return _joint.get(); };
 
         SpatialInertia getSpatialInertia() const { return _spatial_inertia; };
+
+        SpatialForce getExternalForce() const { return _external_force; };
 
         void attachToParent(Joint::Info joint_info) {
             if (joint_info.parent == nullptr) {

@@ -1,5 +1,6 @@
 #include "StellariumSimulation.h"
 #include "Body.h"
+#include "InertiaMatrix.h"
 #include "Integrators.h"
 #include "Joint.h"
 #include "Matrix.h"
@@ -25,6 +26,11 @@
 namespace Stellarium
 {
 
+StellariumSimulation::StellariumSimulation() {
+    // Add a ficticious root body. This will serve as the inertial root for the simulation.
+    addBody("root", SpatialInertia(0.0, Vector3(), InertiaMatrix()), {  });
+}
+
 void StellariumSimulation::addGraphics()
 {
 #ifdef STELL_BUILD_RENDERING
@@ -47,14 +53,17 @@ void StellariumSimulation::addIntegrator(const STELL_INTEGRATOR_TYPE& type, cons
 {
     if (type == STELL_INTEGRATOR_TYPE::rk4)
     {
-        _integrator = std::make_unique<RK4>(dt);
+        _integrator = std::make_unique<RK4>(
+            [this]() { return _getState(); }, 
+            [this]() { return _getStateDot(); }, 
+            [this](const Vector& v) { return _setState(v); }, 
+            dt
+        );
     }
     else
     {
         throw std::invalid_argument("invalid integrator type");
     }
-
-    // std::cout << "Added integrator of type " << type << " to the simulation\n";
 }
 
 void StellariumSimulation::_step()
@@ -64,16 +73,75 @@ void StellariumSimulation::_step()
         throw std::invalid_argument("Cannot step: no integrator has been set");
     }
 
-    std::vector<Body*> bodies;
-    for (auto& body : _bodies)
-    {
-        bodies.push_back(body.get());
-    }
-    _integrator->integrate(bodies, _t);
+    _integrator->integrate(_t);
 
 }
 
-Vector StellariumSimulation::_computeForwardDynamics()
+Vector StellariumSimulation::_getState() const
+{
+    Vector q;
+    Vector q_dot;
+    for (auto& body : _bodies)
+    {
+        if (Joint* joint = body->getJoint())
+        {
+            q.concatenate(joint->getQ());
+            q_dot.concatenate(joint->getQDot());
+        }
+    }
+    
+    return q | q_dot;
+}
+
+Vector StellariumSimulation::_getStateDot() const
+{
+    Vector q_dot;
+    for (auto& body : _bodies)
+    {
+        if (Joint* joint = body->getJoint())
+        {
+            q_dot.concatenate(joint->getQDot());
+        }
+    }
+    Vector q_double_dot = _computeForwardDynamics();
+    return q_dot | q_double_dot;
+}
+
+void StellariumSimulation::_setState(const Vector& s)
+{
+    size_t idx = 0;
+    for (auto& body : _bodies)
+    {
+        if (Joint* joint = body->getJoint())
+        {
+            size_t dof = joint->getDegreesOfFreedom();
+            Vector joint_state = Vector(dof);
+            for (size_t i = 0; i < dof; ++i)
+            {
+                joint_state[i] = s[idx];
+                idx++;
+            }
+            joint->setQ(joint_state);
+        }
+    }
+
+    for (auto& body : _bodies)
+    {
+        if (Joint* joint = body->getJoint())
+        {
+            size_t dof = joint->getDegreesOfFreedom();
+            Vector joint_state_dot = Vector(dof);
+            for (size_t i = 0; i < dof; ++i)
+            {
+                joint_state_dot[i] = s[idx];
+                idx++;
+            }
+            joint->setQDot(joint_state_dot);
+        }
+    }
+}
+
+Vector StellariumSimulation::_computeForwardDynamics() const
 {
     // Forward dynamics via the Articulated Body Algorithm
     // See: Featherstone, Rigid Body Dynamics Algorithms, 2008, table 7.1
@@ -114,7 +182,7 @@ Vector StellariumSimulation::_computeForwardDynamics()
 
         I_A[body] = body->getSpatialInertia().getMatrix();
 
-        SpatialForce f_ext = SpatialForce(); // TODO: zero for now
+        SpatialForce f_ext = body->getExternalForce();
         p_A[body] = (v[body].cross(body->getSpatialInertia() * v[body]) - i_X_0[body] * f_ext).getVector();
     }
 
@@ -146,7 +214,7 @@ Vector StellariumSimulation::_computeForwardDynamics()
     }
 
     // third pass: outward, root to tip
-    a[base] = Vector(6, 0.0); // base is fixed and gravity isn't modeled yet, so this is zero
+    a[base] = this->getConstantGravity();
 
     Vector qdd(0);
     for (size_t i = 1; i < _bodies.size(); ++i)
