@@ -81,9 +81,12 @@ class Integrator
         */
         double _dt;
 
-        const std::function<Vector(void)>& _state_getter;
-        const std::function<Vector(void)>& _state_dot_getter;
-        const std::function<void(const Vector&)>& _state_setter;
+        // Stored by value, NOT by reference: these are bound to temporaries materialized from
+        // lambdas at the call site (see StellariumSimulation::addIntegrator), and reference
+        // members do not extend the lifetime of their initializer.
+        std::function<Vector(void)> _state_getter;
+        std::function<Vector(void)> _state_dot_getter;
+        std::function<void(const Vector&)> _state_setter;
 
 };
 

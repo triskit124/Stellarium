@@ -25,6 +25,10 @@ class SpatialForce
 
         Vector getVector() const { return Vector(_torque | _force); };
 
+        SpatialForce operator+(const SpatialForce& f) const {
+            return SpatialForce(_torque + f.getTorque(), _force + f.getForce());
+        }
+
         SpatialForce operator-(const SpatialForce& f) const {
             return SpatialForce(_torque - f.getTorque(), _force - f.getForce());
         }
@@ -45,6 +49,10 @@ class SpatialVelocity
 
         SpatialVelocity(const Vector3& angular_velocity, const Vector3& linear_velocity) : _angular_velocity(angular_velocity), _linear_velocity(linear_velocity) { };
 
+        /**
+        * @brief Constructs a SpatialVelocity from a 6-element [angular; linear] vector.
+        * @throws std::invalid_argument if vec is not of size 6.
+        */
         explicit SpatialVelocity(const Vector& vec) {
             if (vec.getSize() != 6) {
                 throw std::invalid_argument("Wrong size to construct SpatialVelocity.");
@@ -65,6 +73,10 @@ class SpatialVelocity
 
         SpatialVelocity operator+(const SpatialVelocity& other) const {
             return SpatialVelocity(_angular_velocity + other.getAngularVelocity(), _linear_velocity + other.getLinearVelocity());
+        }
+
+        SpatialVelocity operator-(const SpatialVelocity& other) const {
+            return SpatialVelocity(_angular_velocity - other.getAngularVelocity(), _linear_velocity - other.getLinearVelocity());
         }
 
         SpatialVelocity cross(const SpatialVelocity& v) const {

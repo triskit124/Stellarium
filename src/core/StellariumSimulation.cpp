@@ -26,9 +26,44 @@
 namespace Stellarium
 {
 
+namespace {
+
+/**
+* @brief Appends every element of `chunk` onto `out`.
+*
+* The flat simulation state is assembled from variable-length per-joint blocks. Vector is fixed
+* size once it is non-empty, so the assembly happens in a std::vector and is converted once at the
+* end via toVector().
+*/
+void append(std::vector<double>& out, const Vector& chunk)
+{
+    for (size_t i = 0; i < chunk.getSize(); ++i)
+    {
+        out.push_back(chunk[i]);
+    }
+}
+
+Vector toVector(const std::vector<double>& values)
+{
+    Vector v(values.size());
+    for (size_t i = 0; i < values.size(); ++i)
+    {
+        v[i] = values[i];
+    }
+    return v;
+}
+
+} // end anonymous namespace
+
+
 StellariumSimulation::StellariumSimulation() {
-    // Add a ficticious root body. This will serve as the inertial root for the simulation.
-    addBody("root", SpatialInertia(0.0, Vector3(), InertiaMatrix()), {  });
+    // Add a ficticious root body. This will serve as the inertial root for the simulation. It has
+    // no joint (Joint::Info::parent defaults to nullptr, which Body::attachToParent reads as
+    // "fixed base"), so it never appears in the state vector or in the dynamics passes.
+    //
+    // Constructed directly rather than through addBody() because addBody() re-parents null parents
+    // onto this very body, which does not exist yet.
+    _bodies.emplace_back(std::make_unique<Stellarium::Body>("root", SpatialInertia(0.0, Vector3(), InertiaMatrix()), Joint::Info { }));
 }
 
 void StellariumSimulation::addGraphics()
@@ -42,9 +77,17 @@ void StellariumSimulation::addGraphics()
 
 Body* StellariumSimulation::addBody(const std::string& name, const SpatialInertia& spatial_inertia, const Joint::Info& joint_info)
 {
-    _bodies.emplace_back(std::make_unique<Stellarium::Body>(name, spatial_inertia, joint_info));
+    Joint::Info info = joint_info;
 
-    // std::cout << "Added body " << name << " to the simulation\n";
+    // A null parent means "attach to the world", not "second fixed base". Without this, the body
+    // would be created jointless and the dynamics passes -- which assume every body past the root
+    // has a joint -- would dereference a null Joint*.
+    if (info.parent == nullptr)
+    {
+        info.parent = getBase();
+    }
+
+    _bodies.emplace_back(std::make_unique<Stellarium::Body>(name, spatial_inertia, info));
 
     return _bodies.back().get();
 }
@@ -75,69 +118,101 @@ void StellariumSimulation::_step()
 
     _integrator->integrate(_t);
 
+    updateFrames();
 }
+
+/*
+================================================================================================
+    State vector layout
+
+    [ q for every jointed body ; q_dot for every jointed body ], each block in _bodies order.
+
+    The two halves are sized independently: a joint's configuration (nq) and velocity (nv)
+    coordinate counts differ whenever it uses a redundant parameterization -- see FreeJoint,
+    where nq = 7 and nv = 6.
+================================================================================================
+*/
 
 Vector StellariumSimulation::_getState() const
 {
-    Vector q;
-    Vector q_dot;
+    std::vector<double> q { };
+    std::vector<double> q_dot { };
     for (auto& body : _bodies)
     {
         if (Joint* joint = body->getJoint())
         {
-            q.concatenate(joint->getQ());
-            q_dot.concatenate(joint->getQDot());
+            append(q, joint->getQ());
+            append(q_dot, joint->getQDot());
         }
     }
-    
-    return q | q_dot;
+
+    append(q, toVector(q_dot));
+    return toVector(q);
 }
 
 Vector StellariumSimulation::_getStateDot() const
 {
-    Vector q_dot;
+    std::vector<double> state_dot { };
     for (auto& body : _bodies)
     {
         if (Joint* joint = body->getJoint())
         {
-            q_dot.concatenate(joint->getQDot());
+            append(state_dot, joint->getConfigurationDerivative());
         }
     }
-    Vector q_double_dot = _computeForwardDynamics();
-    return q_dot | q_double_dot;
+
+    append(state_dot, _computeForwardDynamics());
+    return toVector(state_dot);
 }
 
 void StellariumSimulation::_setState(const Vector& s)
 {
-    size_t idx = 0;
+    size_t num_q = 0;
+    size_t num_q_dot = 0;
     for (auto& body : _bodies)
     {
         if (Joint* joint = body->getJoint())
         {
-            size_t dof = joint->getDegreesOfFreedom();
-            Vector joint_state = Vector(dof);
-            for (size_t i = 0; i < dof; ++i)
-            {
-                joint_state[i] = s[idx];
-                idx++;
-            }
-            joint->setQ(joint_state);
+            num_q += joint->getConfigurationSize();
+            num_q_dot += static_cast<size_t>(joint->getDegreesOfFreedom());
         }
     }
 
+    if (s.getSize() != num_q + num_q_dot)
+    {
+        throw std::invalid_argument("Cannot set state: expected a vector of size " + std::to_string(num_q + num_q_dot) + " but got " + std::to_string(s.getSize()));
+    }
+
+    size_t q_idx = 0;
+    size_t q_dot_idx = num_q;
+
     for (auto& body : _bodies)
     {
-        if (Joint* joint = body->getJoint())
+        Joint* joint = body->getJoint();
+        if (!joint)
         {
-            size_t dof = joint->getDegreesOfFreedom();
-            Vector joint_state_dot = Vector(dof);
-            for (size_t i = 0; i < dof; ++i)
-            {
-                joint_state_dot[i] = s[idx];
-                idx++;
-            }
-            joint->setQDot(joint_state_dot);
+            continue;
         }
+
+        Vector q = Vector(joint->getConfigurationSize());
+        for (size_t i = 0; i < q.getSize(); ++i)
+        {
+            q[i] = s[q_idx];
+            q_idx++;
+        }
+        joint->setQ(q);
+
+        Vector q_dot = Vector(static_cast<size_t>(joint->getDegreesOfFreedom()));
+        for (size_t i = 0; i < q_dot.getSize(); ++i)
+        {
+            q_dot[i] = s[q_dot_idx];
+            q_dot_idx++;
+        }
+        joint->setQDot(q_dot);
+
+        // Pull q back onto the joint's configuration manifold -- integrating a unit quaternion
+        // component-wise walks it off the unit sphere.
+        joint->normalizeConfiguration();
     }
 }
 
@@ -146,21 +221,23 @@ Vector StellariumSimulation::_computeForwardDynamics() const
     // Forward dynamics via the Articulated Body Algorithm
     // See: Featherstone, Rigid Body Dynamics Algorithms, 2008, table 7.1
     //
-    // _bodies[0] is the fixed base (no joint, zero velocity/acceleration). All other bodies are assumed
-    // to appear after their parent in _bodies (i.e. parents are always processed before their children).
+    // _bodies[0] is the fixed base (no joint, zero velocity). All other bodies are assumed to
+    // appear after their parent in _bodies (i.e. parents are always processed before their
+    // children); the .at() lookups on parent-keyed scratch turn a violation of that invariant into
+    // an exception rather than a silently-inserted zero.
 
-    std::map<Body*, SpatialVelocity> v { };
-    std::map<Body*, SpatialTransform> i_X_p { };
-    std::map<Body*, SpatialTransform> i_X_0 { };
-    std::map<Body*, SpatialVelocity> c { };
-    std::map<Body*, Matrix> I_A { };   // articulated-body inertia, size [6 x 6]
-    std::map<Body*, Vector> p_A { };   // articulated-body bias force, size [6 x 1]
-    std::map<Body*, Matrix> U { };     // size [6 x dof]
-    std::map<Body*, Matrix> D_inv { }; // size [dof x dof]
-    std::map<Body*, Vector> u { };     // size [dof x 1]
-    std::map<Body*, Vector> a { };
+    std::map<const Body*, SpatialVelocity> v { };
+    std::map<const Body*, SpatialTransform> i_X_p { };
+    std::map<const Body*, SpatialTransform> i_X_0 { };
+    std::map<const Body*, SpatialVelocity> c { };
+    std::map<const Body*, Matrix> I_A { };   // articulated-body inertia, size [6 x 6]
+    std::map<const Body*, Vector> p_A { };   // articulated-body bias force, size [6 x 1]
+    std::map<const Body*, Matrix> U { };     // size [6 x dof]
+    std::map<const Body*, Matrix> D_inv { }; // size [dof x dof]
+    std::map<const Body*, Vector> u { };     // size [dof x 1]
+    std::map<const Body*, Vector> a { };     // size [6 x 1]
 
-    Body* base = _bodies[0].get();
+    const Body* base = getBase();
     v[base] = SpatialVelocity();
     i_X_0[base] = SpatialTransform();
 
@@ -169,21 +246,31 @@ Vector StellariumSimulation::_computeForwardDynamics() const
     {
         Body* body = _bodies[i].get();
         Joint* joint = body->getJoint();
-        Body* parent = joint->getInfo().parent;
+        if (!joint)
+        {
+            throw std::runtime_error("Body '" + body->getName() + "' has no joint. Only the root body may be jointless.");
+        }
+        const Body* parent = joint->getInfo().parent;
 
-        SpatialTransform X_J = joint->getJointTransform();
         SpatialVelocity v_J = joint->getJointVelocity();
 
-        i_X_p[body] = X_J * joint->getInfo().parent_to_joint;
-        i_X_0[body] = i_X_p[body] * i_X_0[parent];
+        i_X_p[body] = joint->getJointTransform() * joint->getInfo().parent_to_joint;
+        i_X_0[body] = i_X_p.at(body) * i_X_0.at(parent);
 
-        v[body] = i_X_p[body] * v[parent] + v_J;
-        c[body] = v[body].cross(v_J);
+        v[body] = i_X_p.at(body) * v.at(parent) + v_J;
+        c[body] = v.at(body).cross(v_J);
 
         I_A[body] = body->getSpatialInertia().getMatrix();
 
-        SpatialForce f_ext = body->getExternalForce();
-        p_A[body] = (v[body].cross(body->getSpatialInertia() * v[body]) - i_X_0[body] * f_ext).getVector();
+        // eq. 7.16. f_ext has to be expressed in body coordinates about the body frame origin:
+        // the body-frame accumulator already is, and the inertial-frame one only needs rotating
+        // (not a full Plucker transform) because both accumulators act at that same origin.
+        const Quaternion E = i_X_0.at(body).getRotation();
+        const SpatialForce f_ext_inertial = body->getInertialFrameExternalForce();
+        const SpatialForce f_ext = body->getBodyFrameExternalForce()
+                                 + SpatialForce(E * f_ext_inertial.getTorque(), E * f_ext_inertial.getForce());
+
+        p_A[body] = (v.at(body).cross(body->getSpatialInertia() * v.at(body)) - f_ext).getVector();
     }
 
     // second pass: inward, tip to root -- fold each body's articulated inertia/bias force into its parent's
@@ -191,54 +278,94 @@ Vector StellariumSimulation::_computeForwardDynamics() const
     {
         Body* body = _bodies[i].get();
         Joint* joint = body->getJoint();
-        Body* parent = joint->getInfo().parent;
+        const Body* parent = joint->getInfo().parent;
         Matrix S = joint->getMotionSubspace();
 
-        U[body] = I_A[body] * S;
-        Matrix D = S.getTranspose() * U[body];
-        u[body] = joint->getGeneralizedForce() - S.getTranspose() * p_A[body];
+        U[body] = I_A.at(body) * S;
+        Matrix D = S.getTranspose() * U.at(body);
+        u[body] = joint->getGeneralizedForce() - S.getTranspose() * p_A.at(body);
         D_inv[body] = SquareMatrix(D).getInverse();
 
         if (parent != base)
         {
-            Matrix I_a = I_A[body] - U[body] * D_inv[body] * U[body].getTranspose();
-            Vector p_a = p_A[body] + I_a * c[body].getVector() + U[body] * (D_inv[body] * u[body]);
+            Matrix I_a = I_A.at(body) - U.at(body) * D_inv.at(body) * U.at(body).getTranspose();
+            Vector p_a = p_A.at(body) + I_a * c.at(body).getVector() + U.at(body) * (D_inv.at(body) * u.at(body));
 
             // Both propagate into the parent frame via the same congruence matrix X = i_X_p[body].getMotionMatrix():
             // I_parent += X^T I_a X (eq. 2.66-2.67), p_parent += X^T p_a (force-type quantities transform via X^-T = X*,
             // and going child->parent is the inverse direction, so it's X^T applied directly).
-            I_A[parent] = I_A[parent] + i_X_p[body].transformInertiaToParent(I_a);
-            Matrix X = i_X_p[body].getMotionMatrix();
-            p_A[parent] = p_A[parent] + X.getTranspose() * p_a;
+            I_A[parent] = I_A.at(parent) + i_X_p.at(body).transformInertiaToParent(I_a);
+            Matrix X = i_X_p.at(body).getMotionMatrix();
+            p_A[parent] = p_A.at(parent) + X.getTranspose() * p_a;
         }
     }
 
-    // third pass: outward, root to tip
-    a[base] = this->getConstantGravity();
+    // third pass: outward, root to tip.
+    //
+    // Gravity is applied via Featherstone's trick (pp. 94): giving the base an acceleration of
+    // -a_g makes every body's computed acceleration carry the gravitational term, with no explicit
+    // body forces. As a spatial vector in this codebase's [angular; linear] ordering that is
+    // (0, 0, 0, -g).
+    a[base] = SpatialVelocity(Vector3(), -getConstantGravity()).getVector();
 
-    Vector qdd(0);
+    std::vector<double> qdd { };
     for (size_t i = 1; i < _bodies.size(); ++i)
     {
         Body* body = _bodies[i].get();
         Joint* joint = body->getJoint();
-        Body* parent = joint->getInfo().parent;
+        const Body* parent = joint->getInfo().parent;
         Matrix S = joint->getMotionSubspace();
 
-        Vector a_prime = (i_X_p[body] * SpatialVelocity(a[parent] + c[body].getVector())).getVector();
+        // a' = i_X_p * a_parent + c. c is already expressed in this body's coordinates, so it is
+        // added AFTER the transform, not before it.
+        Vector a_prime = (i_X_p.at(body) * SpatialVelocity(a.at(parent))).getVector() + c.at(body).getVector();
 
-        Vector qdd_i = D_inv[body] * (u[body] - U[body].getTranspose() * a_prime);
-        qdd = qdd | qdd_i;
+        Vector qdd_i = D_inv.at(body) * (u.at(body) - U.at(body).getTranspose() * a_prime);
+        append(qdd, qdd_i);
 
         a[body] = a_prime + S * qdd_i;
     }
 
-    return qdd;
+    return toVector(qdd);
+}
+
+void StellariumSimulation::updateFrames()
+{
+    // Forward kinematics. Recomputes the same i_X_0 / v chain as the first pass of the ABA, but
+    // writes the result out to each Body's Frames in the conventions the render layer reads.
+    std::map<const Body*, SpatialTransform> i_X_0 { };
+    std::map<const Body*, SpatialVelocity> v { };
+
+    const Body* base = getBase();
+    i_X_0[base] = SpatialTransform();
+    v[base] = SpatialVelocity();
+
+    for (size_t i = 1; i < _bodies.size(); ++i)
+    {
+        Body* body = _bodies[i].get();
+        Joint* joint = body->getJoint();
+        if (!joint)
+        {
+            throw std::runtime_error("Body '" + body->getName() + "' has no joint. Only the root body may be jointless.");
+        }
+        const Body* parent = joint->getInfo().parent;
+
+        SpatialTransform i_X_p = joint->getJointTransform() * joint->getInfo().parent_to_joint;
+
+        i_X_0[body] = i_X_p * i_X_0.at(parent);
+        v[body] = i_X_p * v.at(parent) + joint->getJointVelocity();
+
+        body->setPoseFromBase(i_X_0.at(body), v.at(body));
+    }
 }
 
 void StellariumSimulation::run(double t)
 {
 
     const double t_f = time() + t;
+
+    // Make sure the render thread sees correct poses before the first physics step lands.
+    updateFrames();
 
     double time_counter = 0.0;
     int step_counter = 0;
@@ -304,6 +431,11 @@ Model* StellariumSimulation::loadModel(const std::string& path, Frame& frame)
 
 StellariumSimulation::~StellariumSimulation()
 {
+    // Tear the graphics down first: its Models hold raw Frame* pointers into the bodies, so the
+    // bodies have to outlive it.
+#ifdef STELL_BUILD_RENDERING
+    _graphics.reset();
+#endif
     _bodies.clear();
 }
 

@@ -11,8 +11,28 @@ namespace Stellarium
 {
 
 /**
-* @brief A class representing a spatial transform.
+* @brief A class representing a spatial (Plucker) coordinate transform.
 * See: Featherstone, Rigid Body Dynamics Algorithms, 2008, pp. 22
+*
+* ===========================================================================================
+*   Convention (this is the one place it is written down -- everything else follows from it)
+* ===========================================================================================
+*
+* A SpatialTransform maps quantities from a predecessor frame P into a successor frame S, and is
+* stored as the pair (E, r) of Featherstone eq. 2.24/2.25:
+*
+*   - `r` is the position of S's origin, expressed in P coordinates.
+*   - `E` is the 3x3 *coordinate* transformation from P to S: a vector with P-frame components
+*     `p` has S-frame components `E * p`. E is therefore the TRANSPOSE of the active rotation
+*     that carries P's axes onto S's axes.
+*
+* E is held as `_quaternion`, using the convention that `_quaternion * v` (an active rotation, see
+* Quaternion::operator*) evaluates E * v. Consequently, if S's attitude quaternion is `att` in the
+* sense used by Frame (the active rotation taking P-frame components to S-frame components when
+* applied in reverse, i.e. `v_P = att * v_S`), then `_quaternion == att.getConjugate()`.
+*
+* Concretely, a revolute joint rotating the child by +theta about `k` relative to the parent has
+* `_quaternion = Quaternion(k, theta).getConjugate()` -- see PinJoint::getJointTransform.
 */
 class SpatialTransform
 {   
@@ -94,6 +114,28 @@ class SpatialTransform
         * @param childInertia The spatial inertia (6x6), expressed in this transform's child/successor frame.
         * @return The same spatial inertia, expressed in this transform's parent/predecessor frame.
         */
+        /**
+        * @brief The coordinate-transformation quaternion E. See the class comment for the exact
+        * convention: `getRotation() * v` maps a vector's predecessor-frame components to its
+        * successor-frame components.
+        */
+        Quaternion getRotation() const { return _quaternion; }
+
+        /**
+        * @brief The position of the successor frame's origin, expressed in predecessor coordinates.
+        */
+        Vector3 getTranslation() const { return _translation; }
+
+        /**
+        * @brief The inverse transform, mapping successor-frame quantities back into the
+        * predecessor frame.
+        */
+        SpatialTransform getInverse() const {
+            // Inverting (E, r): the predecessor's origin sits at -E r in successor coordinates,
+            // and the coordinate map runs the other way, so E' = E^T.
+            return SpatialTransform(_quaternion.getInverse(), -(_quaternion * _translation));
+        }
+
         Matrix transformInertiaToParent(const Matrix& childInertia) const {
             Matrix X = getMotionMatrix();
             return X.getTranspose() * childInertia * X;

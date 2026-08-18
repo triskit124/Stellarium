@@ -77,6 +77,34 @@ class StellariumSimulation
         void addConstantGravity(const Vector3& g) { _gravity = g; };
         Vector3 getConstantGravity() const { return _gravity; };
 
+        /**
+         * @brief The fictitious root body: the fixed, inertial base of the kinematic tree.
+         *
+         * It carries no joint and never appears in the state vector. A body added with a null
+         * Joint::Info::parent is attached to this body, i.e. "no parent" means "hung off the
+         * world".
+         */
+        Body* getBase() { return _bodies.front().get(); };
+        const Body* getBase() const { return _bodies.front().get(); };
+
+        /**
+         * @brief Runs forward dynamics at the current state and returns the generalized
+         * acceleration q_ddot, concatenated over every jointed body in tree order.
+         *
+         * This is exactly what the integrator consumes; it is exposed so the dynamics can be
+         * checked against an independent derivation without stepping the simulation.
+         */
+        Vector getGeneralizedAcceleration() const { return _computeForwardDynamics(); };
+
+        /**
+         * @brief Forward kinematics: turns the current joint coordinates into world poses on every
+         * Body's Frames, which is what the render layer reads.
+         *
+         * Called automatically at the end of every step; call it directly after setting joint
+         * coordinates by hand if the poses are needed before the next step.
+         */
+        void updateFrames();
+
 #ifdef STELL_BUILD_RENDERING
         /**
          * @brief Loads a 3D model from a file and associates it with a frame so its transform is

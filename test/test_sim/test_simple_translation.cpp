@@ -1,6 +1,17 @@
+/*
+ * A single body on a free (6-DOF) joint, pushed by a constant inertial-frame force.
+ *
+ * This is the degenerate case of the articulated body algorithm -- one body, no parent coupling,
+ * an identity motion subspace -- so it isolates the rigid-body equations of motion, the
+ * external-force plumbing, and the free joint's configuration kinematics from any tree structure.
+ */
+
+#include "InertiaMatrix.h"
+#include "Joint.h"
+#include "SpatialInertia.h"
 #include "StellariumSimulation.h"
 #include "TestHarness.h"
-
+#include "Vector3.h"
 
 using namespace Stellarium;
 
@@ -12,7 +23,12 @@ int main() {
     StellariumSimulation sim;
     sim.addIntegrator(STELL_INTEGRATOR_TYPE::rk4, 0.1);
 
-    auto body = sim.addBody("body_1");
+    Joint::Info free_joint;
+    free_joint.type = Joint::Type::Free;
+    free_joint.q_init = FreeJoint::identityConfiguration();
+    free_joint.q_dot_init = Vector(FreeJoint::NUM_DOF);
+
+    auto body = sim.addBody("body_1", SpatialInertia(1.0, Vector3(), InertiaMatrix()), free_joint);
 
     body->addInertialFrameForce(Vector3(1,-1,1));
 
