@@ -208,6 +208,7 @@ void GraphicsEngine::run()
         glfwSwapBuffers(_window);
         glfwPollEvents();
 
+        // TODO: is there something hardware-side that is capping graphics FPS at 60?
         auto toc = std::chrono::steady_clock::now();
         double seconds = std::chrono::duration<double>(toc - tic).count();
         time_counter += seconds;

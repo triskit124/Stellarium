@@ -3,7 +3,6 @@
 #include "Matrix.h"
 #include "Matrix33.h"
 #include "Quaternion.h"
-#include "RotationMatrix.h"
 #include "SpatialVector.h"
 #include "Vector3.h"
 
@@ -14,25 +13,18 @@ namespace Stellarium
 * @brief A class representing a spatial (Plucker) coordinate transform.
 * See: Featherstone, Rigid Body Dynamics Algorithms, 2008, pp. 22
 *
-* ===========================================================================================
-*   Convention (this is the one place it is written down -- everything else follows from it)
-* ===========================================================================================
-*
-* A SpatialTransform maps quantities from a predecessor frame P into a successor frame S, and is
+* A SpatialTransform maps quantities expressed in frame A into  frame B. It is
 * stored as the pair (E, r) of Featherstone eq. 2.24/2.25:
 *
-*   - `r` is the position of S's origin, expressed in P coordinates.
-*   - `E` is the 3x3 *coordinate* transformation from P to S: a vector with P-frame components
-*     `p` has S-frame components `E * p`. E is therefore the TRANSPOSE of the active rotation
-*     that carries P's axes onto S's axes.
+*   - `r` is the position of B's origin, expressed in A coordinates.
+*   - `E` is the 3x3 rotation matrix that tranforms 3D vectors from A to B coordinates
 *
-* E is held as `_quaternion`, using the convention that `_quaternion * v` (an active rotation, see
-* Quaternion::operator*) evaluates E * v. Consequently, if S's attitude quaternion is `att` in the
-* sense used by Frame (the active rotation taking P-frame components to S-frame components when
-* applied in reverse, i.e. `v_P = att * v_S`), then `_quaternion == att.getConjugate()`.
+* E is stored internally as a `Quaternion`, using the convention that `_quaternion * v` (an active rotation, see
+* Quaternion::operator*) evaluates E * v. Consequently, if B's attitude quaternion is `att` in the
+* sense used by Frame then `_quaternion == att.getInverse()`.
 *
 * Concretely, a revolute joint rotating the child by +theta about `k` relative to the parent has
-* `_quaternion = Quaternion(k, theta).getConjugate()` -- see PinJoint::getJointTransform.
+* `_quaternion = Quaternion(k, theta).getInverse()` -- see PinJoint::getJointTransform.
 */
 class SpatialTransform
 {   
@@ -102,18 +94,6 @@ class SpatialTransform
             return top.verticalConcatenate(bottom);
         }
 
-        /**
-        * @brief Transforms a spatial-inertia-shaped 6x6 matrix from the frame this transform maps TO (its
-        * "child"/successor frame) back into the frame it maps FROM (its "parent"/predecessor frame).
-        *
-        * With X = this->getMotionMatrix() (the motion transform from parent to child, so that
-        * v_child = X * v_parent), a spatial inertia transforms via the congruence I_parent = X^T * I_child * X
-        * (Featherstone, Rigid Body Dynamics Algorithms, 2008, eq. 2.66-2.67: force-type quantities transform via
-        * the dual/force transform X* = X^-T, and inertia maps velocity to momentum, so
-        * momentum_parent = X^T * momentum_child = X^T * I_child * v_child = X^T * I_child * X * v_parent).
-        * @param childInertia The spatial inertia (6x6), expressed in this transform's child/successor frame.
-        * @return The same spatial inertia, expressed in this transform's parent/predecessor frame.
-        */
         /**
         * @brief The coordinate-transformation quaternion E. See the class comment for the exact
         * convention: `getRotation() * v` maps a vector's predecessor-frame components to its

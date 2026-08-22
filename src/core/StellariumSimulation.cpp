@@ -125,28 +125,29 @@ void StellariumSimulation::_step()
 ================================================================================================
     State vector layout
 
-    [ q for every jointed body ; q_dot for every jointed body ], each block in _bodies order.
+    [ q for every jointed body ; alpha for every jointed body ], each block in _bodies order.
 
-    The two halves are sized independently: a joint's configuration (nq) and velocity (nv)
-    coordinate counts differ whenever it uses a redundant parameterization -- see FreeJoint,
-    where nq = 7 and nv = 6.
+    Following Featherstone, Rigid Body Dynamics Algorithms, 2008, eq. 3.8, the second half is the
+    *velocity coordinate* vector alpha, not d(q)/dt -- the two differ whenever a joint uses a
+    redundant parameterization. The halves are therefore sized independently by nq and nv, which
+    differ for FreeJoint (nq = 7, nv = 6).
 ================================================================================================
 */
 
 Vector StellariumSimulation::_getState() const
 {
     std::vector<double> q { };
-    std::vector<double> q_dot { };
+    std::vector<double> alpha { };
     for (auto& body : _bodies)
     {
         if (Joint* joint = body->getJoint())
         {
             append(q, joint->getQ());
-            append(q_dot, joint->getQDot());
+            append(alpha, joint->getAlpha());
         }
     }
 
-    append(q, toVector(q_dot));
+    append(q, toVector(alpha));
     return toVector(q);
 }
 
@@ -157,7 +158,7 @@ Vector StellariumSimulation::_getStateDot() const
     {
         if (Joint* joint = body->getJoint())
         {
-            append(state_dot, joint->getConfigurationDerivative());
+            append(state_dot, joint->getQDot());
         }
     }
 
@@ -168,23 +169,23 @@ Vector StellariumSimulation::_getStateDot() const
 void StellariumSimulation::_setState(const Vector& s)
 {
     size_t num_q = 0;
-    size_t num_q_dot = 0;
+    size_t num_alpha = 0;
     for (auto& body : _bodies)
     {
         if (Joint* joint = body->getJoint())
         {
-            num_q += joint->getConfigurationSize();
-            num_q_dot += static_cast<size_t>(joint->getDegreesOfFreedom());
+            num_q += joint->getQ().getSize();
+            num_alpha += joint->getDegreesOfFreedom();
         }
     }
 
-    if (s.getSize() != num_q + num_q_dot)
+    if (s.getSize() != num_q + num_alpha)
     {
-        throw std::invalid_argument("Cannot set state: expected a vector of size " + std::to_string(num_q + num_q_dot) + " but got " + std::to_string(s.getSize()));
+        throw std::invalid_argument("Cannot set state: expected a vector of size " + std::to_string(num_q + num_alpha) + " but got " + std::to_string(s.getSize()));
     }
 
     size_t q_idx = 0;
-    size_t q_dot_idx = num_q;
+    size_t alpha_idx = num_q;
 
     for (auto& body : _bodies)
     {
@@ -194,7 +195,7 @@ void StellariumSimulation::_setState(const Vector& s)
             continue;
         }
 
-        Vector q = Vector(joint->getConfigurationSize());
+        Vector q = Vector(joint->getQ().getSize());
         for (size_t i = 0; i < q.getSize(); ++i)
         {
             q[i] = s[q_idx];
@@ -202,13 +203,13 @@ void StellariumSimulation::_setState(const Vector& s)
         }
         joint->setQ(q);
 
-        Vector q_dot = Vector(static_cast<size_t>(joint->getDegreesOfFreedom()));
-        for (size_t i = 0; i < q_dot.getSize(); ++i)
+        Vector alpha = Vector(joint->getDegreesOfFreedom());
+        for (size_t i = 0; i < alpha.getSize(); ++i)
         {
-            q_dot[i] = s[q_dot_idx];
-            q_dot_idx++;
+            alpha[i] = s[alpha_idx];
+            alpha_idx++;
         }
-        joint->setQDot(q_dot);
+        joint->setAlpha(alpha);
 
         // Pull q back onto the joint's configuration manifold -- integrating a unit quaternion
         // component-wise walks it off the unit sphere.
@@ -254,7 +255,7 @@ Vector StellariumSimulation::_computeForwardDynamics() const
 
         SpatialVelocity v_J = joint->getJointVelocity();
 
-        i_X_p[body] = joint->getJointTransform() * joint->getInfo().parent_to_joint;
+        i_X_p[body] = joint->getInfo().child_to_joint.getInverse() * joint->getJointTransform() * joint->getInfo().parent_to_joint;
         i_X_0[body] = i_X_p.at(body) * i_X_0.at(parent);
 
         v[body] = i_X_p.at(body) * v.at(parent) + v_J;
@@ -350,7 +351,7 @@ void StellariumSimulation::updateFrames()
         }
         const Body* parent = joint->getInfo().parent;
 
-        SpatialTransform i_X_p = joint->getJointTransform() * joint->getInfo().parent_to_joint;
+        SpatialTransform i_X_p = joint->getInfo().child_to_joint.getInverse() * joint->getJointTransform() * joint->getInfo().parent_to_joint;
 
         i_X_0[body] = i_X_p * i_X_0.at(parent);
         v[body] = i_X_p * v.at(parent) + joint->getJointVelocity();

@@ -2,7 +2,7 @@
  * A single body on a free (6-DOF) joint, spun up by a constant body-frame torque.
  *
  * The counterpart to test_simple_translation: it exercises the rotational half of the free joint,
- * in particular the quaternion kinematics in FreeJoint::getConfigurationDerivative and the
+ * in particular the quaternion kinematics in FreeJoint::getQDot and the
  * re-normalization that follows every integration step.
  */
 
@@ -31,7 +31,7 @@ int main() {
     Joint::Info free_joint;
     free_joint.type = Joint::Type::Free;
     free_joint.q_init = FreeJoint::identityConfiguration();
-    free_joint.q_dot_init = Vector(FreeJoint::NUM_DOF);
+    free_joint.alpha_init = Vector(6);
 
     // Unit inertia about every axis, so a torque about x produces no gyroscopic coupling and the
     // angular rate is simply the integral of the applied torque.

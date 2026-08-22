@@ -26,7 +26,7 @@ int main() {
     Joint::Info free_joint;
     free_joint.type = Joint::Type::Free;
     free_joint.q_init = FreeJoint::identityConfiguration();
-    free_joint.q_dot_init = Vector(FreeJoint::NUM_DOF);
+    free_joint.alpha_init = Vector(6);
 
     auto body = sim.addBody("body_1", SpatialInertia(1.0, Vector3(), InertiaMatrix()), free_joint);
 

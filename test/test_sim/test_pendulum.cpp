@@ -25,6 +25,7 @@
 #include "SpatialInertia.h"
 #include "SpatialTransform.h"
 #include "Matrix.h"
+#include "Matrix33.h"
 #include "SquareMatrix.h"
 #include "StellariumSimulation.h"
 #include "TestHarness.h"
@@ -90,7 +91,7 @@ std::vector<Body*> buildChain(StellariumSimulation& sim, const std::vector<Link>
         info.axes = { Vector3(1, 0, 0) };
         info.parent_to_joint = SpatialTransform(Quaternion(), Vector3(0.0, 0.0, -parent_length));
         info.q_init = { 0.0 };
-        info.q_dot_init = { 0.0 };
+        info.alpha_init = { 0.0 };
 
         Body* body = sim.addBody("link_" + std::to_string(i + 1), spatialInertiaOf(links[i]), info);
         bodies.push_back(body);
@@ -100,12 +101,68 @@ std::vector<Body*> buildChain(StellariumSimulation& sim, const std::vector<Link>
     return bodies;
 }
 
+/**
+ * @brief Builds the same chain as buildChain(), but with each body frame deliberately displaced and
+ * rotated away from its joint frame by the given transform.
+ *
+ * Featherstone assumes the joint frame on the successor side *is* the child body frame, so nothing
+ * in table 7.1 distinguishes them. Joint::Info::child_to_joint lifts that assumption, and this
+ * helper exists to pin down the consequence: the dynamics are a property of the physical system,
+ * so re-choosing where each body frame sits must leave qddot completely unchanged.
+ *
+ * `frames[i]` is link i's child_to_joint, i.e. the map from the new body frame C to the joint
+ * frame J, stored as (E, r) with `v_J = E * v_C` and `r` the joint origin in C coordinates. The
+ * link geometry is defined in J (as in buildChain), so it has to be pushed into C:
+ *
+ *   p_J = E * (p_C - r)   =>   com_C = E^-1 * com_J + r,   I_C = E^T * I_J * E
+ *
+ * and the joint's parent_to_joint, which must start from the *parent body* frame, picks up the
+ * parent's own transform on the right.
+ */
+std::vector<Body*> buildChainWithBodyFrames(StellariumSimulation& sim,
+                                            const std::vector<Link>& links,
+                                            const std::vector<SpatialTransform>& frames)
+{
+    std::vector<Body*> bodies;
+    Body* parent = nullptr;
+    double parent_length = 0.0;
+    SpatialTransform parent_frame; // identity: the world root's body frame is its joint frame
+
+    for (size_t i = 0; i < links.size(); ++i)
+    {
+        const SpatialTransform& T = frames[i];
+        const Quaternion E = T.getRotation();
+        const Vector3 r = T.getTranslation();
+
+        const SpatialInertia joint_frame_inertia = spatialInertiaOf(links[i]);
+        const Vector3 com = E.getInverse() * joint_frame_inertia.getCenterOfMass() + r;
+        const Matrix33 R = E.getRotationMatrix();
+        const InertiaMatrix inertia(Matrix33(R.getTranspose() * joint_frame_inertia.getCenterOfMassInertia() * R));
+
+        Joint::Info info;
+        info.type = Joint::Type::Pin;
+        info.parent = parent;
+        info.axes = { Vector3(1, 0, 0) };  // the axis is expressed in the joint frame, so it is untouched
+        info.parent_to_joint = SpatialTransform(Quaternion(), Vector3(0.0, 0.0, -parent_length)) * parent_frame;
+        info.child_to_joint = T;
+        info.q_init = { 0.0 };
+        info.alpha_init = { 0.0 };
+
+        Body* body = sim.addBody("link_" + std::to_string(i + 1), SpatialInertia(links[i].mass, com, inertia), info);
+        bodies.push_back(body);
+        parent = body;
+        parent_length = links[i].length;
+        parent_frame = T;
+    }
+    return bodies;
+}
+
 void setJointState(const std::vector<Body*>& bodies, const std::vector<double>& q, const std::vector<double>& q_dot)
 {
     for (size_t i = 0; i < bodies.size(); ++i)
     {
         bodies[i]->getJoint()->setQ(Vector { q[i] });
-        bodies[i]->getJoint()->setQDot(Vector { q_dot[i] });
+        bodies[i]->getJoint()->setAlpha(Vector { q_dot[i] });
     }
 }
 
@@ -393,7 +450,7 @@ int main() {
             sim.run(0.05);
 
             const std::vector<double> q { bodies[0]->getJoint()->getQ()[0], bodies[1]->getJoint()->getQ()[0] };
-            const std::vector<double> v { bodies[0]->getJoint()->getQDot()[0], bodies[1]->getJoint()->getQDot()[0] };
+            const std::vector<double> v { bodies[0]->getJoint()->getAlpha()[0], bodies[1]->getJoint()->getAlpha()[0] };
             const double energy = kineticEnergy(links, q, v) + potentialEnergy(links, q);
             worst_drift = std::max(worst_drift, std::abs(energy - initial_energy));
         }
@@ -452,6 +509,111 @@ int main() {
                                                                 LINK_2.com_offset * std::sin(t1 + t2),
                                                                 -LINK_2.com_offset * std::cos(t1 + t2));
         test.assertTrue("link 2 centre of mass frame", bodies[1]->getCenterOfMassFrame().getPosition() == expected_com_2);
+    }
+
+    /*
+    ==========================================================================
+        5. Invariance to the choice of body frame (Joint::Info::child_to_joint).
+    ==========================================================================
+        Featherstone's derivation assumes the successor-side joint frame and the child body frame
+        coincide, so his motion subspace S is simultaneously a joint-frame and a body-frame
+        quantity. child_to_joint breaks that identity, and every S in table 7.1 (v_J, U, D, u, and
+        the third pass's S*qddot) then has to be mapped into body coordinates -- transforming only
+        i_X_p is not enough, and silently gives each joint the wrong effective inertia.
+
+        The check: rebuild the chain with each body frame moved and rotated arbitrarily away from
+        its joint frame, and require the same qddot as the untouched chain -- and, independently,
+        the same qddot as the Lagrangian, which knows nothing about body frames at all.
+    */
+    {
+        const std::vector<Link> links { LINK_1, LINK_2 };
+
+        // Deliberately generic: a translation along the link axis alone would leave the offending
+        // term parallel to the joint axis and hide the bug.
+        const std::vector<SpatialTransform> frames {
+            SpatialTransform(Quaternion(Vector3(0, 1, 0), 0.9), Vector3(0.13, -0.40, 0.22)),
+            SpatialTransform(Quaternion(Vector3(Vector3(0.3, 0.5, 0.8).getNormalized()), -1.2), Vector3(-0.05, 0.31, 0.60)),
+        };
+
+        StellariumSimulation reference_sim;
+        reference_sim.addConstantGravity({ 0, 0, -GRAVITY });
+        std::vector<Body*> reference_bodies = buildChain(reference_sim, links);
+
+        StellariumSimulation sim;
+        sim.addConstantGravity({ 0, 0, -GRAVITY });
+        std::vector<Body*> bodies = buildChainWithBodyFrames(sim, links, frames);
+
+        const std::vector<std::pair<std::vector<double>, std::vector<double>>> states {
+            { { 0.0,  0.0 }, { 0.0,  0.0 } },
+            { { 0.6, -0.9 }, { 0.0,  0.0 } },
+            { { 0.4, -0.9 }, { 1.7, -2.3 } },
+            { { -1.2, 2.1 }, { -3.0, 4.5 } },
+            { { 1.9,  0.6 }, { -0.8, 0.5 } },
+        };
+
+        bool matches_reference = true;
+        bool matches_lagrangian = true;
+        double worst_reference = 0.0;
+        double worst_lagrangian = 0.0;
+        for (const auto& [q, q_dot] : states)
+        {
+            setJointState(reference_bodies, q, q_dot);
+            setJointState(bodies, q, q_dot);
+
+            const Vector expected = reference_sim.getGeneralizedAcceleration();
+            const Vector actual = sim.getGeneralizedAcceleration();
+            const std::vector<double> lagrangian = lagrangianAcceleration(links, q, q_dot);
+
+            for (size_t i = 0; i < links.size(); ++i)
+            {
+                worst_reference = std::max(worst_reference, std::abs(actual[i] - expected[i]));
+                worst_lagrangian = std::max(worst_lagrangian, std::abs(actual[i] - lagrangian[i]));
+                matches_reference = matches_reference && std::abs(actual[i] - expected[i]) <= 1e-10;
+                matches_lagrangian = matches_lagrangian && std::abs(actual[i] - lagrangian[i]) <= 1e-8;
+            }
+        }
+        std::ostringstream reference_str;
+        reference_str << std::scientific << worst_reference;
+        std::ostringstream lagrangian_str;
+        lagrangian_str << std::scientific << worst_lagrangian;
+        test.assertTrue("qddot is unchanged by the choice of body frame (worst error " + reference_str.str() + ")", matches_reference);
+        test.assertTrue("displaced-body-frame chain still matches the Lagrangian (worst error " + lagrangian_str.str() + ")", matches_lagrangian);
+
+        // updateFrames() applies child_to_joint too, so the poses it writes have to follow the same
+        // rule: the joint frame is still where it was, and the body frame now sits at C, related to
+        // it by att_C = att_J * E and p_J = p_C + att_C * r.
+        setJointState(reference_bodies, { 0.6, -0.9 }, { 1.5, -2.0 });
+        setJointState(bodies, { 0.6, -0.9 }, { 1.5, -2.0 });
+        reference_sim.updateFrames();
+        sim.updateFrames();
+
+        bool poses_match = true;
+        for (size_t i = 0; i < links.size(); ++i)
+        {
+            const Quaternion E = frames[i].getRotation();
+            const Vector3 r = frames[i].getTranslation();
+
+            Quaternion expected_attitude = reference_bodies[i]->getAttitude() * E;
+            Vector3 recovered_joint_position = bodies[i]->getPosition() + bodies[i]->getAttitude() * r;
+            Vector3 expected_joint_position = reference_bodies[i]->getPosition();
+
+            expected_attitude.setEpsilon(1e-12);
+            recovered_joint_position.setEpsilon(1e-12);
+            poses_match = poses_match
+                       && expected_attitude == bodies[i]->getAttitude()
+                       && recovered_joint_position == expected_joint_position;
+        }
+        test.assertTrue("updateFrames() places the displaced body frames correctly", poses_match);
+
+        // The centre of mass is a physical point: it cannot move when the body frame is re-chosen.
+        bool com_matches = true;
+        for (size_t i = 0; i < links.size(); ++i)
+        {
+            Vector3 com = bodies[i]->getCenterOfMassFrame().getPosition();
+            com.setEpsilon(1e-12);
+            com_matches = com_matches && com == reference_bodies[i]->getCenterOfMassFrame().getPosition();
+        }
+        test.assertTrue("the centre of mass is where it was before the body frames moved", com_matches);
     }
 
     return test.getNumFails();

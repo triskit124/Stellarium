@@ -95,6 +95,13 @@ class SpatialVelocity
             );
         }
 
+        // Scalar product between Spatial motion and force vectors.
+        // A scalar product is defined between M&F vectors, but not M&M or F&F
+        // See Featherstone, Rigid Body Dynamics Algorithms, 2008, pp. 17
+        double operator*(const SpatialForce& f) const {
+            return this->getVector() * f.getVector();
+        }
+
     private:
 
         Vector3 _angular_velocity { };
@@ -102,7 +109,12 @@ class SpatialVelocity
 };
 
 
-
+// Scalar product between Spatial motion and force vectors.
+// A scalar product is defined between M&F vectors, but not M&M or F&F
+// See Featherstone, Rigid Body Dynamics Algorithms, 2008, pp. 17
+inline double operator*(const SpatialForce& f, const SpatialVelocity& m) {
+    return m * f;
+}
 
 
 
