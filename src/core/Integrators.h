@@ -1,10 +1,8 @@
 #pragma once
 
 #include <functional>
-#include <vector>
 
 #include "Constants.h"
-#include "Body.h"
 #include "Vector.h"
 
 namespace Stellarium

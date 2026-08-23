@@ -197,17 +197,24 @@ int main() {
         assertMatrixEquals(test, "spatial inertia matrix is symmetric",
                            inertia.getMatrix(), inertia.getMatrix().getTranspose());
 
+        // transformSpatialInertia follows the same direction convention as operator*: with X1 read as
+        // B_X_A, it maps a quantity expressed in A into B.
+        const SpatialInertia I_B = X1.transformSpatialInertia(inertia);
+
         // Kinetic energy is frame-invariant: 0.5 v.I v must not change when both the velocity and
         // the inertia are re-expressed in another frame.
-        const double ke_child = 0.5 * v.getVector().dot(inertia.getMatrix() * v.getVector());
-        const Matrix I_parent = X1.transformInertiaToParent(inertia.getMatrix());
-        const Vector v_parent = X1.getInverse().getMotionMatrix() * v.getVector();
-        const double ke_parent = 0.5 * v_parent.dot(I_parent * v_parent);
-        test.assertEquals("kinetic energy is invariant under transformInertiaToParent", ke_child, ke_parent, 1e-10);
+        const double ke_A = 0.5 * v.getVector().dot(inertia.getMatrix() * v.getVector());
+        const SpatialVelocity v_B = X1 * v;
+        const double ke_B = 0.5 * (v_B * (I_B * v_B));
+        test.assertEquals("kinetic energy is invariant under transformSpatialInertia", ke_A, ke_B, 1e-10);
 
-        assertMatrixEquals(test, "transformInertiaToParent equals X^T I X (eq. 2.66-2.67)",
-                           X1.transformInertiaToParent(inertia.getMatrix()),
-                           X1.getMotionMatrix().getTranspose() * inertia.getMatrix() * X1.getMotionMatrix());
+        assertMatrixEquals(test, "transformSpatialInertia equals X^-T I X^-1 (eq. 2.66-2.67)",
+                           I_B.getMatrix(),
+                           X1.getInverse().getMotionMatrix().getTranspose() * inertia.getMatrix()
+                               * X1.getInverse().getMotionMatrix());
+
+        assertMatrixEquals(test, "transformSpatialInertia round-trips through the inverse transform",
+                           X1.getInverse().transformSpatialInertia(I_B).getMatrix(), inertia.getMatrix());
     }
 
     return test.getNumFails();

@@ -224,25 +224,27 @@ Vector StellariumSimulation::_computeForwardDynamics() const
     //
     // _bodies[0] is the fixed base (no joint, zero velocity). All other bodies are assumed to
     // appear after their parent in _bodies (i.e. parents are always processed before their
-    // children); the .at() lookups on parent-keyed scratch turn a violation of that invariant into
-    // an exception rather than a silently-inserted zero.
+    // children)
+    
+    // TODO: add topological sorting to ensure that _bodies is properly sorted
 
-    std::map<const Body*, SpatialVelocity> v { };
-    std::map<const Body*, SpatialTransform> i_X_p { };
-    std::map<const Body*, SpatialTransform> i_X_0 { };
-    std::map<const Body*, SpatialVelocity> c { };
-    std::map<const Body*, Matrix> I_A { };   // articulated-body inertia, size [6 x 6]
-    std::map<const Body*, Vector> p_A { };   // articulated-body bias force, size [6 x 1]
-    std::map<const Body*, Matrix> U { };     // size [6 x dof]
-    std::map<const Body*, Matrix> D_inv { }; // size [dof x dof]
-    std::map<const Body*, Vector> u { };     // size [dof x 1]
-    std::map<const Body*, Vector> a { };     // size [6 x 1]
+    std::map<const Body*, SpatialVelocity> v { }; // spatial velociy of each body, size [6 x 1]
+    std::map<const Body*, SpatialTransform> i_X_p { }; // transform from body i's parent to body i
+    std::map<const Body*, SpatialTransform> i_X_0 { }; // transform from root body to body i
+    std::map<const Body*, SpatialVelocity> c { }; // velocity-product accelerations for each body, size [6 x 1]
+    std::map<const Body*, Matrix> I_A { };   // articulated-body inertia, size [6 x 6] Note: ABIs have 21 independent parameters, not 10, so we shouldn't represent them with the SpatialInertia class
+    std::map<const Body*, SpatialForce> p_A { };   // articulated-body bias force, size [6 x 1]
+    std::map<const Body*, Matrix> U { };     // subexpression given in Featherstone eq. 7.43, size [6 x dof]
+    std::map<const Body*, Matrix> D_inv { }; // subexpression given in Featherstone eq. 7.44, size [dof x dof]
+    std::map<const Body*, Vector> u { };     // subexpression given in Featherstone eq. 7.45, size [dof x 1]
+    std::map<const Body*, SpatialVelocity> a { }; // spatial acceleraion of each body, size [6 x 1]
 
     const Body* base = getBase();
     v[base] = SpatialVelocity();
     i_X_0[base] = SpatialTransform();
 
     // first pass: outward, root to tip
+    // calculates velocity-product accelerations (c) and bias forces (p)
     for (size_t i = 1; i < _bodies.size(); ++i)
     {
         Body* body = _bodies[i].get();
@@ -271,7 +273,7 @@ Vector StellariumSimulation::_computeForwardDynamics() const
         const SpatialForce f_ext = body->getBodyFrameExternalForce()
                                  + SpatialForce(E * f_ext_inertial.getTorque(), E * f_ext_inertial.getForce());
 
-        p_A[body] = (v.at(body).cross(body->getSpatialInertia() * v.at(body)) - f_ext).getVector();
+        p_A[body] = v.at(body).cross(body->getSpatialInertia() * v.at(body)) - f_ext;
     }
 
     // second pass: inward, tip to root -- fold each body's articulated inertia/bias force into its parent's
@@ -284,32 +286,28 @@ Vector StellariumSimulation::_computeForwardDynamics() const
 
         U[body] = I_A.at(body) * S;
         Matrix D = S.getTranspose() * U.at(body);
-        u[body] = joint->getGeneralizedForce() - S.getTranspose() * p_A.at(body);
+        u[body] = joint->getGeneralizedForce() - S.getTranspose() * p_A.at(body).getVector();
         D_inv[body] = SquareMatrix(D).getInverse();
 
         if (parent != base)
         {
             Matrix I_a = I_A.at(body) - U.at(body) * D_inv.at(body) * U.at(body).getTranspose();
-            Vector p_a = p_A.at(body) + I_a * c.at(body).getVector() + U.at(body) * (D_inv.at(body) * u.at(body));
+            SpatialForce p_a = p_A.at(body) + SpatialForce(I_a * c.at(body).getVector() + U.at(body) * (D_inv.at(body) * u.at(body)));
 
-            // Both propagate into the parent frame via the same congruence matrix X = i_X_p[body].getMotionMatrix():
-            // I_parent += X^T I_a X (eq. 2.66-2.67), p_parent += X^T p_a (force-type quantities transform via X^-T = X*,
-            // and going child->parent is the inverse direction, so it's X^T applied directly).
-            I_A[parent] = I_A.at(parent) + i_X_p.at(body).transformInertiaToParent(I_a);
-            Matrix X = i_X_p.at(body).getMotionMatrix();
-            p_A[parent] = p_A.at(parent) + X.getTranspose() * p_a;
+            // i_X_p maps parent -> body, so the inverse re-expresses I_a in parent coordinates (eq. 7.47).
+            I_A[parent] = I_A.at(parent) + i_X_p.at(body).getInverse().transformSpatialInertia(I_a);
+            p_A[parent] = p_A.at(parent) + i_X_p.at(body).getInverse() * p_a;
         }
     }
 
-    // third pass: outward, root to tip.
+    // third pass: outward, root to tip. Calculate accelerations.
     //
     // Gravity is applied via Featherstone's trick (pp. 94): giving the base an acceleration of
     // -a_g makes every body's computed acceleration carry the gravitational term, with no explicit
-    // body forces. As a spatial vector in this codebase's [angular; linear] ordering that is
-    // (0, 0, 0, -g).
-    a[base] = SpatialVelocity(Vector3(), -getConstantGravity()).getVector();
+    // body forces
+    a[base] = SpatialVelocity(Vector3(), -getConstantGravity());
 
-    std::vector<double> qdd { };
+    std::vector<double> alpha_dot { };
     for (size_t i = 1; i < _bodies.size(); ++i)
     {
         Body* body = _bodies[i].get();
@@ -317,17 +315,14 @@ Vector StellariumSimulation::_computeForwardDynamics() const
         const Body* parent = joint->getInfo().parent;
         Matrix S = joint->getMotionSubspace();
 
-        // a' = i_X_p * a_parent + c. c is already expressed in this body's coordinates, so it is
-        // added AFTER the transform, not before it.
-        Vector a_prime = (i_X_p.at(body) * SpatialVelocity(a.at(parent))).getVector() + c.at(body).getVector();
+        SpatialVelocity a_prime = (i_X_p.at(body) * a.at(parent)) + c.at(body);
+        Vector alpha_dot_i = D_inv.at(body) * (u.at(body) - U.at(body).getTranspose() * a_prime.getVector());
+        append(alpha_dot, alpha_dot_i);
 
-        Vector qdd_i = D_inv.at(body) * (u.at(body) - U.at(body).getTranspose() * a_prime);
-        append(qdd, qdd_i);
-
-        a[body] = a_prime + S * qdd_i;
+        a[body] = a_prime + SpatialVelocity(S * alpha_dot_i);
     }
 
-    return toVector(qdd);
+    return toVector(alpha_dot);
 }
 
 void StellariumSimulation::updateFrames()

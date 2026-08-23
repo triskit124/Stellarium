@@ -1,6 +1,5 @@
 #pragma once
 
-#include <array>
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -11,7 +10,6 @@
 #include "SpatialTransform.h"
 #include "SpatialVector.h"
 #include "Vector3.h"
-#include "InertiaMatrix.h"
 #include "Quaternion.h"
 #include "Joint.h"
 
@@ -71,22 +69,22 @@ class Body
         */
 
         /**
-        * @brief Adds a force acting at the body frame origin, expressed in the BODY frame.
+        * @brief Adds a force acting at the body frame origin, expressed in the body frame.
         */
         void addBodyFrameForce(const Vector3& force) { _body_frame_force.setForce(_body_frame_force.getForce() + force); };
 
         /**
-        * @brief Adds a pure torque, expressed in the BODY frame.
+        * @brief Adds a pure torque, expressed in the body frame.
         */
         void addBodyFrameTorque(const Vector3& torque) { _body_frame_force.setTorque(_body_frame_force.getTorque() + torque); };
 
         /**
-        * @brief Adds a force acting at the body frame origin, expressed in the INERTIAL frame.
+        * @brief Adds a force acting at the body frame origin, expressed in the inertial frame.
         */
         void addInertialFrameForce(const Vector3& force) { _inertial_frame_force.setForce(_inertial_frame_force.getForce() + force); };
 
         /**
-        * @brief Adds a pure torque, expressed in the INERTIAL frame.
+        * @brief Adds a pure torque, expressed in the inertial frame.
         */
         void addInertialFrameTorque(const Vector3& torque) { _inertial_frame_force.setTorque(_inertial_frame_force.getTorque() + torque); };
 

@@ -80,7 +80,7 @@ class Joint
         size_t getDegreesOfFreedom() const { return _alpha.getSize(); }
 
         /**
-        * @brief The motion subspace S expressed in the CHILD BODY frame -- the coordinates the ABA
+        * @brief The motion subspace S expressed in the child body frame -- the coordinates the ABA
         * works in. Joints define their S in the joint frame (getJointFrameMotionSubspace()); this
         * maps it through child_to_joint. Featherstone assumes the two frames coincide, so his S is
         * already body-frame; with a non-identity child_to_joint the extra transform is required.

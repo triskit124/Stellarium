@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Matrix.h"
 #include "Vector.h"
 #include "Vector3.h"
 #include <stdexcept>
@@ -14,6 +15,14 @@ class SpatialForce
         SpatialForce() = default;
 
         SpatialForce(const Vector3& torque, const Vector3& force) : _torque(torque), _force(force) { };
+
+        explicit SpatialForce(const Vector& vec) {
+            if (vec.getSize() != 6) {
+                throw std::invalid_argument("Wrong size to construct SpatialForce.");
+            }
+            _torque = { vec[0], vec[1], vec[2] };
+            _force = { vec[3], vec[4], vec[5] };
+        }
 
         Vector3 getTorque() const { return _torque; };
 

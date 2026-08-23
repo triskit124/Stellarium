@@ -22,28 +22,6 @@
 
 using namespace Stellarium;
 
-namespace {
-
-constexpr double LINK_LENGTH = 2.0;
-constexpr double LINK_MASS = 10.0;
-
-// /**
-//  * @brief A uniform rod of the given length and mass, hanging down its own -z axis from a joint at
-//  * the frame origin, so its centre of mass is half a length down.
-//  */
-// SpatialInertia rodInertia(double length, double mass)
-// {
-//     const double transverse = mass * length * length / 12.0; // uniform rod about its centre
-//     const double axial = mass * 0.01 * 0.01 / 2.0;           // treat it as 1 cm thick about its own axis
-//     return SpatialInertia(mass,
-//                           Vector3(0.0, 0.0, -length / 2.0),
-//                           InertiaMatrix(Vector3(transverse, 0, 0),
-//                                         Vector3(0, transverse, 0),
-//                                         Vector3(0, 0, axial)));
-// }
-
-} // end anonymous namespace
-
 
 int main() {
 
@@ -53,6 +31,9 @@ int main() {
     sim.addGraphics();
 
     const std::string axes_model_path = (std::filesystem::path(STELL_PROJECT_ROOT) / "assets/axes.obj").string();
+
+    constexpr double LINK_LENGTH = 5.0;
+    constexpr double LINK_MASS = 10.0;
 
     // First link: pinned to the world at the origin, rotating about x.
     Joint::Info joint;

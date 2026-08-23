@@ -3,7 +3,9 @@
 #include "Matrix.h"
 #include "Matrix33.h"
 #include "Quaternion.h"
+#include "SpatialInertia.h"
 #include "SpatialVector.h"
+#include "Vector.h"
 #include "Vector3.h"
 
 namespace Stellarium
@@ -95,6 +97,36 @@ class SpatialTransform
         }
 
         /**
+        * @brief Re-expresses a spatial-inertia-shaped 6x6 matrix in this transform's successor frame,
+        * following the same direction convention as operator*: for B_X_A, `I_B = B_X_A.transformSpatialInertia(I_A)`
+        * and `I_A = B_X_A.getInverse().transformSpatialInertia(I_B)`.
+        *
+        * Inertia maps a motion vector to a force vector, so it transforms by a congruence built from
+        * *both* transforms (Featherstone, Rigid Body Dynamics Algorithms, 2008, eq. 2.66):
+        *
+        *   I_B = (B_X_A)* I_A (A_X_B) = X^-T I_A X^-1,   where X = getMotionMatrix() and X* = X^-T
+        *
+        * (f_B = X* f_A = X* I_A v_A = X* I_A X^-1 v_B). Note this is the *inverse* congruence to the
+        * X^T I X that maps an inertia from the successor frame back into the predecessor frame.
+        * @param I The 6x6 inertia, expressed in this transform's predecessor frame.
+        * @return The same inertia, expressed in this transform's successor frame.
+        */
+        Matrix transformSpatialInertia(const Matrix& I) const {
+            Matrix X_inv = getInverse().getMotionMatrix();
+            return X_inv.getTranspose() * I * X_inv;
+        }
+
+        /**
+        * @brief Rigid-body overload of transformSpatialInertia(const Matrix&), with the same direction
+        * convention. Only valid for genuine rigid-body inertias: SpatialInertia stores the 10-parameter
+        * (m, c, Ic) form, so an articulated-body inertia (21 independent parameters) must use the
+        * Matrix overload above.
+        */
+        SpatialInertia transformSpatialInertia(const SpatialInertia& I) const {
+            return SpatialInertia(transformSpatialInertia(I.getMatrix()));
+        }
+
+        /**
         * @brief The coordinate-transformation quaternion E. See the class comment for the exact
         * convention: `getRotation() * v` maps a vector's predecessor-frame components to its
         * successor-frame components.
@@ -115,12 +147,6 @@ class SpatialTransform
             // and the coordinate map runs the other way, so E' = E^T.
             return SpatialTransform(_quaternion.getInverse(), -(_quaternion * _translation));
         }
-
-        Matrix transformInertiaToParent(const Matrix& childInertia) const {
-            Matrix X = getMotionMatrix();
-            return X.getTranspose() * childInertia * X;
-        }
-
 
     private:
 
