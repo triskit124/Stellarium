@@ -107,7 +107,6 @@ class Matrix33 : public SquareMatrix
         * @return The inverse of the matrix.
         */
         Matrix33 getInverse() const {
-            // TODO: implement an efficient method that works for any sized matrix
             if (std::abs(getDeterminant()) <= _epsilon)
             {
                 throw std::invalid_argument("Matrix is singular and cannot be inverted.");

@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Matrix.h"
 #include "Vector.h"
 #include "Vector3.h"
 #include <stdexcept>
@@ -18,7 +17,7 @@ class SpatialForce
 
         explicit SpatialForce(const Vector& vec) {
             if (vec.getSize() != 6) {
-                throw std::invalid_argument("Wrong size to construct SpatialForce.");
+                throw std::invalid_argument("Wrong size to construct SpatialForce. Spatial Vectors must be size 6.");
             }
             _torque = { vec[0], vec[1], vec[2] };
             _force = { vec[3], vec[4], vec[5] };
@@ -50,21 +49,21 @@ class SpatialForce
 };
 
 
-class SpatialVelocity
+class SpatialMotion
 {
     public:
 
-        SpatialVelocity() = default;
+        SpatialMotion() = default;
 
-        SpatialVelocity(const Vector3& angular_velocity, const Vector3& linear_velocity) : _angular_velocity(angular_velocity), _linear_velocity(linear_velocity) { };
+        SpatialMotion(const Vector3& angular_velocity, const Vector3& linear_velocity) : _angular_velocity(angular_velocity), _linear_velocity(linear_velocity) { };
 
         /**
-        * @brief Constructs a SpatialVelocity from a 6-element [angular; linear] vector.
+        * @brief Constructs a SpatialMotion from a 6-element [angular; linear] vector.
         * @throws std::invalid_argument if vec is not of size 6.
         */
-        explicit SpatialVelocity(const Vector& vec) {
+        explicit SpatialMotion(const Vector& vec) {
             if (vec.getSize() != 6) {
-                throw std::invalid_argument("Wrong size to construct SpatialVelocity.");
+                throw std::invalid_argument("Wrong size to construct SpatialMotion. SpatialVectors must be of size 6.");
             }
             _angular_velocity = { vec[0], vec[1], vec[2] };
             _linear_velocity = { vec[3], vec[4], vec[5] };
@@ -80,17 +79,17 @@ class SpatialVelocity
 
         Vector getVector() const { return Vector(_angular_velocity | _linear_velocity); };
 
-        SpatialVelocity operator+(const SpatialVelocity& other) const {
-            return SpatialVelocity(_angular_velocity + other.getAngularVelocity(), _linear_velocity + other.getLinearVelocity());
+        SpatialMotion operator+(const SpatialMotion& other) const {
+            return SpatialMotion(_angular_velocity + other.getAngularVelocity(), _linear_velocity + other.getLinearVelocity());
         }
 
-        SpatialVelocity operator-(const SpatialVelocity& other) const {
-            return SpatialVelocity(_angular_velocity - other.getAngularVelocity(), _linear_velocity - other.getLinearVelocity());
+        SpatialMotion operator-(const SpatialMotion& other) const {
+            return SpatialMotion(_angular_velocity - other.getAngularVelocity(), _linear_velocity - other.getLinearVelocity());
         }
 
-        SpatialVelocity cross(const SpatialVelocity& v) const {
+        SpatialMotion cross(const SpatialMotion& v) const {
             // See Featherstone, Rigid Body Dynamics Algorithms, 2008, eq. 2.33
-            return SpatialVelocity(
+            return SpatialMotion(
                 _angular_velocity.cross(v.getAngularVelocity()),
                 _angular_velocity.cross(v.getLinearVelocity()) + _linear_velocity.cross(v.getAngularVelocity())
             );
@@ -121,7 +120,7 @@ class SpatialVelocity
 // Scalar product between Spatial motion and force vectors.
 // A scalar product is defined between M&F vectors, but not M&M or F&F
 // See Featherstone, Rigid Body Dynamics Algorithms, 2008, pp. 17
-inline double operator*(const SpatialForce& f, const SpatialVelocity& m) {
+inline double operator*(const SpatialForce& f, const SpatialMotion& m) {
     return m * f;
 }
 

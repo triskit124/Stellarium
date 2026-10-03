@@ -74,7 +74,7 @@ Matrix forceMatrix(const SpatialTransform& X)
 /**
  * @brief The spatial motion cross product operator crm(v) of eq. 2.31, in [angular; linear] order.
  */
-Matrix crossMotionMatrix(const SpatialVelocity& v)
+Matrix crossMotionMatrix(const SpatialMotion& v)
 {
     Matrix w_cross = Matrix33::skew(v.getAngularVelocity());
     Matrix v_cross = Matrix33::skew(v.getLinearVelocity());
@@ -93,7 +93,7 @@ int main() {
     const SpatialTransform X1(Quaternion(Vector3(1, 2, -3), 0.7), Vector3(0.4, -1.3, 2.1));
     const SpatialTransform X2(Quaternion(Vector3(-2, 0.5, 1), -1.1), Vector3(-0.9, 0.2, 0.6));
 
-    const SpatialVelocity v(Vector3(0.3, -1.2, 0.8), Vector3(2.0, 0.5, -1.7));
+    const SpatialMotion v(Vector3(0.3, -1.2, 0.8), Vector3(2.0, 0.5, -1.7));
     const SpatialForce f(Vector3(-0.6, 1.1, 0.25), Vector3(0.9, -2.2, 1.4));
 
     /*
@@ -142,7 +142,7 @@ int main() {
     */
     {
         const SpatialTransform X_z90(Quaternion(Vector3(0, 0, 1), M_PI / 2).getConjugate(), Vector3());
-        const SpatialVelocity along_x(Vector3(1, 0, 0), Vector3());
+        const SpatialMotion along_x(Vector3(1, 0, 0), Vector3());
         assertVectorEquals(test, "+90 deg about z: predecessor x reads as successor -y",
                            (X_z90 * along_x).getAngularVelocity(), Vector3(0, -1, 0));
     }
@@ -157,7 +157,7 @@ int main() {
     {
         const Vector3 r(0.0, 0.0, -1.0);
         const SpatialTransform X_t(Quaternion(), r);
-        const SpatialVelocity spin(Vector3(1, 0, 0), Vector3());
+        const SpatialMotion spin(Vector3(1, 0, 0), Vector3());
         assertVectorEquals(test, "xlt leaves angular velocity unchanged",
                            (X_t * spin).getAngularVelocity(), Vector3(1, 0, 0));
         // A unit spin about x, referenced a metre down the -z axis, gives that point a velocity of
@@ -173,7 +173,7 @@ int main() {
     */
 
     {
-        const SpatialVelocity m(Vector3(-0.4, 0.9, 1.6), Vector3(0.7, -0.3, 2.2));
+        const SpatialMotion m(Vector3(-0.4, 0.9, 1.6), Vector3(0.7, -0.3, 2.2));
         assertVectorEquals(test, "motion cross product matches crm (eq. 2.31/2.33)",
                            v.cross(m).getVector(), crossMotionMatrix(v) * m.getVector());
         // crf = -crm^T (eq. 2.32)
@@ -204,7 +204,7 @@ int main() {
         // Kinetic energy is frame-invariant: 0.5 v.I v must not change when both the velocity and
         // the inertia are re-expressed in another frame.
         const double ke_A = 0.5 * v.getVector().dot(inertia.getMatrix() * v.getVector());
-        const SpatialVelocity v_B = X1 * v;
+        const SpatialMotion v_B = X1 * v;
         const double ke_B = 0.5 * (v_B * (I_B * v_B));
         test.assertEquals("kinetic energy is invariant under transformSpatialInertia", ke_A, ke_B, 1e-10);
 

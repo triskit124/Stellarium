@@ -116,7 +116,7 @@ class SpatialInertia
             return ((top_left | top_right).verticalConcatenate(bottom_left | (_mass * Matrix33())));
         }
 
-        SpatialForce operator*(const SpatialVelocity& v) const {
+        SpatialForce operator*(const SpatialMotion& v) const {
             // See Featherstone, Rigid Body Dynamics Algorithms, 2008, eq. 2.63.
             // p is the linear momentum, h is the angular momentum about the reference point (not the center of mass).
             Vector3 p = _mass * (v.getLinearVelocity() + v.getAngularVelocity().cross(_center_of_mass));

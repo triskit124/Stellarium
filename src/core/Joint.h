@@ -80,12 +80,14 @@ class Joint
         size_t getDegreesOfFreedom() const { return _alpha.getSize(); }
 
         /**
-        * @brief The motion subspace S expressed in the child body frame -- the coordinates the ABA
-        * works in. Joints define their S in the joint frame (getJointFrameMotionSubspace()); this
-        * maps it through child_to_joint. Featherstone assumes the two frames coincide, so his S is
-        * already body-frame; with a non-identity child_to_joint the extra transform is required.
-        * Note child_to_joint is constant, so S is still constant in child coordinates and the
-        * S_dot * qdot term of c (table 7.1) remains zero.
+        * @brief The motion subspace S expressed in the child body frame. 
+        * Joint implementations define their S in the joint frame,
+        * see getJointFrameMotionSubspace(). This method maps S to the 
+        * child frame through child_to_joint. Featherstone assumes the two 
+        * frames coincide, so his S is already body-frame; with a 
+        * non-identity child_to_joint the extra transform is required.
+        * Note child_to_joint is constant, so S is still constant in child 
+        * coordinates and the S_dot * qdot term of c (table 7.1) remains zero.
         */
         Matrix getMotionSubspace() const {
             return _info.child_to_joint.getInverse().getMotionMatrix() * getJointFrameMotionSubspace();
@@ -101,11 +103,11 @@ class Joint
 
         // velocity of the successor relative to the predecessor, expressed in child body coordinates.
         // See: Featherstone, Rigid Body Dynamics Algorithms, 2008, eq. 3.33
-        virtual SpatialVelocity getJointVelocity() const { return SpatialVelocity(getMotionSubspace() * _alpha); }
+        virtual SpatialMotion getJointVelocity() const { return SpatialMotion(getMotionSubspace() * _alpha); }
 
         /**
         * @brief d(q)/dt, of size getQ().getSize(). For most joints the velocity coordinates alpha
-        * are simply the derivative of q; joints with nq != nv (see FreeJoint) override this with the
+        * are simply the derivative of q; joints with nq != nv (see FreeJoint) should override this with the
         * kinematic map that turns velocity coordinates into configuration rates.
         */
         virtual Vector getQDot() const { return _alpha; }
@@ -189,7 +191,6 @@ class PinJoint : public SingleDofJoint
         using SingleDofJoint::SingleDofJoint;
         
         virtual Matrix getJointFrameMotionSubspace() const override {
-            // S is 6x(dof) -- one column per joint DOF, mapping qdot to a spatial velocity.
             Vector3 axis = getInfo().axes[0];
             return Matrix { { axis[0] }, { axis[1] }, { axis[2] }, { 0 }, { 0 }, { 0 } };
         };

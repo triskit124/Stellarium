@@ -58,13 +58,13 @@ class SpatialTransform
             return SpatialTransform(q3, r3);
         }
 
-        SpatialVelocity operator*(const SpatialVelocity& v) const {
+        SpatialMotion operator*(const SpatialMotion& v) const {
             // Apply the motion transform (eq. 2.24) directly, without building the 6x6 matrix:
             //   angular' = E * angular
             //   linear'  = E * (linear - r x angular)
             Vector3 angular = v.getAngularVelocity();
             Vector3 linear = v.getLinearVelocity();
-            return SpatialVelocity(
+            return SpatialMotion(
                 _quaternion * angular,
                 _quaternion * (linear - _translation.cross(angular))
             );
@@ -84,7 +84,7 @@ class SpatialTransform
 
         /**
         * @brief Builds the 6x6 spatial motion transform matrix X (eq. 2.24) for this transform, i.e. the
-        * matrix satisfying X * v.getVector() == (*this) * v for a SpatialVelocity v.
+        * matrix satisfying X * v.getVector() == (*this) * v for a SpatialMotion v.
         */
         Matrix getMotionMatrix() const {
             Matrix E = _quaternion.getRotationMatrix();

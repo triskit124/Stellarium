@@ -228,19 +228,19 @@ Vector StellariumSimulation::_computeForwardDynamics() const
     
     // TODO: add topological sorting to ensure that _bodies is properly sorted
 
-    std::map<const Body*, SpatialVelocity> v { }; // spatial velociy of each body, size [6 x 1]
+    std::map<const Body*, SpatialMotion> v { }; // spatial velociy of each body, size [6 x 1]
     std::map<const Body*, SpatialTransform> i_X_p { }; // transform from body i's parent to body i
     std::map<const Body*, SpatialTransform> i_X_0 { }; // transform from root body to body i
-    std::map<const Body*, SpatialVelocity> c { }; // velocity-product accelerations for each body, size [6 x 1]
+    std::map<const Body*, SpatialMotion> c { }; // velocity-product accelerations for each body, size [6 x 1]
     std::map<const Body*, Matrix> I_A { };   // articulated-body inertia, size [6 x 6] Note: ABIs have 21 independent parameters, not 10, so we shouldn't represent them with the SpatialInertia class
     std::map<const Body*, SpatialForce> p_A { };   // articulated-body bias force, size [6 x 1]
     std::map<const Body*, Matrix> U { };     // subexpression given in Featherstone eq. 7.43, size [6 x dof]
     std::map<const Body*, Matrix> D_inv { }; // subexpression given in Featherstone eq. 7.44, size [dof x dof]
     std::map<const Body*, Vector> u { };     // subexpression given in Featherstone eq. 7.45, size [dof x 1]
-    std::map<const Body*, SpatialVelocity> a { }; // spatial acceleraion of each body, size [6 x 1]
+    std::map<const Body*, SpatialMotion> a { }; // spatial acceleraion of each body, size [6 x 1]
 
     const Body* base = getBase();
-    v[base] = SpatialVelocity();
+    v[base] = SpatialMotion();
     i_X_0[base] = SpatialTransform();
 
     // first pass: outward, root to tip
@@ -255,7 +255,7 @@ Vector StellariumSimulation::_computeForwardDynamics() const
         }
         const Body* parent = joint->getInfo().parent;
 
-        SpatialVelocity v_J = joint->getJointVelocity();
+        SpatialMotion v_J = joint->getJointVelocity();
 
         i_X_p[body] = joint->getInfo().child_to_joint.getInverse() * joint->getJointTransform() * joint->getInfo().parent_to_joint;
         i_X_0[body] = i_X_p.at(body) * i_X_0.at(parent);
@@ -305,7 +305,7 @@ Vector StellariumSimulation::_computeForwardDynamics() const
     // Gravity is applied via Featherstone's trick (pp. 94): giving the base an acceleration of
     // -a_g makes every body's computed acceleration carry the gravitational term, with no explicit
     // body forces
-    a[base] = SpatialVelocity(Vector3(), -getConstantGravity());
+    a[base] = SpatialMotion(Vector3(), -getConstantGravity());
 
     std::vector<double> alpha_dot { };
     for (size_t i = 1; i < _bodies.size(); ++i)
@@ -315,11 +315,11 @@ Vector StellariumSimulation::_computeForwardDynamics() const
         const Body* parent = joint->getInfo().parent;
         Matrix S = joint->getMotionSubspace();
 
-        SpatialVelocity a_prime = (i_X_p.at(body) * a.at(parent)) + c.at(body);
+        SpatialMotion a_prime = (i_X_p.at(body) * a.at(parent)) + c.at(body);
         Vector alpha_dot_i = D_inv.at(body) * (u.at(body) - U.at(body).getTranspose() * a_prime.getVector());
         append(alpha_dot, alpha_dot_i);
 
-        a[body] = a_prime + SpatialVelocity(S * alpha_dot_i);
+        a[body] = a_prime + SpatialMotion(S * alpha_dot_i);
     }
 
     return toVector(alpha_dot);
@@ -330,11 +330,11 @@ void StellariumSimulation::updateFrames()
     // Forward kinematics. Recomputes the same i_X_0 / v chain as the first pass of the ABA, but
     // writes the result out to each Body's Frames in the conventions the render layer reads.
     std::map<const Body*, SpatialTransform> i_X_0 { };
-    std::map<const Body*, SpatialVelocity> v { };
+    std::map<const Body*, SpatialMotion> v { };
 
     const Body* base = getBase();
     i_X_0[base] = SpatialTransform();
-    v[base] = SpatialVelocity();
+    v[base] = SpatialMotion();
 
     for (size_t i = 1; i < _bodies.size(); ++i)
     {

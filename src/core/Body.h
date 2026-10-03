@@ -38,7 +38,7 @@ class Body
         * @param cm The position of center of mass of the body.
         * @param inertia The inertia matrix of the body.
         */
-        Body(const std::string& name, SpatialInertia spatial_inertia, Joint::Info joint_info = { })
+        Body(const std::string& name, const SpatialInertia& spatial_inertia, const Joint::Info& joint_info = { })
         : _name(name), 
         _spatial_inertia(spatial_inertia), 
         _body_frame(name), 
@@ -122,7 +122,7 @@ class Body
         *                     (Featherstone's i_X_0).
         * @param velocity     This body's spatial velocity, expressed in body coordinates.
         */
-        void setPoseFromBase(const SpatialTransform& base_to_body, const SpatialVelocity& velocity) {
+        void setPoseFromBase(const SpatialTransform& base_to_body, const SpatialMotion& velocity) {
             // base_to_body holds (E, r): r is the body origin's position in base coordinates, and
             // E maps base components to body components, so the attitude (which maps the other
             // way) is its conjugate. See the convention block in SpatialTransform.h.
