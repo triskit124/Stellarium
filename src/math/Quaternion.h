@@ -137,7 +137,7 @@ class Quaternion: public Vector4
         }
 
         /**
-        * @brief Rotates the vector v. This is an active rotation (i.e. rotates vectors or frames from the starting pose to the end pose).
+        * @brief Rotates the vector v. This is an active rotation (i.e. rotates vectors from the starting pose to the end pose).
         * @param v The vector.
         * @return The rotated vector.
         */
@@ -168,7 +168,7 @@ class Quaternion: public Vector4
 
         /**
         * @brief Gets the rotation matrix representation of the quaternion.
-        * This is an active rotation. That is, it actively rotates a vector or frame from the starting pose to the end pose.
+        * This is an active rotation. That is, it actively rotates a vector from the starting pose to the end pose.
         * @return The rotation matrix representation of the quaternion.
         */
         RotationMatrix getRotationMatrix() const {

@@ -1,45 +1,12 @@
 #include "Integrators.h"
-#include "Body.h"
+#include "Vector.h"
 
 #include <cstddef>
 #include <stdexcept>
 #include <string>
-#include <vector>
 
 namespace Stellarium 
 {
-
-void Integrator::_computeStateVector(std::vector<Body*> bodies)
-{
-   _state.clear();
-   _state.reserve(bodies.size() * Body::STATE_SIZE);
-
-    // Collect the state vector of the system
-    for (auto& body : bodies)
-    {
-        std::array<double*, Body::STATE_SIZE> state = body->getState();
-        for (double* s : state)
-        {
-            _state.push_back(s);
-        }
-    }
-};
-
-void Integrator::_computeStateDotVector(std::vector<Body*> bodies)
-{
-   _state_dot.clear();
-   _state_dot.reserve(bodies.size() * Body::STATE_SIZE);
-
-    // Collect the state derivatives of the system
-    for (auto& body : bodies)
-    {
-        std::array<double, Body::STATE_SIZE> state_dot = body->getStateDot();
-        for (double s : state_dot)
-        {
-            _state_dot.push_back(s);
-        }
-    }
-};
 
 void Integrator::setDeltaT(double dt)
 {
@@ -50,7 +17,7 @@ void Integrator::setDeltaT(double dt)
     _dt = dt;
 }
 
-void RK4::integrate(std::vector<Body*> bodies, double& t)
+void RK4::integrate(double& t)
 {
     /* 
     ========================
@@ -58,20 +25,14 @@ void RK4::integrate(std::vector<Body*> bodies, double& t)
     ========================
     */
 
-    _computeStateVector(bodies);
-    _computeStateDotVector(bodies);
+    Vector _state = _state_getter();
+    Vector _state_dot = _state_dot_getter();
 
-    std::vector<double> initial_state, k1, k2, k3, k4;
-    initial_state.resize(_state.size());
-    k1.resize(_state.size());
-    k2.resize(_state.size());
-    k3.resize(_state.size());
-    k4.resize(_state.size());
-
-    for (size_t i = 0; i < _state.size(); ++i)
-    {
-        initial_state[i] = *_state[i];
-    }
+    Vector initial_state = _state;
+    Vector k1 = Vector(_state.getSize());
+    Vector k2 = Vector(_state.getSize());
+    Vector k3 = Vector(_state.getSize());
+    Vector k4 = Vector(_state.getSize());
 
     /* 
     ============================
@@ -87,12 +48,13 @@ void RK4::integrate(std::vector<Body*> bodies, double& t)
     */
     t += _dt/2;
 
-    for (size_t i = 0; i < _state.size(); ++i)
+    for (size_t i = 0; i < _state.getSize(); ++i)
     {
-        *_state[i] = initial_state[i] + (_dt * k1[i] / 2);
+        _state[i] = initial_state[i] + (_dt * k1[i] / 2);
     }
 
-    _computeStateDotVector(bodies);
+    _state_setter(_state);
+    _state_dot = _state_dot_getter();
 
     k2 = _state_dot;
 
@@ -101,12 +63,13 @@ void RK4::integrate(std::vector<Body*> bodies, double& t)
         Runge-Kutta step 3 
     ============================
     */
-    for (size_t i = 0; i < _state.size(); ++i)
+    for (size_t i = 0; i < _state.getSize(); ++i)
     {
-        *_state[i] = initial_state[i] + (_dt * k2[i] / 2);
+        _state[i] = initial_state[i] + (_dt * k2[i] / 2);
     }
 
-    _computeStateDotVector(bodies);
+    _state_setter(_state);
+    _state_dot = _state_dot_getter();
 
     k3 = _state_dot;
 
@@ -117,12 +80,13 @@ void RK4::integrate(std::vector<Body*> bodies, double& t)
     */
     t += _dt/2;
 
-    for (size_t i = 0; i < _state.size(); ++i)
+    for (size_t i = 0; i < _state.getSize(); ++i)
     {
-        *_state[i] = initial_state[i] + (_dt * k3[i]);
+        _state[i] = initial_state[i] + (_dt * k3[i]);
     }
 
-    _computeStateDotVector(bodies);
+    _state_setter(_state);
+    _state_dot = _state_dot_getter();
 
     k4 = _state_dot;
 
@@ -131,19 +95,17 @@ void RK4::integrate(std::vector<Body*> bodies, double& t)
         Final integrated state
     ==============================
     */
-    for (size_t i = 0; i < _state.size(); i++)
+    for (size_t i = 0; i < _state.getSize(); i++)
     {
-        *_state[i] = initial_state[i] + (_dt / 6) * (k1[i] + 2*k2[i] + 2*k3[i] + k4[i]);
+        _state[i] = initial_state[i] + (_dt / 6) * (k1[i] + 2*k2[i] + 2*k3[i] + k4[i]);
     }
 
+    _state_setter(_state);
+
     // one last state dot call to normalize attitude quaternions and update derivatives
-    _computeStateDotVector(bodies);
+    _state_dot = _state_dot_getter();
+
 };
 
-Integrator::~Integrator()
-{
-    _state.clear();
-    _state_dot.clear();
-};
 
 } // end namespace Stellarium

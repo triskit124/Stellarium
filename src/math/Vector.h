@@ -14,7 +14,9 @@ namespace Stellarium
 {
 
 /**
-* @brief A class representing an N-dimensional vector. Size must be given at construction time. Cannot be resized after construction.
+* @brief A class representing an N-dimensional vector. Size is given at construction time and cannot
+* be changed afterwards, with one exception: a default-constructed (size 0, "unsized") Vector adopts
+* the size of the first vector assigned to it. See operator=.
 */
 class Vector : public MathBase
 {
@@ -31,7 +33,7 @@ class Vector : public MathBase
         * @param size The size of the vector.
         * @param val Value to assign to all elements. Defaults to 0.
         */
-        Vector(size_t size, double val = 0.0) : MathBase(), _size(size), _data(size, val) { };
+        Vector(size_t size = 0, double val = 0.0) : MathBase(), _size(size), _data(size, val) { };
 
         /**
         * @brief Constructs a Vector with the given values. The size of the vector is determined by the number of values given.
@@ -63,29 +65,36 @@ class Vector : public MathBase
 
         /**
         * @brief Copy assignment operator. Performs a size check before copying.
+        *
+        * A default-constructed Vector has size 0 and is treated as "unsized": assigning to it
+        * adopts the size of the right-hand side. This is what makes accumulation patterns such as
+        * `Vector acc; acc = acc.concatenate(chunk);` and struct fields like Joint::Info::q_init usable.
+        * Once a Vector is non-empty its size is fixed, and assigning a differently-sized vector
+        * to it throws.
+        *
         * @param rhs The vector to copy from.
-        * @throws std::invalid_argument if the sizes of the vectors do not match.
+        * @throws std::invalid_argument if this vector is non-empty and the sizes do not match.
         * @return Reference to this vector after assignment.
         */
         Vector& operator=(const Vector& rhs) {
-            if (rhs.getSize() != _size) {
-                throw std::invalid_argument("Cannot assign vector of size " + std::to_string(rhs.getSize()) + " to vector of size " + std::to_string(_size));
-            }
+            _checkAssignable(rhs.getSize());
+            _size = rhs._size;
             _data = rhs._data;
             return *this;
         }
 
         /**
-        * @brief Move assignment operator. Performs a size check before moving.
+        * @brief Move assignment operator. Follows the same sizing rule as the copy-assignment
+        * operator: an empty (size 0) vector adopts the size of the right-hand side, otherwise the
+        * sizes must match.
         * @param rhs The vector to move from.
-        * @throws std::invalid_argument if the sizes of the vectors do not match.
+        * @throws std::invalid_argument if this vector is non-empty and the sizes do not match.
         * @return Reference to this vector after assignment.
         */
         Vector& operator=(Vector&& rhs) {
-            if (rhs.getSize() != _size) {
-                throw std::invalid_argument("Cannot assign vector of size " + std::to_string(rhs.getSize()) + " to vector of size " + std::to_string(_size));
-            }
-            _data = rhs._data;
+            _checkAssignable(rhs.getSize());
+            _size = rhs._size;
+            _data = rhs._data; // copy, not move: leaving rhs with a size but no data would break its invariant
             return *this;
         } 
 
@@ -299,7 +308,34 @@ class Vector : public MathBase
             return std::abs(getNorm() - 1.0) <= _epsilon;
         }
 
+        std::vector<double> getData() const { return _data; };
+
+        /**
+        * @brief concatenate this vector with another vector
+        * @param m The vector to concatenate onto the end of this vector.
+        */
+        Vector concatenate(const Vector& m) const {
+            Vector concatenated = Vector(_size + m.getSize());
+            for (size_t i = 0; i < _size; ++i) {
+                concatenated[i] = _data[i];
+            }
+            for (size_t i = 0; i < m.getSize(); ++i) {
+                concatenated[i + _size] = m[i];
+            }
+            return concatenated;
+        }
+
         private:
+
+            /**
+            * @brief Throws unless this vector can be assigned a vector of the given size, i.e.
+            * unless it is empty ("unsized") or already has that exact size.
+            */
+            void _checkAssignable(size_t rhs_size) const {
+                if (_size != 0 && rhs_size != _size) {
+                    throw std::invalid_argument("Cannot assign vector of size " + std::to_string(rhs_size) + " to vector of size " + std::to_string(_size));
+                }
+            }
 
             size_t _size; // number of elements in the vector
             std::vector<double> _data; // the values of the vector

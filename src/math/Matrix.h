@@ -29,7 +29,7 @@ class Matrix : public MathBase
         /**
         * @brief Default constructor. Initializes all elements to 0.
         */
-        Matrix(size_t num_rows, size_t num_cols) : MathBase(), _num_rows(num_rows), _num_cols(num_cols), _rows(num_rows, Vector(num_cols, 0.0)) {}
+        Matrix(size_t num_rows = 0, size_t num_cols = 0) : MathBase(), _num_rows(num_rows), _num_cols(num_cols), _rows(num_rows, Vector(num_cols, 0.0)) {}
 
         /**
         * @brief Constructs a Matrix with the given rows.
@@ -81,6 +81,38 @@ class Matrix : public MathBase
             Matrix result(_num_rows, _num_cols);
             for (size_t i = 0; i < _num_rows; ++i) {
                 result[i] = _rows[i] / c;
+            }
+            return result;
+        }
+
+        /**
+        * @brief Matrix-matrix addition.
+        * @param m The matrix to add.
+        * @return The elementwise sum of the two matrices.
+        */
+        Matrix operator+(const Matrix& m) const {
+            if (_num_rows != m.getNumRows() || _num_cols != m.getNumCols()) {
+                throw std::invalid_argument("Cannot add matrices of different size. Got " + std::to_string(_num_rows) + "x" + std::to_string(_num_cols) + " and " + std::to_string(m.getNumRows()) + "x" + std::to_string(m.getNumCols()));
+            }
+            Matrix result(_num_rows, _num_cols);
+            for (size_t i = 0; i < _num_rows; ++i) {
+                result[i] = _rows[i] + m[i];
+            }
+            return result;
+        }
+
+        /**
+        * @brief Matrix-matrix subtraction.
+        * @param m The matrix to subtract.
+        * @return The elementwise difference of the two matrices.
+        */
+        Matrix operator-(const Matrix& m) const {
+            if (_num_rows != m.getNumRows() || _num_cols != m.getNumCols()) {
+                throw std::invalid_argument("Cannot subtract matrices of different size. Got " + std::to_string(_num_rows) + "x" + std::to_string(_num_cols) + " and " + std::to_string(m.getNumRows()) + "x" + std::to_string(m.getNumCols()));
+            }
+            Matrix result(_num_rows, _num_cols);
+            for (size_t i = 0; i < _num_rows; ++i) {
+                result[i] = _rows[i] - m[i];
             }
             return result;
         }
@@ -164,6 +196,14 @@ class Matrix : public MathBase
             return true;
         }
 
+        /**
+        * @brief negation operator
+        * @param m The matrix to concatenate onto the right of this matrix.
+        */
+        Matrix operator-() const {
+            return *this * -1.0;
+        }
+
         /*
         ===================
               Methods
@@ -217,6 +257,37 @@ class Matrix : public MathBase
                 }
             }
             return array;
+        }
+
+        /**
+        * @brief horizontal concatenation
+        * @param m The matrix to concatenate onto the right of this matrix.
+        */
+        Matrix horizontalConcatenate(const Matrix& m) const {
+            if (_num_rows != m.getNumRows()) {
+                throw std::invalid_argument("Cannot right-concatenate matrices with different numbers of rows. Got " + std::to_string(_num_rows) + " and " + std::to_string(m.getNumRows()));
+            }
+            Matrix concatenated = Matrix(_num_rows, _num_cols + m.getNumCols());
+            for (size_t i = 0; i < _num_rows; ++i) {
+                concatenated[i] = _rows[i].concatenate(m[i]);
+            }
+            return concatenated;
+        }
+
+        /**
+        * @brief vertical concatenation
+        * @param m The matrix to concatenate onto the bottom of this matrix.
+        */
+        Matrix verticalConcatenate(const Matrix& m) const {
+            if (_num_cols != m.getNumCols()) {
+                throw std::invalid_argument("Cannot vertical-concatenate matrices with different numbers of cols. Got " + std::to_string(_num_cols) + " and " + std::to_string(m.getNumCols()));
+            }
+            return (this->getTranspose().horizontalConcatenate(m.getTranspose())).getTranspose();
+        }
+
+        static Matrix zeros(int num) {
+            // mxn constructor initializes to zeros
+            return Matrix(num, num);
         }
 
     private:

@@ -1,9 +1,9 @@
 #pragma once
 
-#include <vector>
+#include <functional>
 
 #include "Constants.h"
-#include "Body.h"
+#include "Vector.h"
 
 namespace Stellarium
 {
@@ -27,7 +27,7 @@ class Integrator
         * @brief Default constructor.
         * @param dt The integration step size.
         */
-        explicit Integrator(const double dt = 1.0) {
+        explicit Integrator(const std::function<Vector(void)>& state_getter, const std::function<Vector(void)>& state_dot_getter, const std::function<void(const Vector&)>& state_setter, const double dt = 1.0) : _state_getter(state_getter), _state_dot_getter(state_dot_getter), _state_setter(state_setter) {
             if (dt <= STELL_EPSILON)
             {
                 throw std::invalid_argument("dt must be positive.");
@@ -38,46 +38,53 @@ class Integrator
         /**
         * @brief Destructor.
         */
-        virtual ~Integrator();
+        virtual ~Integrator() = default;
 
         /**
         * @brief Integrates the state of the system.
         * @param bodies[in] The bodies to be integrated.
         * @param t[out] The simulation time variable. Gets updated by the integrator.
         */
-        virtual void integrate(std::vector<Body*> bodies, double& t) = 0;
+        virtual void integrate(double& t) = 0;
 
         void setDeltaT(double dt);
         
         double getDeltaT() { return _dt; };
 
     protected:
-        /**
-        * @brief Collects the state vector for each body and stores the total simulation state in this->_state.
-        * @param bodies[in] The bodies to be integrated.
-        */
-        virtual void _computeStateVector(std::vector<Body*> bodies);
+        // /**
+        // * @brief Collects the state vector for each body and stores the total simulation state in this->_state.
+        // * @param bodies[in] The bodies to be integrated.
+        // */
+        // virtual void _computeStateVector(std::vector<Body*> bodies);
 
-        /**
-        * @brief Collects the state derivative vector for each body and stores the total simulation state derivative in this->_state_dot.
-        * @param bodies[in] The bodies to be integrated.
-        */
-        virtual void _computeStateDotVector(std::vector<Body*> bodies);
+        // /**
+        // * @brief Collects the state derivative vector for each body and stores the total simulation state derivative in this->_state_dot.
+        // * @param bodies[in] The bodies to be integrated.
+        // */
+        // virtual void _computeStateDotVector(std::vector<Body*> bodies);
 
         /**
         * @brief The total state vector for all bodies in the simulation.
         */
-        std::vector<double*> _state {};
+        // std::vector<double*> _state {};
 
         /**
         * @brief The total state derivative vector for all bodies in the simulation.
         */
-        std::vector<double> _state_dot {};
+        // std::vector<double> _state_dot {};
 
         /**
         * @brief the integration step size
         */
         double _dt;
+
+        // Stored by value, NOT by reference: these are bound to temporaries materialized from
+        // lambdas at the call site (see StellariumSimulation::addIntegrator), and reference
+        // members do not extend the lifetime of their initializer.
+        std::function<Vector(void)> _state_getter;
+        std::function<Vector(void)> _state_dot_getter;
+        std::function<void(const Vector&)> _state_setter;
 
 };
 
@@ -88,17 +95,14 @@ class RK4 : public Integrator
 {
     public:
 
-        /**
-        * @brief Default constructor.
-        */
-        explicit RK4(const double dt = 1.0) : Integrator(dt) {};
+        using Integrator::Integrator;
 
         /**
         * @brief Integrates the state of the system.
         * @param bodies[in] The bodies to be integrated.
         * @param t[out] The simulation time variable. Gets updated by the integrator.
         */
-        void integrate(std::vector<Body*> bodies, double& t) override;
+        virtual void integrate(double& t) override;
 
     protected:
 
