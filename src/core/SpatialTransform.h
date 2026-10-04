@@ -62,8 +62,8 @@ class SpatialTransform
             // Apply the motion transform (eq. 2.24) directly, without building the 6x6 matrix:
             //   angular' = E * angular
             //   linear'  = E * (linear - r x angular)
-            Vector3 angular = v.getAngularVelocity();
-            Vector3 linear = v.getLinearVelocity();
+            Vector3 angular = v.getAngularPart();
+            Vector3 linear = v.getLinearPart();
             return SpatialMotion(
                 _quaternion * angular,
                 _quaternion * (linear - _translation.cross(angular))
@@ -74,8 +74,8 @@ class SpatialTransform
             // Apply the force transform (eq. 2.25) directly, without building the 6x6 matrix:
             //   torque' = E * (torque - r x force)
             //   force'  = E * force
-            Vector3 torque = f.getTorque();
-            Vector3 force = f.getForce();
+            Vector3 torque = f.getAngularPart();
+            Vector3 force = f.getLinearPart();
             return SpatialForce(
                 _quaternion * (torque - _translation.cross(force)),
                 _quaternion * force

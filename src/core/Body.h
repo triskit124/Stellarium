@@ -71,22 +71,22 @@ class Body
         /**
         * @brief Adds a force acting at the body frame origin, expressed in the body frame.
         */
-        void addBodyFrameForce(const Vector3& force) { _body_frame_force.setForce(_body_frame_force.getForce() + force); };
+        void addBodyFrameForce(const Vector3& force) { _body_frame_force.setLinearPart(_body_frame_force.getLinearPart() + force); };
 
         /**
         * @brief Adds a pure torque, expressed in the body frame.
         */
-        void addBodyFrameTorque(const Vector3& torque) { _body_frame_force.setTorque(_body_frame_force.getTorque() + torque); };
+        void addBodyFrameTorque(const Vector3& torque) { _body_frame_force.setAngularPart(_body_frame_force.getAngularPart() + torque); };
 
         /**
         * @brief Adds a force acting at the body frame origin, expressed in the inertial frame.
         */
-        void addInertialFrameForce(const Vector3& force) { _inertial_frame_force.setForce(_inertial_frame_force.getForce() + force); };
+        void addInertialFrameForce(const Vector3& force) { _inertial_frame_force.setLinearPart(_inertial_frame_force.getLinearPart() + force); };
 
         /**
         * @brief Adds a pure torque, expressed in the inertial frame.
         */
-        void addInertialFrameTorque(const Vector3& torque) { _inertial_frame_force.setTorque(_inertial_frame_force.getTorque() + torque); };
+        void addInertialFrameTorque(const Vector3& torque) { _inertial_frame_force.setAngularPart(_inertial_frame_force.getAngularPart() + torque); };
 
         /**
         * @brief Clears all forces and torques acting on the body.
@@ -133,16 +133,16 @@ class Body
             // components; the spatial velocity is entirely in body components.
             _body_frame.setPosition(position);
             _body_frame.setAttitude(attitude);
-            _body_frame.setVelocity(attitude * velocity.getLinearVelocity());
-            _body_frame.setAngularVelocity(velocity.getAngularVelocity());
+            _body_frame.setVelocity(attitude * velocity.getLinearPart());
+            _body_frame.setAngularVelocity(velocity.getAngularPart());
 
             // The centre of mass rides along, offset by c in body coordinates. Its velocity picks
             // up the omega x c term since it is a different body-fixed point.
             const Vector3 c = _spatial_inertia.getCenterOfMass();
             _center_of_mass_frame.setPosition(position + attitude * c);
             _center_of_mass_frame.setAttitude(attitude);
-            _center_of_mass_frame.setVelocity(attitude * (velocity.getLinearVelocity() + velocity.getAngularVelocity().cross(c)));
-            _center_of_mass_frame.setAngularVelocity(velocity.getAngularVelocity());
+            _center_of_mass_frame.setVelocity(attitude * (velocity.getLinearPart() + velocity.getAngularPart().cross(c)));
+            _center_of_mass_frame.setAngularVelocity(velocity.getAngularPart());
         }
 
         Frame& getBodyFrame() { return _body_frame; };

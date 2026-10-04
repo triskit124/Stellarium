@@ -271,7 +271,7 @@ Vector StellariumSimulation::_computeForwardDynamics() const
         const Quaternion E = i_X_0.at(body).getRotation();
         const SpatialForce f_ext_inertial = body->getInertialFrameExternalForce();
         const SpatialForce f_ext = body->getBodyFrameExternalForce()
-                                 + SpatialForce(E * f_ext_inertial.getTorque(), E * f_ext_inertial.getForce());
+                                 + SpatialForce(E * f_ext_inertial.getAngularPart(), E * f_ext_inertial.getLinearPart());
 
         p_A[body] = v.at(body).cross(body->getSpatialInertia() * v.at(body)) - f_ext;
     }

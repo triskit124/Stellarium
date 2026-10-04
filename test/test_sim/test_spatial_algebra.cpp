@@ -76,8 +76,8 @@ Matrix forceMatrix(const SpatialTransform& X)
  */
 Matrix crossMotionMatrix(const SpatialMotion& v)
 {
-    Matrix w_cross = Matrix33::skew(v.getAngularVelocity());
-    Matrix v_cross = Matrix33::skew(v.getLinearVelocity());
+    Matrix w_cross = Matrix33::skew(v.getAngularPart());
+    Matrix v_cross = Matrix33::skew(v.getLinearPart());
     Matrix zero3(3, 3);
     return (w_cross.horizontalConcatenate(zero3)).verticalConcatenate(v_cross.horizontalConcatenate(w_cross));
 }
@@ -144,7 +144,7 @@ int main() {
         const SpatialTransform X_z90(Quaternion(Vector3(0, 0, 1), M_PI / 2).getConjugate(), Vector3());
         const SpatialMotion along_x(Vector3(1, 0, 0), Vector3());
         assertVectorEquals(test, "+90 deg about z: predecessor x reads as successor -y",
-                           (X_z90 * along_x).getAngularVelocity(), Vector3(0, -1, 0));
+                           (X_z90 * along_x).getAngularPart(), Vector3(0, -1, 0));
     }
 
     /*
@@ -159,11 +159,11 @@ int main() {
         const SpatialTransform X_t(Quaternion(), r);
         const SpatialMotion spin(Vector3(1, 0, 0), Vector3());
         assertVectorEquals(test, "xlt leaves angular velocity unchanged",
-                           (X_t * spin).getAngularVelocity(), Vector3(1, 0, 0));
+                           (X_t * spin).getAngularPart(), Vector3(1, 0, 0));
         // A unit spin about x, referenced a metre down the -z axis, gives that point a velocity of
         // omega x r = (1,0,0) x (0,0,-1) = (0, 1, 0)... expressed as -r x omega below.
         assertVectorEquals(test, "xlt shifts the linear reference point",
-                           (X_t * spin).getLinearVelocity(), -r.cross(Vector3(1, 0, 0)));
+                           (X_t * spin).getLinearPart(), -r.cross(Vector3(1, 0, 0)));
     }
 
     /*
