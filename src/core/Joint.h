@@ -262,7 +262,7 @@ class FreeJoint : public Joint
 
         virtual void normalizeConfiguration() override {
             // calling getAttitude returns a normalized Quaternion representing the attitude
-            setQ(getAttitude() | getTranslation());
+            setQ(getAttitude().concatenate(getTranslation()));
         }
 
         /**

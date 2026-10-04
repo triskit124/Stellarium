@@ -113,7 +113,7 @@ class SpatialInertia
             Matrix33 top_right = _mass * c_cross;
             Matrix33 bottom_left = -top_right; // == _mass * c_cross.getTranspose()
 
-            return ((top_left | top_right).verticalConcatenate(bottom_left | (_mass * Matrix33())));
+            return ((top_left.horizontalConcatenate(top_right)).verticalConcatenate(bottom_left.horizontalConcatenate(_mass * Matrix33())));
         }
 
         SpatialForce operator*(const SpatialMotion& v) const {

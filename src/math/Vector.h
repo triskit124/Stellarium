@@ -68,7 +68,7 @@ class Vector : public MathBase
         *
         * A default-constructed Vector has size 0 and is treated as "unsized": assigning to it
         * adopts the size of the right-hand side. This is what makes accumulation patterns such as
-        * `Vector acc; acc = acc | chunk;` and struct fields like Joint::Info::q_init usable.
+        * `Vector acc; acc = acc.concatenate(chunk);` and struct fields like Joint::Info::q_init usable.
         * Once a Vector is non-empty its size is fixed, and assigning a differently-sized vector
         * to it throws.
         *
@@ -231,14 +231,6 @@ class Vector : public MathBase
                 throw std::invalid_argument("invalid index: " + std::to_string(idx));
             }
             return _data[idx];
-        }
-
-        /**
-        * @brief concatenation operator
-        * @param m The vector to concatenate onto the end of this vector.
-        */
-        Vector operator|(const Vector& m) const {
-            return this->concatenate(m);
         }
 
         /*

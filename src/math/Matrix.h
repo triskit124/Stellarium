@@ -204,14 +204,6 @@ class Matrix : public MathBase
             return *this * -1.0;
         }
 
-        /**
-        * @brief horizontal concatenation operator
-        * @param m The matrix to concatenate onto the right of this matrix.
-        */
-        Matrix operator|(const Matrix& m) const {
-            return this->horizontalConcatenate(m);
-        }
-
         /*
         ===================
               Methods
@@ -277,7 +269,7 @@ class Matrix : public MathBase
             }
             Matrix concatenated = Matrix(_num_rows, _num_cols + m.getNumCols());
             for (size_t i = 0; i < _num_rows; ++i) {
-                concatenated[i] = _rows[i] | m[i];
+                concatenated[i] = _rows[i].concatenate(m[i]);
             }
             return concatenated;
         }
@@ -290,7 +282,7 @@ class Matrix : public MathBase
             if (_num_cols != m.getNumCols()) {
                 throw std::invalid_argument("Cannot vertical-concatenate matrices with different numbers of cols. Got " + std::to_string(_num_cols) + " and " + std::to_string(m.getNumCols()));
             }
-            return (this->getTranspose() | m.getTranspose()).getTranspose();
+            return (this->getTranspose().horizontalConcatenate(m.getTranspose())).getTranspose();
         }
 
         static Matrix zeros(int num) {
