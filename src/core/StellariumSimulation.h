@@ -47,7 +47,7 @@ class StellariumSimulation
          *
          * @param name The name of the body.
          * @param spatial_inertia The spatial inertia (mass, center of mass, inertia tensor) of the body.
-         * @param joint_info The joint connecting this body to its parent.
+         * @param joint_info The joint connecting this body to its predecessor.
          */
         Body* addBody(const std::string& name,
                       const SpatialInertia& spatial_inertia,
@@ -81,7 +81,7 @@ class StellariumSimulation
          * @brief The fictitious root body: the fixed, inertial base of the kinematic tree.
          *
          * It carries no joint and never appears in the state vector. A body added with a null
-         * Joint::Info::parent is attached to this body, i.e. "no parent" means "hung off the
+         * Joint::Info::predecessor is attached to this body, i.e. "no predecessor" means "hung off the
          * world".
          */
         Body* getBase() { return _bodies.front().get(); };

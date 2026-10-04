@@ -38,10 +38,10 @@ int main() {
     // First link: pinned to the world at the origin, rotating about x.
     Joint::Info joint;
     joint.type = Joint::Type::Pin;
-    joint.parent = nullptr; // attached to the world root
+    joint.predecessor = nullptr; // attached to the world root
     joint.axes = { Vector3(1, 0, 0) };
-    joint.parent_to_joint = SpatialTransform();
-    joint.child_to_joint = SpatialTransform(Quaternion(), Vector3(0, 0, LINK_LENGTH));
+    joint.predecessor_to_joint = SpatialTransform();
+    joint.successor_to_joint = SpatialTransform(Quaternion(), Vector3(0, 0, LINK_LENGTH));
     joint.q_init = { 0.99 * M_PI};
     joint.alpha_init = { 0.0 };
 
@@ -51,17 +51,17 @@ int main() {
     sim.loadModel(axes_model_path, body_1->getBodyFrame());
 
     // Second link: pinned to the far end of the first, a link length down its -z axis.
-    joint.parent = body_1;
-    joint.child_to_joint = SpatialTransform(Quaternion(), Vector3(0.0, 0.0, LINK_LENGTH));
+    joint.predecessor = body_1;
+    joint.successor_to_joint = SpatialTransform(Quaternion(), Vector3(0.0, 0.0, LINK_LENGTH));
     joint.q_init = { 0.2};
 
     Body* body_2 = sim.addBody("body_2", inertia, joint);
     sim.loadModel(axes_model_path, body_2->getBodyFrame());
 
     // Third link
-    // joint.parent = body_2;
+    // joint.predecessor = body_2;
     // joint.axes = { Vector3(0, 1, 0) };
-    // joint.child_to_joint = SpatialTransform(Quaternion(), Vector3(0.0, 0.0, LINK_LENGTH));
+    // joint.successor_to_joint = SpatialTransform(Quaternion(), Vector3(0.0, 0.0, LINK_LENGTH));
     // joint.q_init = { 0.2 };
 
     // Body* body_3 = sim.addBody("body_2", inertia, joint);

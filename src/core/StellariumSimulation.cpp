@@ -58,11 +58,8 @@ Vector toVector(const std::vector<double>& values)
 
 StellariumSimulation::StellariumSimulation() {
     // Add a ficticious root body. This will serve as the inertial root for the simulation. It has
-    // no joint (Joint::Info::parent defaults to nullptr, which Body::attachToParent reads as
+    // no joint (Joint::Info::predecessor defaults to nullptr, which Body::attachToPredecessor reads as
     // "fixed base"), so it never appears in the state vector or in the dynamics passes.
-    //
-    // Constructed directly rather than through addBody() because addBody() re-parents null parents
-    // onto this very body, which does not exist yet.
     _bodies.emplace_back(std::make_unique<Stellarium::Body>("root", SpatialInertia(0.0, Vector3(), InertiaMatrix()), Joint::Info { }));
 }
 
@@ -79,12 +76,12 @@ Body* StellariumSimulation::addBody(const std::string& name, const SpatialInerti
 {
     Joint::Info info = joint_info;
 
-    // A null parent means "attach to the world", not "second fixed base". Without this, the body
+    // A null predecessor means "attach to the world", not "second fixed base". Without this, the body
     // would be created jointless and the dynamics passes -- which assume every body past the root
     // has a joint -- would dereference a null Joint*.
-    if (info.parent == nullptr)
+    if (info.predecessor == nullptr)
     {
-        info.parent = getBase();
+        info.predecessor = getBase();
     }
 
     _bodies.emplace_back(std::make_unique<Stellarium::Body>(name, spatial_inertia, info));
@@ -253,11 +250,11 @@ Vector StellariumSimulation::_computeForwardDynamics() const
         {
             throw std::runtime_error("Body '" + body->getName() + "' has no joint. Only the root body may be jointless.");
         }
-        const Body* parent = joint->getInfo().parent;
+        const Body* parent = joint->getInfo().predecessor;
 
         SpatialMotion v_J = joint->getJointVelocity();
 
-        i_X_p[body] = joint->getInfo().child_to_joint.getInverse() * joint->getJointTransform() * joint->getInfo().parent_to_joint;
+        i_X_p[body] = joint->getInfo().successor_to_joint.getInverse() * joint->getJointTransform() * joint->getInfo().predecessor_to_joint;
         i_X_0[body] = i_X_p.at(body) * i_X_0.at(parent);
 
         v[body] = i_X_p.at(body) * v.at(parent) + v_J;
@@ -281,7 +278,7 @@ Vector StellariumSimulation::_computeForwardDynamics() const
     {
         Body* body = _bodies[i].get();
         Joint* joint = body->getJoint();
-        const Body* parent = joint->getInfo().parent;
+        const Body* parent = joint->getInfo().predecessor;
         Matrix S = joint->getMotionSubspace();
 
         U[body] = I_A.at(body) * S;
@@ -312,7 +309,7 @@ Vector StellariumSimulation::_computeForwardDynamics() const
     {
         Body* body = _bodies[i].get();
         Joint* joint = body->getJoint();
-        const Body* parent = joint->getInfo().parent;
+        const Body* parent = joint->getInfo().predecessor;
         Matrix S = joint->getMotionSubspace();
 
         SpatialMotion a_prime = (i_X_p.at(body) * a.at(parent)) + c.at(body);
@@ -344,9 +341,9 @@ void StellariumSimulation::updateFrames()
         {
             throw std::runtime_error("Body '" + body->getName() + "' has no joint. Only the root body may be jointless.");
         }
-        const Body* parent = joint->getInfo().parent;
+        const Body* parent = joint->getInfo().predecessor;
 
-        SpatialTransform i_X_p = joint->getInfo().child_to_joint.getInverse() * joint->getJointTransform() * joint->getInfo().parent_to_joint;
+        SpatialTransform i_X_p = joint->getInfo().successor_to_joint.getInverse() * joint->getJointTransform() * joint->getInfo().predecessor_to_joint;
 
         i_X_0[body] = i_X_p * i_X_0.at(parent);
         v[body] = i_X_p * v.at(parent) + joint->getJointVelocity();

@@ -25,7 +25,7 @@ namespace Stellarium
 * Quaternion::operator*) evaluates E * v. Consequently, if B's attitude quaternion is `att` in the
 * sense used by Frame then `_quaternion == att.getInverse()`.
 *
-* Concretely, a revolute joint rotating the child by +theta about `k` relative to the parent has
+* Concretely, a revolute joint rotating the successor by +theta about `k` relative to the predecessor has
 * `_quaternion = Quaternion(k, theta).getInverse()` -- see PinJoint::getJointTransform.
 */
 class SpatialTransform

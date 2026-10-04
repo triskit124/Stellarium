@@ -80,23 +80,23 @@ SpatialInertia spatialInertiaOf(const Link& link)
 std::vector<Body*> buildChain(StellariumSimulation& sim, const std::vector<Link>& links)
 {
     std::vector<Body*> bodies;
-    Body* parent = nullptr; // nullptr == attached to the world
-    double parent_length = 0.0;
+    Body* predecessor = nullptr; // nullptr == attached to the world
+    double predecessor_length = 0.0;
 
     for (size_t i = 0; i < links.size(); ++i)
     {
         Joint::Info info;
         info.type = Joint::Type::Pin;
-        info.parent = parent;
+        info.predecessor = predecessor;
         info.axes = { Vector3(1, 0, 0) };
-        info.parent_to_joint = SpatialTransform(Quaternion(), Vector3(0.0, 0.0, -parent_length));
+        info.predecessor_to_joint = SpatialTransform(Quaternion(), Vector3(0.0, 0.0, -predecessor_length));
         info.q_init = { 0.0 };
         info.alpha_init = { 0.0 };
 
         Body* body = sim.addBody("link_" + std::to_string(i + 1), spatialInertiaOf(links[i]), info);
         bodies.push_back(body);
-        parent = body;
-        parent_length = links[i].length;
+        predecessor = body;
+        predecessor_length = links[i].length;
     }
     return bodies;
 }
@@ -105,28 +105,28 @@ std::vector<Body*> buildChain(StellariumSimulation& sim, const std::vector<Link>
  * @brief Builds the same chain as buildChain(), but with each body frame deliberately displaced and
  * rotated away from its joint frame by the given transform.
  *
- * Featherstone assumes the joint frame on the successor side *is* the child body frame, so nothing
- * in table 7.1 distinguishes them. Joint::Info::child_to_joint lifts that assumption, and this
+ * Featherstone assumes the joint frame on the successor side *is* the successor body frame, so nothing
+ * in table 7.1 distinguishes them. Joint::Info::successor_to_joint lifts that assumption, and this
  * helper exists to pin down the consequence: the dynamics are a property of the physical system,
  * so re-choosing where each body frame sits must leave qddot completely unchanged.
  *
- * `frames[i]` is link i's child_to_joint, i.e. the map from the new body frame C to the joint
+ * `frames[i]` is link i's successor_to_joint, i.e. the map from the new body frame C to the joint
  * frame J, stored as (E, r) with `v_J = E * v_C` and `r` the joint origin in C coordinates. The
  * link geometry is defined in J (as in buildChain), so it has to be pushed into C:
  *
  *   p_J = E * (p_C - r)   =>   com_C = E^-1 * com_J + r,   I_C = E^T * I_J * E
  *
- * and the joint's parent_to_joint, which must start from the *parent body* frame, picks up the
- * parent's own transform on the right.
+ * and the joint's predecessor_to_joint, which must start from the *predecessor body* frame, picks up the
+ * predecessor's own transform on the right.
  */
 std::vector<Body*> buildChainWithBodyFrames(StellariumSimulation& sim,
                                             const std::vector<Link>& links,
                                             const std::vector<SpatialTransform>& frames)
 {
     std::vector<Body*> bodies;
-    Body* parent = nullptr;
-    double parent_length = 0.0;
-    SpatialTransform parent_frame; // identity: the world root's body frame is its joint frame
+    Body* predecessor = nullptr;
+    double predecessor_length = 0.0;
+    SpatialTransform predecessor_frame; // identity: the world root's body frame is its joint frame
 
     for (size_t i = 0; i < links.size(); ++i)
     {
@@ -141,18 +141,18 @@ std::vector<Body*> buildChainWithBodyFrames(StellariumSimulation& sim,
 
         Joint::Info info;
         info.type = Joint::Type::Pin;
-        info.parent = parent;
+        info.predecessor = predecessor;
         info.axes = { Vector3(1, 0, 0) };  // the axis is expressed in the joint frame, so it is untouched
-        info.parent_to_joint = SpatialTransform(Quaternion(), Vector3(0.0, 0.0, -parent_length)) * parent_frame;
-        info.child_to_joint = T;
+        info.predecessor_to_joint = SpatialTransform(Quaternion(), Vector3(0.0, 0.0, -predecessor_length)) * predecessor_frame;
+        info.successor_to_joint = T;
         info.q_init = { 0.0 };
         info.alpha_init = { 0.0 };
 
         Body* body = sim.addBody("link_" + std::to_string(i + 1), SpatialInertia(links[i].mass, com, inertia), info);
         bodies.push_back(body);
-        parent = body;
-        parent_length = links[i].length;
-        parent_frame = T;
+        predecessor = body;
+        predecessor_length = links[i].length;
+        predecessor_frame = T;
     }
     return bodies;
 }
@@ -513,11 +513,11 @@ int main() {
 
     /*
     ==========================================================================
-        5. Invariance to the choice of body frame (Joint::Info::child_to_joint).
+        5. Invariance to the choice of body frame (Joint::Info::successor_to_joint).
     ==========================================================================
-        Featherstone's derivation assumes the successor-side joint frame and the child body frame
+        Featherstone's derivation assumes the successor-side joint frame and the successor body frame
         coincide, so his motion subspace S is simultaneously a joint-frame and a body-frame
-        quantity. child_to_joint breaks that identity, and every S in table 7.1 (v_J, U, D, u, and
+        quantity. successor_to_joint breaks that identity, and every S in table 7.1 (v_J, U, D, u, and
         the third pass's S*qddot) then has to be mapped into body coordinates -- transforming only
         i_X_p is not enough, and silently gives each joint the wrong effective inertia.
 
@@ -579,7 +579,7 @@ int main() {
         test.assertTrue("qddot is unchanged by the choice of body frame (worst error " + reference_str.str() + ")", matches_reference);
         test.assertTrue("displaced-body-frame chain still matches the Lagrangian (worst error " + lagrangian_str.str() + ")", matches_lagrangian);
 
-        // updateFrames() applies child_to_joint too, so the poses it writes have to follow the same
+        // updateFrames() applies successor_to_joint too, so the poses it writes have to follow the same
         // rule: the joint frame is still where it was, and the body frame now sits at C, related to
         // it by att_C = att_J * E and p_J = p_C + att_C * r.
         setJointState(reference_bodies, { 0.6, -0.9 }, { 1.5, -2.0 });

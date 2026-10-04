@@ -36,10 +36,10 @@ class Joint
 
         struct Info {
             Type type = Type::Locked;
-            Body* parent = nullptr;          // nullptr means "attach to the simulation's fixed base"
+            Body* predecessor = nullptr;          // nullptr means "attach to the simulation's fixed base"
             std::vector<Vector3> axes { };   // joint axes, expressed in the joint frame
-            SpatialTransform parent_to_joint { }; // parent body frame -> joint frame, expressed in parent frame (the "XT" of Featherstone table 7.1)
-            SpatialTransform child_to_joint { }; // child body frame -> joint frame, expressed in child frame
+            SpatialTransform predecessor_to_joint { }; // predecessor body frame -> joint frame, expressed in predecessor frame (the "XT" of Featherstone table 7.1)
+            SpatialTransform successor_to_joint { }; // successor body frame -> joint frame, expressed in successor frame
             Vector q_init { }; // initial value of the joint's position variables
             Vector alpha_init { }; // initial value of the joints velocity variables
         };
@@ -61,7 +61,7 @@ class Joint
         * @param cm The position of center of mass of the Joint.
         * @param inertia The inertia matrix of the Joint.
         */
-        Joint(Body* child, const Info& info) : _q(info.q_init), _alpha(info.alpha_init), _tau(info.alpha_init.getSize(), 0.0), _child(child), _info(info)  {};
+        Joint(Body* successor, const Info& info) : _q(info.q_init), _alpha(info.alpha_init), _tau(info.alpha_init.getSize(), 0.0), _successor(successor), _info(info)  {};
 
         virtual ~Joint() = default;
 
@@ -80,17 +80,17 @@ class Joint
         size_t getDegreesOfFreedom() const { return _alpha.getSize(); }
 
         /**
-        * @brief The motion subspace S expressed in the child body frame. 
+        * @brief The motion subspace S expressed in the successor body frame. 
         * Joint implementations define their S in the joint frame,
         * see getJointFrameMotionSubspace(). This method maps S to the 
-        * child frame through child_to_joint. Featherstone assumes the two 
+        * successor frame through successor_to_joint. Featherstone assumes the two 
         * frames coincide, so his S is already body-frame; with a 
-        * non-identity child_to_joint the extra transform is required.
-        * Note child_to_joint is constant, so S is still constant in child 
+        * non-identity successor_to_joint the extra transform is required.
+        * Note successor_to_joint is constant, so S is still constant in successor 
         * coordinates and the S_dot * qdot term of c (table 7.1) remains zero.
         */
         Matrix getMotionSubspace() const {
-            return _info.child_to_joint.getInverse().getMotionMatrix() * getJointFrameMotionSubspace();
+            return _info.successor_to_joint.getInverse().getMotionMatrix() * getJointFrameMotionSubspace();
         }
 
         /**
@@ -98,10 +98,10 @@ class Joint
         */
         virtual Matrix getJointFrameMotionSubspace() const = 0;
 
-        // transforms from joint frame on parent to child body frame
+        // transforms from joint frame on predecessor to successor body frame
         virtual SpatialTransform getJointTransform() const = 0;
 
-        // velocity of the successor relative to the predecessor, expressed in child body coordinates.
+        // velocity of the successor relative to the predecessor, expressed in successor body coordinates.
         // See: Featherstone, Rigid Body Dynamics Algorithms, 2008, eq. 3.33
         virtual SpatialMotion getJointVelocity() const { return SpatialMotion(getMotionSubspace() * _alpha); }
 
@@ -120,7 +120,7 @@ class Joint
 
 
         const Info& getInfo() const { return _info; }
-        Body* getChild() { return _child; }
+        Body* getSuccessor() { return _successor; }
 
         /**
         * @brief The configuration coordinates q (nq of them).
@@ -165,7 +165,7 @@ class Joint
 
     private:
 
-        Body* _child;
+        Body* _successor;
         Info _info;
 
 };
@@ -174,7 +174,7 @@ class Joint
 class SingleDofJoint : public Joint
 {
     public:
-        SingleDofJoint(Body* child, const Info& info) : Joint(child, info) {
+        SingleDofJoint(Body* successor, const Info& info) : Joint(successor, info) {
             if (info.axes.size() != 1) {
                 throw std::invalid_argument("Tried to create a single dof joint but info.axes has " + std::to_string(info.axes.size()) + " axes instead of 1.");
             }
@@ -196,7 +196,7 @@ class PinJoint : public SingleDofJoint
         };
 
         virtual SpatialTransform getJointTransform() const override {
-            // The child frame is the joint frame rotated by +q about the joint axis, the
+            // The successor frame is the joint frame rotated by +q about the joint axis, the
             // quaternion class expects an active rotation -- hence the inverse. See the convention block in
             // SpatialTransform.h, and Featherstone's rotx/roty/rotz (eq. 2.24, pp. 23).
             return SpatialTransform(Quaternion(getInfo().axes[0], _q[0]).getInverse(), Vector3());
@@ -208,14 +208,14 @@ class PinJoint : public SingleDofJoint
 /**
 * @brief An unconstrained 6-DOF joint, used to give a body a floating base.
 *
-* The configuration is the redundant 7-parameter pose of the child frame relative to the joint
-* frame on the parent, laid out as [qw, qx, qy, qz, x, y, z]:
-*   - the quaternion is the child's attitude in the sense used by Frame, i.e. the active rotation
-*     satisfying `v_parent = q * v_child` (so the spatial transform's E is its inverse -- see the
+* The configuration is the redundant 7-parameter pose of the successor frame relative to the joint
+* frame on the predecessor, laid out as [qw, qx, qy, qz, x, y, z]:
+*   - the quaternion is the successor's attitude in the sense used by Frame, i.e. the active rotation
+*     satisfying `v_predecessor = q * v_successor` (so the spatial transform's E is its inverse -- see the
 *     convention block in SpatialTransform.h);
-*   - the translation is the child origin's position, expressed in parent coordinates.
+*   - the translation is the successor origin's position, expressed in predecessor coordinates.
 *
-* The velocity coordinates are the child's spatial velocity expressed in child coordinates,
+* The velocity coordinates are the successor's spatial velocity expressed in successor coordinates,
 * [wx, wy, wz, vx, vy, vz], which makes the motion subspace the 6x6 identity.
 */
 class FreeJoint : public Joint
@@ -227,7 +227,7 @@ class FreeJoint : public Joint
         */
         static Vector identityConfiguration() { return Vector { 1, 0, 0, 0, 0, 0, 0 }; }
 
-        FreeJoint(Body* child, const Info& info) : Joint(child, info) {
+        FreeJoint(Body* successor, const Info& info) : Joint(successor, info) {
             if (_q.getSize() != 7) {
                 throw std::invalid_argument("A free joint needs a q_init of size 7 ([qw,qx,qy,qz,x,y,z]) but got size " + std::to_string(_q.getSize()) + ".");
             }
@@ -245,17 +245,17 @@ class FreeJoint : public Joint
 
         virtual Vector getQDot() const override {
             const Quaternion att = getAttitude();
-            const Vector3 omega_child = getAngularVelocity();
-            const Vector3 v_child = getLinearVelocity();
+            const Vector3 omega_successor = getAngularVelocity();
+            const Vector3 v_successor = getLinearVelocity();
 
             // Attitude kinematics for an active-rotation attitude quaternion whose angular velocity is expressed
-            // in the child frame: q_dot = 0.5 * q * (0, omega_child).
+            // in the successor frame: q_dot = 0.5 * q * (0, omega_successor).
             // Should be equivalent to Featherstone, Rigid Body Dynamics Algorithms, 2008, eq. 4.12 except that we use active rotation, not passive.
-            const Quaternion att_dot = 0.5 * att * Quaternion(0.0, omega_child[0], omega_child[1], omega_child[2], false);
+            const Quaternion att_dot = 0.5 * att * Quaternion(0.0, omega_successor[0], omega_successor[1], omega_successor[2], false);
 
-            // The linear velocity coordinate is the child origin's velocity in child coordinates;
-            // the translation coordinate lives in parent coordinates, so rotate it back.
-            const Vector3 r_dot = att * v_child;
+            // The linear velocity coordinate is the successor origin's velocity in successor coordinates;
+            // the translation coordinate lives in predecessor coordinates, so rotate it back.
+            const Vector3 r_dot = att * v_successor;
 
             return Vector { att_dot[0], att_dot[1], att_dot[2], att_dot[3], r_dot[0], r_dot[1], r_dot[2] };
         }
@@ -266,25 +266,25 @@ class FreeJoint : public Joint
         }
 
         /**
-        * @brief The child's attitude relative to the parent, i.e. the active rotation satisfying
-        * `v_parent = getAttitude() * v_child`. Returns a normalized quaternion.
+        * @brief The successor's attitude relative to the predecessor, i.e. the active rotation satisfying
+        * `v_predecessor = getAttitude() * v_successor`. Returns a normalized quaternion.
         */
         Quaternion getAttitude() const { return Quaternion(_q[0], _q[1], _q[2], _q[3]); }
 
         /**
-        * @brief The child origin's position, expressed in parent coordinates.
+        * @brief The successor origin's position, expressed in predecessor coordinates.
         * See Featherstone, Rigid Body Dynamics Algorithms, 2008, pp. 81 for discussion of why
-        * translation is expressed in parent coordinates while velocity is expressed in child coordinates.
+        * translation is expressed in predecessor coordinates while velocity is expressed in successor coordinates.
         */
         Vector3 getTranslation() const { return Vector3(_q[4], _q[5], _q[6]); }
 
         /**
-        * @brief The angualr velocity of the child body w.r.t. parent, expressed in child frame
+        * @brief The angualr velocity of the successor body w.r.t. predecessor, expressed in successor frame
         */
         Vector3 getAngularVelocity() const { return Vector3(_alpha[0], _alpha[1], _alpha[2]); }
 
         /**
-        * @brief The linear valocity of the child body w.r.t. parent, expressed in child frame
+        * @brief The linear valocity of the successor body w.r.t. predecessor, expressed in successor frame
         */
         Vector3 getLinearVelocity() const { return Vector3(_alpha[3], _alpha[4], _alpha[5]); }
 };
