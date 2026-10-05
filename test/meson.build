@@ -24,6 +24,7 @@ if get_option('build_rendering')
   demo_sources += files(
     'test_demos/test_double_pendulum.cpp',
     'test_demos/test_slider.cpp',
+    'test_demos/test_ball_joint.cpp',
   )
   # Both of these still use the pre-multibody Body/addBody API and need an interactive window;
   # test_window additionally needs assets/backpack/, which is not tracked in the repo.

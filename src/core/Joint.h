@@ -146,7 +146,7 @@ class Joint
         /**
         * @brief The time rate of change of the joint position variables, q. Ie: dq/dt.
         * For most joints the velocity coordinates alpha are simply dq/dt; joints with 
-        * nq != nv (eg FreeJoint or SphericalJoint) should override this to
+        * nq != nv (eg FreeJoint or BallJoint) should override this to
         * appropriately compute dq/dt.
         */
         virtual Vector getQDot() const { return _alpha; }
@@ -202,7 +202,7 @@ class Joint
     protected:
 
         Vector _q; // The joint's position coordinates
-        Vector _alpha; // The joint's velocity coordinates. Not d(q)/dt in the general case -- see FreeJoint or SphericalJoint
+        Vector _alpha; // The joint's velocity coordinates. Not d(q)/dt in the general case -- see FreeJoint or BallJoint
         Vector _tau; // The generalized forces acting on the joint
 
     private:
@@ -325,6 +325,48 @@ class FreeJoint : public Joint
         * @brief The linear valocity of the successor body w.r.t. predecessor, expressed in successor frame
         */
         Vector3 getLinearVelocity() const { return Vector3(_alpha[3], _alpha[4], _alpha[5]); }
+};
+
+
+class BallJoint : public Joint
+{
+    public:
+
+        BallJoint(Body* successor, const Info& info) : Joint(3, 4, 0, successor, info) { }
+
+        virtual Matrix getJointFrameMotionSubspace() const override { return SquareMatrix(3).verticalConcatenate(Matrix(3, 3)); };
+
+        virtual SpatialTransform getJointTransform() const override {
+            return SpatialTransform(getAttitude().getInverse(), Vector3());
+        }
+
+        virtual Vector getQDot() const override {
+            const Quaternion att = getAttitude();
+            const Vector3 omega_successor = getAngularVelocity();
+
+            // Attitude kinematics for an active-rotation attitude quaternion whose angular velocity is expressed
+            // in the successor frame: q_dot = 0.5 * q * (0, omega_successor).
+            // Should be equivalent to Featherstone, Rigid Body Dynamics Algorithms, 2008, eq. 4.12 except that we use active rotation, not passive.
+            const Quaternion att_dot = 0.5 * att * Quaternion(0.0, omega_successor[0], omega_successor[1], omega_successor[2], false);
+
+            return Vector { att_dot[0], att_dot[1], att_dot[2], att_dot[3] };
+        }
+
+        virtual void normalizeConfiguration() override {
+            // calling getAttitude() returns a unit Quaternion representing the attitude
+            _q = getAttitude();
+        }
+
+        /**
+        * @brief The successor's attitude relative to the predecessor, i.e. the active rotation satisfying
+        * `v_predecessor = getAttitude() * v_successor`. Returns a normalized quaternion.
+        */
+        Quaternion getAttitude() const { return Quaternion(_q[0], _q[1], _q[2], _q[3]); }
+
+        /**
+        * @brief The angualr velocity of the successor body w.r.t. predecessor, expressed in successor frame
+        */
+        Vector3 getAngularVelocity() const { return Vector3(_alpha[0], _alpha[1], _alpha[2]); }
 };
 
 

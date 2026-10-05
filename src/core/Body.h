@@ -170,6 +170,9 @@ class Body
                 case Joint::Type::Slider:
                     _joint = std::make_unique<SliderJoint>(this, joint_info);
                     break;
+                case Joint::Type::Ball:
+                    _joint = std::make_unique<BallJoint>(this, joint_info);
+                    break;
                 case Joint::Type::Free:
                     _joint = std::make_unique<FreeJoint>(this, joint_info);
                     break;
