@@ -7,6 +7,8 @@
 #include "SquareMatrix.h"
 #include "Vector.h"
 #include "Vector3.h"
+#include <cassert>
+#include <cstddef>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -51,17 +53,29 @@ class Joint
         ===================================
         */
 
-
         Joint() = delete;
 
-        /**
-        * @brief Constructs a Joint object with the given name, mass, center of mass, and inertia.
-        * @param name The name of the Joint.
-        * @param mass The mass of the Joint.
-        * @param cm The position of center of mass of the Joint.
-        * @param inertia The inertia matrix of the Joint.
-        */
-        Joint(Body* successor, const Info& info) : _q(info.q_init), _alpha(info.alpha_init), _tau(info.alpha_init.getSize(), 0.0), _successor(successor), _info(info)  {};
+        Joint(size_t num_dofs, size_t q_size, size_t axes_size, Body* successor, const Info& info) : _q(info.q_init), _alpha(info.alpha_init), _tau(info.alpha_init.getSize(), 0.0), _successor(successor), _info(info) { 
+            // Verify sizes are correct
+            if (info.axes.size() != axes_size) {
+                throw std::invalid_argument("Tried to create joint but info.axes has " + std::to_string(info.axes.size()) + " axes instead of " + std::to_string(axes_size) + ".\n");
+            }
+            if (info.q_init.getSize() != q_size) {
+                throw std::invalid_argument("Tried to create joint but q_init has size " + std::to_string(info.q_init.getSize()) + " instead of " + std::to_string(q_size) + ".\n");
+            }
+            if (info.alpha_init.getSize() != num_dofs) {
+                throw std::invalid_argument("Tried to create joint but info.alpha_init has size " + std::to_string(info.alpha_init.getSize()) + " instead of " + std::to_string(num_dofs) + ".\n");
+            }
+            
+            // Ensure joint axes are normalized
+            for (Vector3& joint_axis : _info.axes)
+            {
+                joint_axis.normalize();
+            }
+
+            // Ensure that position variables are normalized
+            normalizeConfiguration();
+        };
 
         virtual ~Joint() = default;
 
@@ -93,22 +107,47 @@ class Joint
             return _info.successor_to_joint.getInverse().getMotionMatrix() * getJointFrameMotionSubspace();
         }
 
+        // Apparent derivative of motion subspace matrix, ie S_dot. Usually zero except for special cases
+        // See: Featherstone, Rigid Body Dynamics Algorithms, 2008, eq. 3.41 (S_dot) 
+        Matrix getMotionSubspaceDot() const {
+            return _info.successor_to_joint.getInverse().getMotionMatrix() * getJointFrameMotionSubspaceDot();
+        }
+
         /**
-        * @brief The motion subspace S expressed in the joint frame, one column per DOF.
+        * @brief The motion subspace matrix S expressed in the joint frame, one column per DOF.
         */
         virtual Matrix getJointFrameMotionSubspace() const = 0;
 
         // transforms from joint frame on predecessor to successor body frame
         virtual SpatialTransform getJointTransform() const = 0;
 
-        // velocity of the successor relative to the predecessor, expressed in successor body coordinates.
-        // See: Featherstone, Rigid Body Dynamics Algorithms, 2008, eq. 3.33
-        virtual SpatialMotion getJointVelocity() const { return SpatialMotion(getMotionSubspace() * _alpha); }
+        /**
+        * @brief Apparent time derivative of the motion subspace matrix S expressed in the joint frame, one column per DOF.
+        * Usually zero except for special cases.
+        */
+        virtual Matrix getJointFrameMotionSubspaceDot() const { return Matrix(6, getDegreesOfFreedom()); }
+
+        // Velocity of the successor relative to the predecessor, expressed in successor body frame.
+        // See: Featherstone, Rigid Body Dynamics Algorithms, 2008, eq. 3.32 (v_J)
+        virtual SpatialMotion getJointVelocity() const { return SpatialMotion(getMotionSubspace() * _alpha) + getBiasVelocity(); }
+
+        // Bias velocity. Usually zero except for special cases.
+        // See: Featherstone, Rigid Body Dynamics Algorithms, 2008, eq. 3.32 (sigma(q, t))
+        virtual SpatialMotion getBiasVelocity() const { return SpatialMotion(); }
+
+        // Apparent derivative of bias velocity. Usually zero except for special cases.
+        // See: Featherstone, Rigid Body Dynamics Algorithms, 2008, eq. 3.41 (sigma_dot(q, t))       
+        virtual SpatialMotion getBiasVelocityDot() const { return SpatialMotion(); }
+
+        // Apparent derivative of joint velocity. Usually zero except for special cases.
+        // See: Featherstone, Rigid Body Dynamics Algorithms, 2008, eq. 3.41 (c_J) 
+        virtual SpatialMotion getJointVelocityDot() const { return SpatialMotion(getMotionSubspaceDot() * _alpha) + getBiasVelocityDot(); }
 
         /**
-        * @brief d(q)/dt, of size getQ().getSize(). For most joints the velocity coordinates alpha
-        * are simply the derivative of q; joints with nq != nv (see FreeJoint) should override this with the
-        * kinematic map that turns velocity coordinates into configuration rates.
+        * @brief The time rate of change of the joint position variables, q. Ie: dq/dt.
+        * For most joints the velocity coordinates alpha are simply dq/dt; joints with 
+        * nq != nv (eg FreeJoint or SphericalJoint) should override this to
+        * appropriately compute dq/dt.
         */
         virtual Vector getQDot() const { return _alpha; }
 
@@ -137,6 +176,9 @@ class Joint
                 throw std::invalid_argument("Incorrect size.");
             }
             _q = q;
+
+            // Ensure that _q is normalized
+            normalizeConfiguration();
         }
 
         void setAlpha(const Vector& alpha) {
@@ -160,7 +202,7 @@ class Joint
     protected:
 
         Vector _q; // The joint's position coordinates
-        Vector _alpha; // The joint's velocity coordinates. NOT d(q)/dt in the general case -- see FreeJoint
+        Vector _alpha; // The joint's velocity coordinates. Not d(q)/dt in the general case -- see FreeJoint or SphericalJoint
         Vector _tau; // The generalized forces acting on the joint
 
     private:
@@ -174,14 +216,7 @@ class Joint
 class SingleDofJoint : public Joint
 {
     public:
-        SingleDofJoint(Body* successor, const Info& info) : Joint(successor, info) {
-            if (info.axes.size() != 1) {
-                throw std::invalid_argument("Tried to create a single dof joint but info.axes has " + std::to_string(info.axes.size()) + " axes instead of 1.");
-            }
-            if (info.q_init.getSize() != 1 || info.alpha_init.getSize() != 1) {
-                throw std::invalid_argument("Tried to create a single dof joint but info.q_init/alpha_init have sizes " + std::to_string(info.q_init.getSize()) + "/" + std::to_string(info.alpha_init.getSize()) + " instead of 1/1.");
-            }
-        }
+        SingleDofJoint(Body* successor, const Info& info) : Joint(1, 1, 1, successor, info) { }
 };
 
 
@@ -204,6 +239,22 @@ class PinJoint : public SingleDofJoint
 
 };
 
+class SliderJoint : public SingleDofJoint
+{
+    public:
+        using SingleDofJoint::SingleDofJoint;
+        
+        virtual Matrix getJointFrameMotionSubspace() const override {
+            Vector3 axis = getInfo().axes[0];
+            return Matrix { { 0 }, { 0 }, { 0 }, { axis[0] }, { axis[1] }, { axis[2] } };
+        };
+
+        virtual SpatialTransform getJointTransform() const override {
+            Vector3 axis = getInfo().axes[0];
+            return SpatialTransform(Quaternion(), Vector3(axis[0], axis[1], axis[2]) * _q[0]);
+        }
+};
+
 
 /**
 * @brief An unconstrained 6-DOF joint, used to give a body a floating base.
@@ -222,20 +273,7 @@ class FreeJoint : public Joint
 {
     public:
 
-        /**
-        * @brief The identity configuration: unit quaternion, zero translation.
-        */
-        static Vector identityConfiguration() { return Vector { 1, 0, 0, 0, 0, 0, 0 }; }
-
-        FreeJoint(Body* successor, const Info& info) : Joint(successor, info) {
-            if (_q.getSize() != 7) {
-                throw std::invalid_argument("A free joint needs a q_init of size 7 ([qw,qx,qy,qz,x,y,z]) but got size " + std::to_string(_q.getSize()) + ".");
-            }
-            if (_alpha.getSize() != 6) {
-                throw std::invalid_argument("A free joint needs an alpha_init of size 6 ([wx,wy,wz,vx,vy,vz]) but got size " + std::to_string(_alpha.getSize()) + ".");
-            }
-            normalizeConfiguration();
-        }
+        FreeJoint(Body* successor, const Info& info) : Joint(6, 7, 0, successor, info) { }
 
         virtual Matrix getJointFrameMotionSubspace() const override { return SquareMatrix(6); };
 
@@ -261,8 +299,8 @@ class FreeJoint : public Joint
         }
 
         virtual void normalizeConfiguration() override {
-            // calling getAttitude returns a normalized Quaternion representing the attitude
-            setQ(getAttitude().concatenate(getTranslation()));
+            // calling getAttitude() returns a unit Quaternion representing the attitude
+            _q = getAttitude().concatenate(getTranslation());
         }
 
         /**

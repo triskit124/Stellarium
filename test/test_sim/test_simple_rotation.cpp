@@ -30,7 +30,7 @@ int main() {
 
     Joint::Info free_joint;
     free_joint.type = Joint::Type::Free;
-    free_joint.q_init = FreeJoint::identityConfiguration();
+    free_joint.q_init = { 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
     free_joint.alpha_init = Vector(6);
 
     // Unit inertia about every axis, so a torque about x produces no gyroscopic coupling and the

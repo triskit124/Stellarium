@@ -167,6 +167,9 @@ class Body
                 case Joint::Type::Pin:
                     _joint = std::make_unique<PinJoint>(this, joint_info);
                     break;
+                case Joint::Type::Slider:
+                    _joint = std::make_unique<SliderJoint>(this, joint_info);
+                    break;
                 case Joint::Type::Free:
                     _joint = std::make_unique<FreeJoint>(this, joint_info);
                     break;

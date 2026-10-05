@@ -207,10 +207,6 @@ void StellariumSimulation::_setState(const Vector& s)
             alpha_idx++;
         }
         joint->setAlpha(alpha);
-
-        // Pull q back onto the joint's configuration manifold -- integrating a unit quaternion
-        // component-wise walks it off the unit sphere.
-        joint->normalizeConfiguration();
     }
 }
 
@@ -253,12 +249,13 @@ Vector StellariumSimulation::_computeForwardDynamics() const
         const Body* parent = joint->getInfo().predecessor;
 
         SpatialMotion v_J = joint->getJointVelocity();
+        SpatialMotion c_J = joint->getJointVelocityDot();
 
         i_X_p[body] = joint->getInfo().successor_to_joint.getInverse() * joint->getJointTransform() * joint->getInfo().predecessor_to_joint;
         i_X_0[body] = i_X_p.at(body) * i_X_0.at(parent);
 
         v[body] = i_X_p.at(body) * v.at(parent) + v_J;
-        c[body] = v.at(body).cross(v_J);
+        c[body] = c_J + v.at(body).cross(v_J);
 
         I_A[body] = body->getSpatialInertia().getMatrix();
 
