@@ -46,5 +46,25 @@ int main() {
     // Inverse
     test.assertTrue("Matrix33 inverse 2", M2.getInverse() == Matrix33(Vector3(-5, 3, 4), Vector3(7, 3, -8), Vector3(1, -3, 4)) / 12);
 
+    /*
+    =======================
+            skew
+    =======================
+    */
+    Vector3 v1(1, 2, -3);
+    Vector3 v2(4, -5, 6);
+
+    // Basic construction
+    test.assertTrue("Matrix33 skew construction", Matrix33::skew(Vector3(1, 2, 3)) == Matrix33(Vector3(0, -3, 2), Vector3(3, 0, -1), Vector3(-2, 1, 0)));
+
+    // Cross-product identity: skew(v) * u == v.cross(u)
+    test.assertTrue("Matrix33 skew cross product identity", Matrix33::skew(v1) * v2 == v1.cross(v2));
+
+    // Skew-symmetry: transpose is the negation
+    test.assertTrue("Matrix33 skew is skew-symmetric", Matrix33::skew(v1).getTranspose() == Matrix33::skew(v1) * -1);
+
+    // Zero vector maps to the zero matrix
+    test.assertTrue("Matrix33 skew of zero vector", Matrix33::skew(Vector3(0, 0, 0)) == Matrix33(Vector3(0, 0, 0), Vector3(0, 0, 0), Vector3(0, 0, 0)));
+
     return test.getNumFails();
 }

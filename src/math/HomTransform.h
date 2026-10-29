@@ -28,7 +28,7 @@ class HomTransform
         /**
         * @brief Default destructor
         */
-        ~HomTransform() = default;
+        virtual ~HomTransform() = default;
 
         /**
         * @brief Constructs from a quaternion and translation vector.

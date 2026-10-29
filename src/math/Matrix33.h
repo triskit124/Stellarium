@@ -107,7 +107,6 @@ class Matrix33 : public SquareMatrix
         * @return The inverse of the matrix.
         */
         Matrix33 getInverse() const {
-            // TODO: implement an efficient method that works for any sized matrix
             if (std::abs(getDeterminant()) <= _epsilon)
             {
                 throw std::invalid_argument("Matrix is singular and cannot be inverted.");
@@ -125,6 +124,20 @@ class Matrix33 : public SquareMatrix
             double det33 = this->getDeterminant();
 
             return (det11 > 0) && (det22 > 0) && (det33 > 0);
+        }
+
+        /**
+        * @brief Constructs the skew-symmetric (cross-product operator) matrix for a vector,
+        *        such that Matrix33::skew(v) * u == v.cross(u).
+        * @param v The vector to construct the skew-symmetric matrix from.
+        * @return The skew-symmetric matrix representation of v.
+        */
+        static Matrix33 skew(const Vector3& v) {
+            return Matrix33(
+                Vector3(0, -v[2], v[1]),
+                Vector3(v[2], 0, -v[0]),
+                Vector3(-v[1], v[0], 0)
+            );
         }
 
 };
