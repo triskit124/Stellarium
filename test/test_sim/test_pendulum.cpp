@@ -581,7 +581,7 @@ int main() {
 
         // updateFrames() applies successor_to_joint too, so the poses it writes have to follow the same
         // rule: the joint frame is still where it was, and the body frame now sits at C, related to
-        // it by att_C = att_J * E and p_J = p_C + att_C * r.
+        // it by att_C = att_J * E^-1 and p_J = p_C + att_C^-1 * r.
         setJointState(reference_bodies, { 0.6, -0.9 }, { 1.5, -2.0 });
         setJointState(bodies, { 0.6, -0.9 }, { 1.5, -2.0 });
         reference_sim.updateFrames();
@@ -593,8 +593,8 @@ int main() {
             const Quaternion E = frames[i].getRotation();
             const Vector3 r = frames[i].getTranslation();
 
-            Quaternion expected_attitude = reference_bodies[i]->getAttitude() * E;
-            Vector3 recovered_joint_position = bodies[i]->getPosition() + bodies[i]->getAttitude() * r;
+            Quaternion expected_attitude = reference_bodies[i]->getAttitude() * E.getInverse();
+            Vector3 recovered_joint_position = bodies[i]->getPosition() + bodies[i]->getAttitude().getInverse() * r;
             Vector3 expected_joint_position = reference_bodies[i]->getPosition();
 
             expected_attitude.setEpsilon(1e-12);

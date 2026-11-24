@@ -4,7 +4,6 @@
 #include "Integrators.h"
 #include "Joint.h"
 #include "Matrix.h"
-#include "Matrix33.h"
 #include "SpatialInertia.h"
 #include "SpatialTransform.h"
 #include "SpatialVector.h"
@@ -221,7 +220,7 @@ Vector StellariumSimulation::_computeForwardDynamics() const
     
     // TODO: add topological sorting to ensure that _bodies is properly sorted
 
-    std::map<const Body*, SpatialMotion> v { }; // spatial velociy of each body, size [6 x 1]
+    std::map<const Body*, SpatialMotion> v { }; // spatial velocity of each body, size [6 x 1]
     std::map<const Body*, SpatialTransform> i_X_p { }; // transform from body i's parent to body i
     std::map<const Body*, SpatialTransform> i_X_0 { }; // transform from root body to body i
     std::map<const Body*, SpatialMotion> c { }; // velocity-product accelerations for each body, size [6 x 1]

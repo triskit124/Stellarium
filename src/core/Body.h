@@ -123,25 +123,23 @@ class Body
         * @param velocity     This body's spatial velocity, expressed in body coordinates.
         */
         void setPoseFromBase(const SpatialTransform& base_to_body, const SpatialMotion& velocity) {
-            // base_to_body holds (E, r): r is the body origin's position in base coordinates, and
-            // E maps base components to body components, so the attitude (which maps the other
-            // way) is its conjugate. See the convention block in SpatialTransform.h.
-            const Quaternion attitude = base_to_body.getRotation().getConjugate();
+            const Quaternion attitude = base_to_body.getRotation();
+            const Quaternion body_to_base = attitude.getInverse();
             const Vector3 position = base_to_body.getTranslation();
 
             // Frame stores linear velocity in INERTIAL components and angular velocity in FRAME
             // components; the spatial velocity is entirely in body components.
             _body_frame.setPosition(position);
             _body_frame.setAttitude(attitude);
-            _body_frame.setVelocity(attitude * velocity.getLinearPart());
+            _body_frame.setVelocity(body_to_base * velocity.getLinearPart());
             _body_frame.setAngularVelocity(velocity.getAngularPart());
 
-            // The centre of mass rides along, offset by c in body coordinates. Its velocity picks
+            // The center of mass rides along, offset by c in body coordinates. Its velocity picks
             // up the omega x c term since it is a different body-fixed point.
             const Vector3 c = _spatial_inertia.getCenterOfMass();
-            _center_of_mass_frame.setPosition(position + attitude * c);
+            _center_of_mass_frame.setPosition(position + body_to_base * c);
             _center_of_mass_frame.setAttitude(attitude);
-            _center_of_mass_frame.setVelocity(attitude * (velocity.getLinearPart() + velocity.getAngularPart().cross(c)));
+            _center_of_mass_frame.setVelocity(body_to_base * (velocity.getLinearPart() + velocity.getAngularPart().cross(c)));
             _center_of_mass_frame.setAngularVelocity(velocity.getAngularPart());
         }
 

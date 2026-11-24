@@ -131,7 +131,7 @@ class Frame
         Vector3 _acc {0.0, 0.0, 0.0};
 
         /**
-        * @brief The attitude quaternion of the frame, representing active rotation from INERTIAL to FRAME.
+        * @brief The attitude quaternion of the frame: the passive rotation from INERTIAL to FRAME, i.e. `_att * v_inertial == v_frame`.
         */
         Quaternion _att {1.0, 0.0, 0.0, 0.0};
 

@@ -194,11 +194,11 @@ class Camera : public Frame
     protected:
 
         /**
-        * @brief Returns the camera's orientation, expressed as a rotation from canonical
-        * OpenGL eye axes (X-right, Y-up, -Z-forward) directly to world axes. This bakes in
+        * @brief Returns the camera's orientation, expressed as the passive rotation from world axes
+        * directly to canonical OpenGL eye axes (X-right, Y-up, -Z-forward). This bakes in
         * the fixed offset between the world's Z-up/Y-forward convention and eye space, so
         * that _att alone still represents just the user-driven look rotation.
-        * @return The orientation quaternion mapping eye-space vectors to world-space vectors.
+        * @return The orientation quaternion mapping world-space components to eye-space components.
         */
         Quaternion getEyeOrientation() const { return _att * WORLD_UP_TO_EYE_BASIS; };
 
@@ -206,7 +206,7 @@ class Camera : public Frame
         * @brief Recomputes _pos from _target, _distance, and the current orientation.
         * Call after anything changes orbit distance or look angles.
         */
-        void updatePositionFromOrbit() { _pos = _target - (getEyeOrientation() * Vector3(0, 0, -1)) * _distance; };
+        void updatePositionFromOrbit() { _pos = _target - (getEyeOrientation().getInverse() * Vector3(0, 0, -1)) * _distance; };
 
         Vector3 _target { 0.0, 0.0, 0.0 }; // point the camera orbits around, in world coordinates
         double _distance { 10.0 }; // distance from _target to _pos

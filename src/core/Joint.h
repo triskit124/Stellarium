@@ -114,11 +114,11 @@ class Joint
         }
 
         /**
-        * @brief The motion subspace matrix S expressed in the joint frame, one column per DOF.
+        * @brief The motion subspace matrix S expressed in the successor's joint frame, one column per DOF.
         */
         virtual Matrix getJointFrameMotionSubspace() const = 0;
 
-        // transforms from joint frame on predecessor to successor body frame
+        // transforms from joint frame on predecessor to joint frame on successor.
         virtual SpatialTransform getJointTransform() const = 0;
 
         /**
@@ -231,10 +231,10 @@ class PinJoint : public SingleDofJoint
         };
 
         virtual SpatialTransform getJointTransform() const override {
-            // The successor frame is the joint frame rotated by +q about the joint axis, the
-            // quaternion class expects an active rotation -- hence the inverse. See the convention block in
-            // SpatialTransform.h, and Featherstone's rotx/roty/rotz (eq. 2.24, pp. 23).
-            return SpatialTransform(Quaternion(getInfo().axes[0], _q[0]).getInverse(), Vector3());
+            // The successor frame is the joint frame rotated by +q about the joint axis; quaternions are passive,
+            // so this is directly the coordinate transform E. See the convention block in SpatialTransform.h,
+            // and Featherstone's rotx/roty/rotz (eq. 2.24, pp. 23).
+            return SpatialTransform(Quaternion(getInfo().axes[0], _q[0]), Vector3());
         }
 
 };
@@ -261,8 +261,8 @@ class SliderJoint : public SingleDofJoint
 *
 * The configuration is the redundant 7-parameter pose of the successor frame relative to the joint
 * frame on the predecessor, laid out as [qw, qx, qy, qz, x, y, z]:
-*   - the quaternion is the successor's attitude in the sense used by Frame, i.e. the active rotation
-*     satisfying `v_predecessor = q * v_successor` (so the spatial transform's E is its inverse -- see the
+*   - the quaternion is the successor's attitude in the sense used by Frame, i.e. the passive rotation
+*     satisfying `v_successor = q * v_predecessor` (so it is directly the spatial transform's E -- see the
 *     convention block in SpatialTransform.h);
 *   - the translation is the successor origin's position, expressed in predecessor coordinates.
 *
@@ -278,7 +278,7 @@ class FreeJoint : public Joint
         virtual Matrix getJointFrameMotionSubspace() const override { return SquareMatrix(6); };
 
         virtual SpatialTransform getJointTransform() const override {
-            return SpatialTransform(getAttitude().getInverse(), getTranslation());
+            return SpatialTransform(getAttitude(), getTranslation());
         }
 
         virtual Vector getQDot() const override {
@@ -286,14 +286,14 @@ class FreeJoint : public Joint
             const Vector3 omega_successor = getAngularVelocity();
             const Vector3 v_successor = getLinearVelocity();
 
-            // Attitude kinematics for an active-rotation attitude quaternion whose angular velocity is expressed
+            // Attitude kinematics for a passive attitude quaternion whose angular velocity is expressed
             // in the successor frame: q_dot = 0.5 * q * (0, omega_successor).
-            // Should be equivalent to Featherstone, Rigid Body Dynamics Algorithms, 2008, eq. 4.12 except that we use active rotation, not passive.
+            // Featherstone, Rigid Body Dynamics Algorithms, 2008, eq. 4.12.
             const Quaternion att_dot = 0.5 * att * Quaternion(0.0, omega_successor[0], omega_successor[1], omega_successor[2], false);
 
             // The linear velocity coordinate is the successor origin's velocity in successor coordinates;
             // the translation coordinate lives in predecessor coordinates, so rotate it back.
-            const Vector3 r_dot = att * v_successor;
+            const Vector3 r_dot = att.getInverse() * v_successor;
 
             return Vector { att_dot[0], att_dot[1], att_dot[2], att_dot[3], r_dot[0], r_dot[1], r_dot[2] };
         }
@@ -304,8 +304,8 @@ class FreeJoint : public Joint
         }
 
         /**
-        * @brief The successor's attitude relative to the predecessor, i.e. the active rotation satisfying
-        * `v_predecessor = getAttitude() * v_successor`. Returns a normalized quaternion.
+        * @brief The successor's attitude relative to the predecessor, i.e. the passive rotation satisfying
+        * `v_successor = getAttitude() * v_predecessor`. Returns a normalized quaternion.
         */
         Quaternion getAttitude() const { return Quaternion(_q[0], _q[1], _q[2], _q[3]); }
 
@@ -337,16 +337,16 @@ class BallJoint : public Joint
         virtual Matrix getJointFrameMotionSubspace() const override { return SquareMatrix(3).verticalConcatenate(Matrix(3, 3)); };
 
         virtual SpatialTransform getJointTransform() const override {
-            return SpatialTransform(getAttitude().getInverse(), Vector3());
+            return SpatialTransform(getAttitude(), Vector3());
         }
 
         virtual Vector getQDot() const override {
             const Quaternion att = getAttitude();
             const Vector3 omega_successor = getAngularVelocity();
 
-            // Attitude kinematics for an active-rotation attitude quaternion whose angular velocity is expressed
+            // Attitude kinematics for a passive attitude quaternion whose angular velocity is expressed
             // in the successor frame: q_dot = 0.5 * q * (0, omega_successor).
-            // Should be equivalent to Featherstone, Rigid Body Dynamics Algorithms, 2008, eq. 4.12 except that we use active rotation, not passive.
+            // Featherstone, Rigid Body Dynamics Algorithms, 2008, eq. 4.12.
             const Quaternion att_dot = 0.5 * att * Quaternion(0.0, omega_successor[0], omega_successor[1], omega_successor[2], false);
 
             return Vector { att_dot[0], att_dot[1], att_dot[2], att_dot[3] };
@@ -358,8 +358,8 @@ class BallJoint : public Joint
         }
 
         /**
-        * @brief The successor's attitude relative to the predecessor, i.e. the active rotation satisfying
-        * `v_predecessor = getAttitude() * v_successor`. Returns a normalized quaternion.
+        * @brief The successor's attitude relative to the predecessor, i.e. the passive rotation satisfying
+        * `v_successor = getAttitude() * v_predecessor`. Returns a normalized quaternion.
         */
         Quaternion getAttitude() const { return Quaternion(_q[0], _q[1], _q[2], _q[3]); }
 

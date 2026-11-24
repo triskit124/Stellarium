@@ -32,16 +32,17 @@ Matrix44 Camera::getViewMatrix()
 void Camera::processKeyboardInput(Camera_Movement direction, double delta_time)
 {
     double velocity = _movement_speed * delta_time;
-    Quaternion orientation = getEyeOrientation();
+    // getEyeOrientation() maps world components to eye components; invert it to get eye axes in world coordinates.
+    Quaternion eye_to_world = getEyeOrientation().getInverse();
     Vector3 delta;
     if (direction == FORWARD)
-        delta = orientation * Vector3(0, 0, -1) * velocity; // Z points backwards in eye frame
+        delta = eye_to_world * Vector3(0, 0, -1) * velocity; // Z points backwards in eye frame
     if (direction == BACKWARD)
-        delta = orientation * Vector3(0, 0, -1) * -velocity; // Z points backwards in eye frame
+        delta = eye_to_world * Vector3(0, 0, -1) * -velocity; // Z points backwards in eye frame
     if (direction == LEFT)
-        delta = orientation * Vector3(1, 0, 0) * -velocity; // X points right in eye frame
+        delta = eye_to_world * Vector3(1, 0, 0) * -velocity; // X points right in eye frame
     if (direction == RIGHT)
-        delta = orientation * Vector3(1, 0, 0) * velocity; // X points right in eye frame
+        delta = eye_to_world * Vector3(1, 0, 0) * velocity; // X points right in eye frame
 
     // Translate the camera and its orbit target together, so distance/orientation
     // (and therefore future orbit/zoom behavior) stay consistent.
@@ -65,8 +66,8 @@ void Camera::orbit(double x_offset, double y_offset)
     // Rebuilt fresh from persistent yaw/pitch every time (never decomposed from _att),
     // so this is immune to the Euler-angle singularities in Quaternion::getRollPitchYaw().
     //
-    // _att is composed as the outer factor in getEyeOrientation() (_att * WORLD_UP_TO_EYE_BASIS),
-    // so its own rotation axes act directly in world space, not eye space: yaw must therefore use
+    // _att is composed as the outer factor in getEyeOrientation() (_att * WORLD_UP_TO_EYE_BASIS, i.e. the
+    // world -> look frame rotation applied first), so its own rotation axes act directly in world space, not eye space: yaw must therefore use
     // the true world up axis (0,0,1), while pitch uses (1,0,0) since eye/world X coincide at rest.
     setAttitude(Quaternion(Vector3(0, 0, 1), _yaw) * Quaternion(Vector3(1, 0, 0), _pitch));
     updatePositionFromOrbit();
@@ -76,9 +77,9 @@ void Camera::pan(double x_offset, double y_offset)
 {
     // Scale by distance so panning feels consistent whether zoomed in or out, matching Blender.
     double scale = _pan_speed * _distance;
-    Quaternion orientation = getEyeOrientation();
-    Vector3 right = orientation * Vector3(1, 0, 0);
-    Vector3 up = orientation * Vector3(0, 1, 0);
+    Quaternion eye_to_world = getEyeOrientation().getInverse();
+    Vector3 right = eye_to_world * Vector3(1, 0, 0);
+    Vector3 up = eye_to_world * Vector3(0, 1, 0);
 
     Vector3 delta = (right * -x_offset + up * y_offset) * scale;
     _target += delta;

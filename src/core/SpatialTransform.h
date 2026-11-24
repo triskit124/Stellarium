@@ -21,12 +21,12 @@ namespace Stellarium
 *   - `r` is the position of B's origin, expressed in A coordinates.
 *   - `E` is the 3x3 rotation matrix that tranforms 3D vectors from A to B coordinates
 *
-* E is stored internally as a `Quaternion`, using the convention that `_quaternion * v` (an active rotation, see
-* Quaternion::operator*) evaluates E * v. Consequently, if B's attitude quaternion is `att` in the
-* sense used by Frame then `_quaternion == att.getInverse()`.
+* E is stored internally as a `Quaternion`. Quaternions encode passive rotations (see Quaternion::operator*), so
+* `_quaternion * v` evaluates E * v directly, and if B's attitude quaternion is `att` in the sense used by
+* Frame then `_quaternion == att`.
 *
 * Concretely, a revolute joint rotating the successor by +theta about `k` relative to the predecessor has
-* `_quaternion = Quaternion(k, theta).getInverse()` -- see PinJoint::getJointTransform.
+* `_quaternion = Quaternion(k, theta)` -- see PinJoint::getJointTransform.
 */
 class SpatialTransform
 {   
@@ -52,8 +52,9 @@ class SpatialTransform
             // (apply other first, then this) satisfies, per block-multiplying eq. 2.24/2.25:
             //   E3 = E2 * E1
             //   r3 = r1 + E1^T * r2
-            // i.e. compose the rotations, and add r1 to r2 rotated back into frame A
-            Quaternion q3 = _quaternion * other._quaternion;
+            // i.e. compose the rotations, and add r1 to r2 rotated back into frame A.
+            // For passive quaternions E(q1 (x) q2) = E(q2) * E(q1), so E2 * E1 is q1 (x) q2.
+            Quaternion q3 = other._quaternion * _quaternion;
             Vector3 r3 = other._translation + (other._quaternion.getInverse() * _translation);
             return SpatialTransform(q3, r3);
         }

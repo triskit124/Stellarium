@@ -54,26 +54,40 @@ class RotationMatrix: public Matrix33
         ====================
         */
 
+        /**
+        * @brief Returns the Roll-Pitch-Yaw Euler angles of this passive rotation: the frame is rotated by roll about x, then by
+        * pitch about the new y, then by yaw about the new z (a body 1-2-3 sequence), i.e. the angles satisfying
+        * C = Rz(yaw) Ry(pitch) Rx(roll), where Rx, Ry, Rz are the passive (frame) elementary rotations.
+        * Consistent with Quaternion(roll, pitch, yaw) and Quaternion::getRollPitchYaw().
+        * @return The Euler angles as (roll, pitch, yaw) in radians.
+        */
         Vector3 getRollPitchYaw() const {
-            // See: https://eecs.qmul.ac.uk/~gslabaugh/publications/euler.pdf
+            // With (cr, sr), (cp, sp), (cy, sy) the cosines/sines of roll, pitch, yaw, C = Rz(yaw) Ry(pitch) Rx(roll) is
+            //
+            //     [  cp*cy    cr*sy + sr*sp*cy    sr*sy - cr*sp*cy ]
+            //     [ -cp*sy    cr*cy - sr*sp*sy    sr*cy + cr*sp*sy ]
+            //     [  sp       -sr*cp               cr*cp           ]
+            //
+            // At pitch = +/-90 deg (cp = 0) only roll +/- yaw is observable: C[0][1] = sin(roll +/- yaw) and
+            // C[1][1] = cos(roll +/- yaw) (+ for pitch = +90, - for pitch = -90), so yaw is set to 0.
 
             double roll, pitch, yaw = 0.0;
 
-            if (abs((*this)[2][0] - 1) <= _epsilon)
+            if (std::abs((*this)[2][0] - 1) <= _epsilon)
             {
-                pitch = -M_PI_2;
-                roll = -yaw + atan2(-(*this)[0][1], -(*this)[0][2]);
+                pitch = M_PI_2;
+                roll = atan2((*this)[0][1], (*this)[1][1]);
             }
             else if (std::abs((*this)[2][0] + 1) <= _epsilon)
             {
-                pitch = M_PI_2;
-                roll = yaw + atan2((*this)[0][1], (*this)[0][2]);
+                pitch = -M_PI_2;
+                roll = atan2(-(*this)[0][1], (*this)[1][1]);
             }
             else
             {
-                pitch = -asin((*this)[2][0]);
-                roll = atan2((*this)[2][1] / cos(pitch), (*this)[2][2] / cos(pitch));
-                yaw = atan2((*this)[1][0] / cos(pitch), (*this)[0][0] / cos(pitch));
+                pitch = asin((*this)[2][0]);
+                roll = atan2(-(*this)[2][1], (*this)[2][2]);
+                yaw = atan2(-(*this)[1][0], (*this)[0][0]);
             }
 
             return Vector3(roll, pitch, yaw);

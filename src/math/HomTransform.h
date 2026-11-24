@@ -9,6 +9,10 @@ namespace Stellarium
 
 /**
 * @brief A class representing a rigid body transformation using quaternion and vector storage.
+*
+* Represents the pose of a frame B relative to a frame A: the translation is B's origin expressed in A coordinates, and
+* the rotation is the passive quaternion mapping A components to B components (`rotation * v_A == v_B`).
+* transform() maps a point expressed in B coordinates to A coordinates.
 */
 class HomTransform
 {
@@ -94,10 +98,10 @@ class HomTransform
         /**
         * @brief Transforms a Vector3 by this transformation. Order of operations is rotation followed by translation.
         * @param v The vector to transform.
-        * @return The transformed vector (rotation * v + translation).
+        * @return The transformed vector (rotation^-1 * v + translation), i.e. a point expressed in B mapped to A coordinates.
         */
         Vector3 transform(const Vector3& v) const {
-            return (_rotation * v) + _translation;
+            return (_rotation.getInverse() * v) + _translation;
         }
 
         /**
@@ -105,8 +109,7 @@ class HomTransform
         * @return The inverse transformation.
         */
         HomTransform getInverse() const {
-            Quaternion invRot = _rotation.getInverse();
-            return HomTransform(invRot, -(invRot * _translation));
+            return HomTransform(_rotation.getInverse(), -(_rotation * _translation));
         }
 
         /**
@@ -117,7 +120,7 @@ class HomTransform
         HomTransform operator*(const HomTransform& other) const {
             return HomTransform(
                 _rotation * other.getRotation(),
-                _rotation * other.getTranslation() + _translation
+                _rotation.getInverse() * other.getTranslation() + _translation
             );
         }
 
@@ -126,7 +129,8 @@ class HomTransform
         * @return A 4x4 homogeneous transform matrix.
         */
         Matrix44 toMatrix() const {
-            RotationMatrix rotMat = _rotation.getRotationMatrix();
+            // The homogeneous matrix maps B points to A points, so it needs the active matrix (transpose of the DCM).
+            Matrix33 rotMat = Matrix33(_rotation.getRotationMatrix().getTranspose());
             Matrix44 mat;
             mat[0] = Vector4(rotMat[0][0], rotMat[0][1], rotMat[0][2], _translation[0]);
             mat[1] = Vector4(rotMat[1][0], rotMat[1][1], rotMat[1][2], _translation[1]);

@@ -61,9 +61,6 @@ class Quaternion: public Vector4
         * @param normalize Whether to normalize the quaternion.
         */
         explicit Quaternion(const Vector& v, bool normalize = true) : Vector4(v) {
-            if (v.getSize() != 4) {
-                throw std::invalid_argument("Cannot convert Vector to Quaternion. Vector has size " + std::to_string(v.getSize()) + " but expected 4.");
-            }
             if (normalize)
             {
                 this->normalize();
@@ -71,7 +68,8 @@ class Quaternion: public Vector4
         }
 
         /**
-        * @brief Constructs a Quaternion based on an axis-angle rotation.
+        * @brief Constructs a Quaternion based on an axis-angle rotation. Represents a frame rotated by +angle about axis
+        * (passive rotation): `q * v` gives the components of v in the rotated frame.
         * @param axis The axis of rotation.
         * @param angle The angle of rotation in radians.
         */
@@ -86,17 +84,18 @@ class Quaternion: public Vector4
         };
 
         /**
-        * @brief Constructs a Quaternion based on a roll-pitch-yaw (XYZ) Euler rotation sequence.
+        * @brief Constructs a Quaternion based on a roll-pitch-yaw Euler rotation sequence (body 1-2-3: the frame is rotated
+        * by roll about x, then by pitch about the new y, then by yaw about the new z).
         * @param roll The roll Euler angle in radians.
         * @param pitch The pitch Euler angle in radians.
         * @param yaw The yaw Euler angle in radians.
         */
         Quaternion(double roll, double pitch, double yaw) {
-            // TODO: this needs to be checked
             Quaternion q_roll = Quaternion(Vector3(1, 0, 0), roll);
             Quaternion q_pitch = Quaternion(Vector3(0, 1, 0), pitch);
             Quaternion qyaw = Quaternion(Vector3(0, 0, 1), yaw);
-            Quaternion q = qyaw * q_pitch * q_roll;
+            // Passive quaternions compose left to right: q1 * q2 applies the q1 frame rotation first.
+            Quaternion q = q_roll * q_pitch * qyaw;
             (*this)[0] = q[0];
             (*this)[1] = q[1];
             (*this)[2] = q[2];
@@ -137,9 +136,9 @@ class Quaternion: public Vector4
         }
 
         /**
-        * @brief Rotates the vector v. This is an active rotation (i.e. rotates vectors from the starting pose to the end pose).
-        * @param v The vector.
-        * @return The rotated vector.
+        * @brief Applies a passive rotation to v: gives the components of v in the rotated frame.
+        * @param v The vector, expressed in the original frame.
+        * @return The same vector, expressed in the rotated frame.
         */
         Vector3 operator*(const Vector3& v) const {
             if (isIdentity())
@@ -153,9 +152,9 @@ class Quaternion: public Vector4
             }
 
             // Reference: https://faculty.sites.iastate.edu/jia/files/inline-files/quaternion.pdf
-            // Theorem 2:
+            // Theorem 2: q_conj * v * q rotates the coordinate frame by theta about the axis while v is fixed.
             Quaternion p = Quaternion(0.0, v[0], v[1], v[2], false);
-            Quaternion pp = *this * p * this->getConjugate();
+            Quaternion pp = this->getConjugate() * p * *this;
 
             return pp.getVectorTerm();
         };
@@ -168,12 +167,13 @@ class Quaternion: public Vector4
 
         /**
         * @brief Gets the rotation matrix representation of the quaternion.
-        * This is an active rotation. That is, it actively rotates a vector from the starting pose to the end pose.
+        * This is a passive rotation (direction cosine matrix): getRotationMatrix() * v == (*this) * v, mapping components in
+        * the original frame to components in the rotated frame. Matches Featherstone's rq() (RBDA, 2008, eq. 4.12).
         * @return The rotation matrix representation of the quaternion.
         */
         RotationMatrix getRotationMatrix() const {
 
-            // See: https://www.mathworks.com/help/nav/ref/quaternion.rotmat.html
+            // See: https://www.mathworks.com/help/nav/ref/quaternion.rotmat.html ('frame' rotation type)
 
             if (isIdentity())
             {
@@ -191,9 +191,9 @@ class Quaternion: public Vector4
             double d = (*this)[3];
 
             return RotationMatrix(
-                Vector3(2*a*a - 1 + 2*b*b, 2*b*c - 2*a*d, 2*b*d + 2*a*c),
-                Vector3(2*b*c + 2*a*d, 2*a*a - 1 + 2*c*c, 2*c*d - 2*a*b),
-                Vector3(2*b*d - 2*a*c, 2*c*d + 2*a*b, 2*a*a - 1 + 2*d*d)
+                Vector3(2*a*a - 1 + 2*b*b, 2*b*c + 2*a*d, 2*b*d - 2*a*c),
+                Vector3(2*b*c - 2*a*d, 2*a*a - 1 + 2*c*c, 2*c*d + 2*a*b),
+                Vector3(2*b*d + 2*a*c, 2*c*d - 2*a*b, 2*a*a - 1 + 2*d*d)
             );
         }
 

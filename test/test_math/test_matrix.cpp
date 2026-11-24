@@ -2,7 +2,7 @@
 #include "TestHarness.h"
 #include "SquareMatrix.h"
 #include "Vector.h"
-#include <cstddef>
+
 #include <stdexcept>
 #include <vector>
 

@@ -141,7 +141,7 @@ int main() {
         predecessor's y-axis, so a vector along the predecessor's x-axis reads (0, -1, 0) in it.
     */
     {
-        const SpatialTransform X_z90(Quaternion(Vector3(0, 0, 1), M_PI / 2).getConjugate(), Vector3());
+        const SpatialTransform X_z90(Quaternion(Vector3(0, 0, 1), M_PI / 2), Vector3());
         const SpatialMotion along_x(Vector3(1, 0, 0), Vector3());
         assertVectorEquals(test, "+90 deg about z: predecessor x reads as successor -y",
                            (X_z90 * along_x).getAngularPart(), Vector3(0, -1, 0));
