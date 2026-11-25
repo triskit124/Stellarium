@@ -29,7 +29,7 @@ class Camera : public Frame
             setScreenWidth(width);
             setScreenHeight(height);
             _aspect_ratio = static_cast<double>(_screen_width) / static_cast<double>(_screen_height);
-            setAttitude(Quaternion(Vector3(0, 1, 0), _yaw) * Quaternion(Vector3(1, 0, 0), _pitch));
+            setAttitude(Quaternion(Vector3(0, 0, 1), _yaw) * Quaternion(Vector3(1, 0, 0), _pitch));
             updatePositionFromOrbit();
         } ;
 

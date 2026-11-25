@@ -2,7 +2,7 @@
 
 #include "Vector3.h"
 #include "Quaternion.h"
-#include "HomTransform.h"
+#include "SpatialTransform.h"
 
 namespace Stellarium
 {
@@ -96,17 +96,20 @@ class Frame
         Vector3 getAngularVelocity() const { return _ang_vel; };
 
         /**
-        * @brief Get the pose of the frame with respect to its parent.
-        * @return The pose of the frame with respect to its parent.
+        * @brief Get the pose of the frame w.r.t. the inertial frame, as the spatial transform frame_X_inertial:
+        * (E, r) = (_att, _pos), mapping inertial-frame quantities/points into this frame.
+        * @return The pose of the frame w.r.t. the inertial frame.
         */
-        HomTransform getPose() const { return HomTransform(_att, _pos); };
+        SpatialTransform getPose() const { return SpatialTransform(_att, _pos); };
 
         /**
-        * @brief Returns a transformation matrix from this frame to a target frame.
+        * @brief Returns the spatial transform target_X_this, mapping quantities expressed in this frame into the
+        * target frame. Its translation is the target's origin expressed in this frame, and its rotation is the passive
+        * rotation from this frame to the target.
         * @param target The target frame.
-        * @return The transformation matrix from this frame to the target frame.
+        * @return The transform from this frame to the target frame.
         */
-        HomTransform getTransformTo(const Frame& target) const { return getPose().getInverse() * target.getPose(); };
+        SpatialTransform getTransformTo(const Frame& target) const { return target.getPose() * getPose().getInverse(); };
 
     protected:
 

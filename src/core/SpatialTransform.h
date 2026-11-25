@@ -2,6 +2,7 @@
 
 #include "Matrix.h"
 #include "Matrix33.h"
+#include "Matrix44.h"
 #include "Quaternion.h"
 #include "SpatialInertia.h"
 #include "SpatialVector.h"
@@ -12,21 +13,20 @@ namespace Stellarium
 {
 
 /**
-* @brief A class representing a spatial (Plucker) coordinate transform.
+* @brief A class representing a spatial coordinate transform.
 * See: Featherstone, Rigid Body Dynamics Algorithms, 2008, pp. 22
 *
-* A SpatialTransform maps quantities expressed in frame A into  frame B. It is
+* A SpatialTransform maps quantities expressed in frame A into frame B. It is
 * stored as the pair (E, r) of Featherstone eq. 2.24/2.25:
 *
 *   - `r` is the position of B's origin, expressed in A coordinates.
 *   - `E` is the 3x3 rotation matrix that tranforms 3D vectors from A to B coordinates
 *
-* E is stored internally as a `Quaternion`. Quaternions encode passive rotations (see Quaternion::operator*), so
+* E is stored internally as a `Quaternion`. Quaternions in Stellarium encode passive rotations (see Quaternion::operator*), so
 * `_quaternion * v` evaluates E * v directly, and if B's attitude quaternion is `att` in the sense used by
 * Frame then `_quaternion == att`.
 *
-* Concretely, a revolute joint rotating the successor by +theta about `k` relative to the predecessor has
-* `_quaternion = Quaternion(k, theta)` -- see PinJoint::getJointTransform.
+* SpatialTransform can be used to transform a `SpatialVector` as well as a `Vector3` from Frame A to B.
 */
 class SpatialTransform
 {   
@@ -43,6 +43,10 @@ class SpatialTransform
         virtual ~SpatialTransform() = default;
 
         SpatialTransform(const Quaternion& quaternion, const Vector3& translation) :  _quaternion(quaternion.getNormalized()), _translation(translation) { }
+
+        bool operator==(const SpatialTransform& other) const {
+            return _quaternion == other._quaternion && _translation == other._translation;
+        }
 
         SpatialTransform operator*(const SpatialTransform& other) const {
             // Compose spatial transforms directly via quaternion/translation, without
@@ -83,6 +87,17 @@ class SpatialTransform
             );
         }
 
+        Vector3 operator*(const Vector3& v) const {
+            return transformVector(v);
+        }
+
+        /**
+        * @brief Maps a Vector3 expressed in A coordinates to the same vector expressed in B coordinates:
+        */
+        Vector3 transformVector(const Vector3& v) const {
+            return _quaternion * (v - _translation);
+        }
+
         /**
         * @brief Builds the 6x6 spatial motion transform matrix X (eq. 2.24) for this transform, i.e. the
         * matrix satisfying X * v.getVector() == (*this) * v for a SpatialMotion v.
@@ -95,6 +110,21 @@ class SpatialTransform
             Matrix top = E.horizontalConcatenate(zero3);
             Matrix bottom = (-(E * r_cross)).horizontalConcatenate(E);
             return top.verticalConcatenate(bottom);
+        }
+
+        /**
+        * @brief The 4x4 homogeneous matrix equivalent of transformPoint(), i.e. [E, -E r; 0, 1], mapping
+        * homogeneous A points to B points.
+        */
+        Matrix44 getHomogeneousMatrix() const {
+            const RotationMatrix E = _quaternion.getRotationMatrix();
+            const Vector3 t = -(_quaternion * _translation);
+            return Matrix44(
+                Vector4(E[0][0], E[0][1], E[0][2], t[0]),
+                Vector4(E[1][0], E[1][1], E[1][2], t[1]),
+                Vector4(E[2][0], E[2][1], E[2][2], t[2]),
+                Vector4(0.0, 0.0, 0.0, 1.0)
+            );
         }
 
         /**

@@ -38,7 +38,7 @@ namespace Stellarium
 
 //     // translational acceleration of body w.r.t. inertial frame, expressed in INERTIAL frame
 //     // _force is given in the body frame so we need to rotate it to the inertial frame first
-//     Vector3 accel = (_att * _force) / _mass;
+//     Vector3 accel = (_att.getInverse() * _force) / _mass;
 
 //     // angular acceleration of body w.r.t. inertial frame, expressed in BODY frame
 //     Vector3 ang_accel = _inertia.getInverse() * (_torque - _ang_vel.cross(_inertia * _ang_vel));

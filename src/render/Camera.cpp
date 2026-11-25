@@ -1,5 +1,5 @@
 #include "Camera.h"
-#include "HomTransform.h"
+#include "SpatialTransform.h"
 #include "Matrix44.h"
 #include "Quaternion.h"
 #include "Vector4.h"
@@ -26,7 +26,7 @@ Matrix44 Camera::getProjectionMatrix()
 
 Matrix44 Camera::getViewMatrix()
 {
-    return HomTransform(getEyeOrientation(), _pos).getInverse().toMatrix();
+    return SpatialTransform(getEyeOrientation(), _pos).getHomogeneousMatrix(); // eye_X_world: world points -> eye points
 }
 
 void Camera::processKeyboardInput(Camera_Movement direction, double delta_time)

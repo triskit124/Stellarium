@@ -180,7 +180,7 @@ void GraphicsEngine::run()
             {
                 if (Frame* frame = _models[i]->getFrame())
                 {
-                    transforms[i] = frame->getPose().toMatrix();
+                    transforms[i] = frame->getPose().getInverse().getHomogeneousMatrix();
                 }
             }
         }
@@ -425,7 +425,7 @@ void GraphicsEngine::drawGrid() const
     _grid_shader->use();
     _grid_shader->setMat4("projection", _camera->getProjectionMatrix());
     _grid_shader->setMat4("view", _camera->getViewMatrix());
-    _grid_shader->setMat4("model", _grid_frame.getPose().toMatrix());
+    _grid_shader->setMat4("model", _grid_frame.getPose().getInverse().getHomogeneousMatrix());
     _grid_shader->setVec3("cameraPos", _camera->getPosition());
     _grid_shader->setFloat("cellSize", 1.0f);
     _grid_shader->setInt("cellsPerMajor", 10);

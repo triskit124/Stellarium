@@ -126,9 +126,9 @@ int main() {
     test.assertTrue("RPY constructor composes body 1-2-3 frame rotations", q1 == q2);
 
     // Test round trip for rpy
-    test.assertTrue("RPY -> Quat -> RotMat -> RPY 1", abs(q1.getRotationMatrix().getRollPitchYaw()[0] - roll) <= STELL_EPSILON);
-    test.assertTrue("RPY -> Quat -> RotMat -> RPY 2", abs(q1.getRotationMatrix().getRollPitchYaw()[1] - pitch) <= STELL_EPSILON);
-    test.assertTrue("RPY -> Quat -> RotMat -> RPY 3", abs(q1.getRotationMatrix().getRollPitchYaw()[2] - yaw) <= STELL_EPSILON);
+    test.assertTrue("RPY -> Quat -> RotMat -> RPY 1", std::abs(q1.getRotationMatrix().getRollPitchYaw()[0] - roll) <= STELL_EPSILON);
+    test.assertTrue("RPY -> Quat -> RotMat -> RPY 2", std::abs(q1.getRotationMatrix().getRollPitchYaw()[1] - pitch) <= STELL_EPSILON);
+    test.assertTrue("RPY -> Quat -> RotMat -> RPY 3", std::abs(q1.getRotationMatrix().getRollPitchYaw()[2] - yaw) <= STELL_EPSILON);
 
     // Sequence check by hand: roll +90 about x, then pitch +90 about the new y
     q1 = Quaternion(M_PI/2, M_PI/2, 0.0);
