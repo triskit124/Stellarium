@@ -1,5 +1,6 @@
 #include "TestHarness.h"
 
+#include <exception>
 #include <iostream>
 #include <algorithm>
 #include <iomanip>
@@ -30,7 +31,7 @@ void Test::assertTrue(const std::string& description, bool condition)
 
 void Test::assertEquals(const std::string& description, double a, double b, double epsilon)
 {
-    assertTrue(description, abs(a - b) <= epsilon);
+    assertTrue(description, std::abs(a - b) <= epsilon);
 }
 
 void Test::summarize()

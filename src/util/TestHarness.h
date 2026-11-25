@@ -1,5 +1,8 @@
 #pragma once
 
+#include <cstdlib>
+#include <exception>
+#include <functional>
 #include <string>
 #include <vector>
 
@@ -18,6 +21,17 @@ class Test
 
         void assertTrue(const std::string& description, bool condition);
         void assertEquals(const std::string& description, double a, double b, double epsilon = 0.0);
+
+        template <typename exception_type>
+        void assertRaises(const std::string& description, std::function<void()> callable) {
+            bool raises_correctly = false;
+            try {
+                callable();
+            } catch (const exception_type&) {
+                raises_correctly = true;
+            }
+            assertTrue(description, raises_correctly);
+        }
 
         void summarize();
 

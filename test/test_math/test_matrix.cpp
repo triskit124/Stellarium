@@ -76,38 +76,13 @@ int main() {
     test.assertTrue("Col-major array", mat1.getColMajorArray() == array1);
 
     // test that we cannot assign a new row to a Matrix that has incompatible shape
-    bool result_assign_bad_row = false;
+    test.assertRaises<std::invalid_argument>("Set bad row caught by Vector", [&mat1](){ mat1[1] = { 55.0, 67.0 }; });
 
-    try {
-        mat1[1] = { 55.0, 67.0 };
-    } catch (const std::invalid_argument&) {
-        result_assign_bad_row = true;
-    }
-
-    test.assertTrue("Set bad row caught by Vector", result_assign_bad_row);
-
-    // test that we cannot create a mstrix with incompatible dimensions
-    bool result_create_matrix_with_bad_dimensions = false;
-
-    try {
-        Matrix mat3 { { {1.0, 2.0 }, {3.0, 4.0, 5.0} } };
-    } catch (const std::invalid_argument&) {
-        result_create_matrix_with_bad_dimensions = true;
-    }
-
-    test.assertTrue("Create Matrix with bad dimensions", result_create_matrix_with_bad_dimensions);
+    // test that we cannot create a matrix with incompatible dimensions
+    test.assertRaises<std::invalid_argument>("Create Matrix with bad dimensions", [](){ Matrix mat3 { { {1.0, 2.0 }, {3.0, 4.0, 5.0} } }; });
     
     // test that we cannot create a SquareMatrix from non-square data
-        // test that we cannot create a mstrix with incompatible dimensions
-    bool result_create_square_matrix_with_bad_dimensions = false;
-
-    try {
-        SquareMatrix mat4 { { {1.0, 2.0 }, {3.0, 4.0, }, {5.0, 6.0} } };
-    } catch (const std::invalid_argument&) {
-        result_create_square_matrix_with_bad_dimensions = true;
-    }
-
-    test.assertTrue("Create SquareMatrix with bad dimensions", result_create_square_matrix_with_bad_dimensions);
+    test.assertRaises<std::invalid_argument>("Create SquareMatrix with bad dimensions", [](){ SquareMatrix mat4 { { {1.0, 2.0 }, {3.0, 4.0, }, {5.0, 6.0} } }; });
 
     return test.getNumFails();
 }
