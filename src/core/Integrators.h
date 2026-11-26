@@ -27,7 +27,7 @@ class Integrator
         * @brief Default constructor.
         * @param dt The integration step size.
         */
-        explicit Integrator(const std::function<Vector(void)>& state_getter, const std::function<Vector(void)>& state_dot_getter, const std::function<void(const Vector&)>& state_setter, const double dt = 1.0) : _state_getter(state_getter), _state_dot_getter(state_dot_getter), _state_setter(state_setter) {
+        explicit Integrator(const std::function<Vector(void)>& state_getter, const std::function<Vector(void)>& state_dot_getter, const std::function<void(const Vector&)>& state_setter, const std::function<void(const Vector&)>& state_dot_setter, const double dt = 1.0) : _state_getter(state_getter), _state_dot_getter(state_dot_getter), _state_setter(state_setter), _state_dot_setter(state_dot_setter) {
             if (dt <= STELL_EPSILON)
             {
                 throw std::invalid_argument("dt must be positive.");
@@ -85,6 +85,7 @@ class Integrator
         std::function<Vector(void)> _state_getter;
         std::function<Vector(void)> _state_dot_getter;
         std::function<void(const Vector&)> _state_setter;
+        std::function<void(const Vector&)> _state_dot_setter;
 
 };
 

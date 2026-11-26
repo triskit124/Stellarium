@@ -508,7 +508,7 @@ int main() {
         const Vector3 expected_com_2 = expected_pos_2 + Vector3(0.0,
                                                                 LINK_2.com_offset * std::sin(t1 + t2),
                                                                 -LINK_2.com_offset * std::cos(t1 + t2));
-        test.assertTrue("link 2 centre of mass frame", bodies[1]->getCenterOfMassFrame().getPosition() == expected_com_2);
+        test.assertTrue("link 2 centre of mass frame", bodies[1]->getCenterOfMassFrame().getPose().getTranslation() == expected_com_2);
     }
 
     /*
@@ -609,9 +609,9 @@ int main() {
         bool com_matches = true;
         for (size_t i = 0; i < links.size(); ++i)
         {
-            Vector3 com = bodies[i]->getCenterOfMassFrame().getPosition();
+            Vector3 com = bodies[i]->getCenterOfMassFrame().getPose().getTranslation();
             com.setEpsilon(1e-12);
-            com_matches = com_matches && com == reference_bodies[i]->getCenterOfMassFrame().getPosition();
+            com_matches = com_matches && com == reference_bodies[i]->getCenterOfMassFrame().getPose().getTranslation();
         }
         test.assertTrue("the centre of mass is where it was before the body frames moved", com_matches);
     }

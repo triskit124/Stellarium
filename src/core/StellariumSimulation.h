@@ -96,6 +96,8 @@ class StellariumSimulation
          */
         Vector getGeneralizedAcceleration() const { return _computeForwardDynamics(); };
 
+        std::pair<size_t, size_t> getStateSize() const;
+
         /**
          * @brief Forward kinematics: turns the current joint coordinates into world poses on every
          * Body's Frames, which is what the render layer reads.
@@ -153,6 +155,7 @@ class StellariumSimulation
         Vector _getState() const;
         Vector _getStateDot() const;
         void _setState(const Vector& s);
+        void _setStateDot(const Vector& state_dot);
 
 
 };

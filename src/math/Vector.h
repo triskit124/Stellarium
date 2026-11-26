@@ -16,7 +16,7 @@ namespace Stellarium
 /**
 * @brief A class representing an N-dimensional vector. Size is given at construction time and cannot
 * be changed afterwards, with one exception: a default-constructed (size 0, "unsized") Vector adopts
-* the size of the first vector assigned to it. See operator=.
+* the size of the first vector assigned to it.
 */
 class Vector : public MathBase
 {
@@ -285,7 +285,9 @@ class Vector : public MathBase
         */
         void normalize() {
             double n = getNorm();
-            if (!isUnit() && n > _epsilon) {
+            // Always divide (even when already within _epsilon of unit) so repeated renormalization
+            // actually removes accumulated drift instead of letting it build up to the tolerance.
+            if (n > _epsilon) {
                 *this /= n;
             }
         }

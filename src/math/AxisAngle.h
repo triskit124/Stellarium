@@ -19,10 +19,7 @@ class AxisAngle: public MathBase
         ===================================
         */
 
-        /**
-        * @brief Default constructor
-        */
-        AxisAngle() = default;
+        AxisAngle() = delete;
 
         /**
         * @brief Default destructor
@@ -45,12 +42,13 @@ class AxisAngle: public MathBase
         */
         explicit AxisAngle(const Quaternion& q) {
             Quaternion qq = q.getNormalized();
-            _angle = 2 * std::acos(qq[0]);
-            double s = std::sqrt(1 - pow(qq[0], 2));
+            const Vector3 v = Vector3(qq[1], qq[2], qq[3]);
+            const double s = v.getNorm();
+            _angle = 2 * std::atan2(s, qq[0]);
             _axis = Vector3(1, 0, 0);
             if (s > _epsilon)
             {
-                _axis = Vector3(qq[1], qq[2], qq[3]) / s;
+                _axis = v / s;
             }
         };
 
@@ -90,7 +88,7 @@ class AxisAngle: public MathBase
         /**
         * @brief The axis of rotation.
         */
-        Vector3 _axis {1.0, 0.0, 0.0};
+        Vector3 _axis;
 
         /**
         * @brief The angle of rotation in radians.

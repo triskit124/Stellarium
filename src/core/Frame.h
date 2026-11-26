@@ -1,14 +1,15 @@
 #pragma once
 
-#include "Vector3.h"
 #include "Quaternion.h"
+#include "SpatialVector.h"
 #include "SpatialTransform.h"
+#include "Vector3.h"
 
 namespace Stellarium
 {
 
 /**
-* @brief A class representing a Frame with a pose.
+* @brief A class representing a Frame.
 */
 class Frame
 {
@@ -21,13 +22,16 @@ class Frame
         ===================================
         */
 
+        Frame() = delete;
+        virtual ~Frame() = default;
+
         /**
         * @brief Constructs a Frame object with the given name, position, and attitude.
         * @param name The name of the frame.
-        * @param pos The position of the frame.
-        * @param att The attitude of the frame.
+        * @param pose The pose of the frame w.r.t. the parent frame.
+        * @param parent The parent frame.
         */
-        explicit Frame(const std::string& name, const Vector3& pos = Vector3(), const Quaternion& att = Quaternion()) : _name(name), _pos(pos), _att(att) {};
+        explicit Frame(const std::string& name, const SpatialTransform& pose = SpatialTransform()) : _name(name), _pose(pose) {};
 
         /*
         ===================
@@ -42,65 +46,58 @@ class Frame
         std::string getName() const { return _name; };
 
         /**
-        * @brief Sets the name of the frame.
-        * @param name The new name of the frame.
+        * @brief Sets the pose of the frame w.r.t. inertial.
+        * @param pose The new pose of the frame.
         */
-        void setName(const std::string& name) { _name = name; };
+        void setPose(const SpatialTransform& pose) { _pose = pose; };
 
         /**
-        * @brief Sets the position state of the frame.
+        * @brief Sets only the position-portion of the pose of the frame w.r.t. inertial.
         * @param pos The new position of the frame.
         */
-        void setPosition(const Vector3& pos) { _pos = pos; };
+        void setPosition(const Vector3& pos) { setPose(SpatialTransform(getPose().getRotation(), pos)); }
 
         /**
-        * @brief Sets the velocity state of the frame.
+        * @brief Sets only the attitude-portion of the pose of the frame w.r.t. inertial.
+        * @param pos The new position of the frame.
+        */
+        void setAttitude(const Quaternion& att) { setPose(SpatialTransform(att, getPose().getTranslation())); }
+
+        /**
+        * @brief Sets the velocity of the frame w.r.t. inertial
+        * The angular portion (w) is expressed in this frame.
+        * The linear portion (v) is expressed in the inertial frame.
         * @param vel The new velocity of the frame.
         */
-        void setVelocity(const Vector3& vel) { _vel = vel; };
+        void setVelocity(const SpatialMotion& velocity) { _velocity = velocity; };
 
         /**
-        * @brief Sets the attitude state of the frame.
-        * @param att The new attitude of the frame.
+        * @brief Sets the acceleration of the frame w.r.t. inertial
+        * @param vel The new velocity of the frame.
         */
-        void setAttitude(const Quaternion& att) { _att = att.getNormalized(); };
+        void setAcceleration(const SpatialMotion& acceleration) { _acceleration = acceleration; };
 
         /**
-        * @brief Sets the angular velocity state of the frame.
-        * @param ang_vel The new angular velocity of the frame.
-        */
-        void setAngularVelocity(const Vector3& ang_vel) { _ang_vel = ang_vel; };
-
-        /**
-        * @brief Gets the position of the frame.
-        * @return The position of the frame.
-        */
-        Vector3 getPosition() const { return _pos; };
-
-        /**
-        * @brief Gets the velocity of the frame.
-        * @return The velocity of the frame.
-        */
-        Vector3 getVelocity() const { return _vel; };
-
-        /**
-        * @brief Gets the attitude of the frame.
-        * @return The attitude of the frame.
-        */
-        Quaternion getAttitude() const { return _att; };
-
-        /**
-        * @brief Gets the angular velocity of the frame.
-        * @return The angular velocity of the frame.
-        */
-        Vector3 getAngularVelocity() const { return _ang_vel; };
-
-        /**
-        * @brief Get the pose of the frame w.r.t. the inertial frame, as the spatial transform frame_X_inertial:
-        * (E, r) = (_att, _pos), mapping inertial-frame quantities/points into this frame.
+        * @brief Get the Spatial Transform (q, r) of this frame with respect to the inertial frame.
+        * The attitude portion (q) is a quaternion that encodes the passive rotation from the inertial frame to this frame.
+        * The linear portion (r) is the location of this frame's origin w.r.t. inetial, expressed in the inertial frame.
         * @return The pose of the frame w.r.t. the inertial frame.
         */
-        SpatialTransform getPose() const { return SpatialTransform(_att, _pos); };
+        SpatialTransform getPose() const { return _pose; };
+
+        /**
+        * @brief Gets the spatial velocity of the frame w.r.t. inertial
+        * The angular portion (w) is expressed in this frame.
+        * The linear portion (v) is expressed in the inertial frame.
+        * @return The velocity of the frame.
+        */
+        SpatialMotion getVelocity() const { return _velocity; };
+
+        /**
+        * @brief Gets the spatial acceleration of the frame w.r.t. inertial
+        * @return The velocity of the frame.
+        */
+        SpatialMotion getAcceleration() const { return _acceleration; };
 
         /**
         * @brief Returns the spatial transform target_X_this, mapping quantities expressed in this frame into the
@@ -111,43 +108,33 @@ class Frame
         */
         SpatialTransform getTransformTo(const Frame& target) const { return target.getPose() * getPose().getInverse(); };
 
-    protected:
+    private:
 
         /**
         * @brief The name of the frame.
         */
-        std::string _name { "frame" };
+        std::string _name;
 
         /**
-        * @brief The position of the frame w.r.t inertial, expressed in INERTIAL frame.
+        * @brief The Spatial Transform (q, r) of this frame with respect to the inertial frame.
+        * The attitude portion (q) is a quaternion that encodes the passive rotation from the inertial frame to this frame.
+        * The linear portion (r) is the location of this frame's origin w.r.t. inetial, expressed in the inertial frame.
         */
-        Vector3 _pos {0.0, 0.0, 0.0};
+        SpatialTransform _pose { };
 
-        /**
-        * @brief The velocity of the frame w.r.t inertial, expressed in INERTIAL frame.
+        /** 
+        * @brief The Spatial Velocity (w, v) of this frame w.r.t. inertial.
+        * The angular portion (w) is expressed in this frame.
+        * The linear portion (v) is expressed in the inertial frame.
         */
-        Vector3 _vel {0.0, 0.0, 0.0};
+        SpatialMotion _velocity { };
 
-        /**
-        * @brief The acceleration of the frame w.r.t inertial, expressed in INERTIAL frame.
+        /** 
+        * @brief The Spatial Acceleration (w_dot, v_dot) of this frame w.r.t. inertial.
+        * The angular portion (w_dot) is expressed in this frame.
+        * The linear portion (v_dot) is expressed in the inertial frame.
         */
-        Vector3 _acc {0.0, 0.0, 0.0};
-
-        /**
-        * @brief The attitude quaternion of the frame: the passive rotation from INERTIAL to FRAME, i.e. `_att * v_inertial == v_frame`.
-        */
-        Quaternion _att {1.0, 0.0, 0.0, 0.0};
-
-        /**
-        * @brief The angular velocity of the frame w.r.t inertial, expressed in this FRAME.
-        */
-        Vector3 _ang_vel {0.0, 0.0, 0.0};
-
-        /**
-        * @brief The angular acceleration of the frame w.r.t inertial, expressed in this FRAME.
-        */
-        Vector3 _ang_acc {0.0, 0.0, 0.0};
-
+        SpatialMotion _acceleration { };
 };
 
 } // namespace Stellarium

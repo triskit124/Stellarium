@@ -55,7 +55,7 @@ class Joint
 
         Joint() = delete;
 
-        Joint(size_t num_dofs, size_t q_size, size_t axes_size, Body* successor, const Info& info) : _q(info.q_init), _alpha(info.alpha_init), _tau(info.alpha_init.getSize(), 0.0), _successor(successor), _info(info) { 
+        Joint(size_t num_dofs, size_t q_size, size_t axes_size, Body* successor, const Info& info) : _q(info.q_init), _alpha(info.alpha_init), _alpha_dot(info.alpha_init.getSize(), 0.0), _tau(info.alpha_init.getSize(), 0.0), _successor(successor), _info(info) { 
             // Verify sizes are correct
             if (info.axes.size() != axes_size) {
                 throw std::invalid_argument("Tried to create joint but info.axes has " + std::to_string(info.axes.size()) + " axes instead of " + std::to_string(axes_size) + ".\n");
@@ -171,6 +171,11 @@ class Joint
         */
         const Vector& getAlpha() const { return _alpha; };
 
+        /**
+        * @brief The acceleration coordinates alpha_dot (nv of them). For information only. These are an output of the forward dynamics.
+        */
+        const Vector& getAlphaDot() const { return _alpha_dot; };
+
         void setQ(const Vector& q) {
             if (q.getSize() != _q.getSize()) {
                 throw std::invalid_argument("Incorrect size.");
@@ -188,6 +193,13 @@ class Joint
             _alpha = alpha;
         }
 
+        void setAlphaDot(const Vector& alpha_dot) {
+            if (alpha_dot.getSize() != _alpha_dot.getSize()) {
+                throw std::invalid_argument("Incorrect size.");
+            }
+            _alpha_dot = alpha_dot;
+        }
+
         // Generalized (joint-space) force/torque applied by an actuator, dual to alpha. Defaults to zero.
         Vector getGeneralizedForce() const { return _tau; };
 
@@ -203,6 +215,7 @@ class Joint
 
         Vector _q; // The joint's position coordinates
         Vector _alpha; // The joint's velocity coordinates. Not d(q)/dt in the general case -- see FreeJoint or BallJoint
+        Vector _alpha_dot; // The joint's acceleration coordinates. For information only. These are an output of the forward dynamics.
         Vector _tau; // The generalized forces acting on the joint
 
     private:
@@ -317,7 +330,7 @@ class FreeJoint : public Joint
         Vector3 getTranslation() const { return Vector3(_q[4], _q[5], _q[6]); }
 
         /**
-        * @brief The angualr velocity of the successor body w.r.t. predecessor, expressed in successor frame
+        * @brief The angular velocity of the successor body w.r.t. predecessor, expressed in successor frame
         */
         Vector3 getAngularVelocity() const { return Vector3(_alpha[0], _alpha[1], _alpha[2]); }
 

@@ -42,7 +42,7 @@ class Body
         : _name(name), 
         _spatial_inertia(spatial_inertia), 
         _body_frame(name), 
-        _center_of_mass_frame(name + "_center_of_mass", spatial_inertia.getCenterOfMass()) 
+        _center_of_mass_frame(name + "_center_of_mass", SpatialTransform(Quaternion(), spatial_inertia.getCenterOfMass())) 
         {
             attachToPredecessor(joint_info);
         };
@@ -109,10 +109,12 @@ class Body
         ==========================================================================================
         */
 
-        Vector3 getPosition() const { return _body_frame.getPosition(); };
-        Vector3 getVelocity() const { return _body_frame.getVelocity(); };
-        Quaternion getAttitude() const { return _body_frame.getAttitude(); };
-        Vector3 getAngularVelocity() const { return _body_frame.getAngularVelocity(); };
+        Vector3 getPosition() const { return _body_frame.getPose().getTranslation(); };
+        Vector3 getVelocity() const { return _body_frame.getVelocity().getLinearPart(); };
+        Quaternion getAttitude() const { return _body_frame.getPose().getRotation(); };
+        Vector3 getAngularVelocity() const { return _body_frame.getVelocity().getAngularPart(); };
+        Vector3 getAcceleration() const { return _body_frame.getAcceleration().getLinearPart(); };
+        Vector3 getAngularAcceleration() const { return _body_frame.getAcceleration().getAngularPart(); };
 
         /**
         * @brief Writes this body's pose from its spatial transform and velocity relative to the
@@ -122,25 +124,23 @@ class Body
         *                     (Featherstone's i_X_0).
         * @param velocity     This body's spatial velocity, expressed in body coordinates.
         */
-        void setPoseFromBase(const SpatialTransform& base_to_body, const SpatialMotion& velocity) {
+        void setPoseFromBase(const SpatialTransform& base_to_body, const SpatialMotion& velocity, const SpatialMotion& acceleration) {
             const Quaternion attitude = base_to_body.getRotation();
             const Quaternion body_to_base = attitude.getInverse();
             const Vector3 position = base_to_body.getTranslation();
 
-            // Frame stores linear velocity in INERTIAL components and angular velocity in FRAME
+            // Frame stores linear velocity in inertial components and angular velocity in frame
             // components; the spatial velocity is entirely in body components.
-            _body_frame.setPosition(position);
-            _body_frame.setAttitude(attitude);
-            _body_frame.setVelocity(body_to_base * velocity.getLinearPart());
-            _body_frame.setAngularVelocity(velocity.getAngularPart());
+            _body_frame.setPose(base_to_body);
+            _body_frame.setVelocity(SpatialMotion(velocity.getAngularPart(), body_to_base * velocity.getLinearPart()));
+            _body_frame.setAcceleration(SpatialMotion(acceleration.getAngularPart(), body_to_base * acceleration.getLinearPart()));
 
             // The center of mass rides along, offset by c in body coordinates. Its velocity picks
             // up the omega x c term since it is a different body-fixed point.
-            const Vector3 c = _spatial_inertia.getCenterOfMass();
-            _center_of_mass_frame.setPosition(position + body_to_base * c);
-            _center_of_mass_frame.setAttitude(attitude);
-            _center_of_mass_frame.setVelocity(body_to_base * (velocity.getLinearPart() + velocity.getAngularPart().cross(c)));
-            _center_of_mass_frame.setAngularVelocity(velocity.getAngularPart());
+            const SpatialTransform body_to_cm = SpatialTransform(Quaternion(), _spatial_inertia.getCenterOfMass());
+            _center_of_mass_frame.setPose(body_to_cm * base_to_body);
+            _center_of_mass_frame.setVelocity(body_to_cm * velocity);
+            _center_of_mass_frame.setAcceleration(body_to_cm * acceleration);
         }
 
         Frame& getBodyFrame() { return _body_frame; };
