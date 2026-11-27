@@ -20,7 +20,7 @@ class Test
         ~Test() { summarize(); };
 
         void assertTrue(const std::string& description, bool condition);
-        void assertEquals(const std::string& description, double a, double b, double epsilon = 0.0);
+        void assertEquals(const std::string& description, double actual, double expected, double abs_tol = 0.0, double rel_tol = 0.0);
 
         template <typename exception_type>
         void assertRaises(const std::string& description, std::function<void()> callable) {
@@ -30,7 +30,7 @@ class Test
             } catch (const exception_type&) {
                 raises_correctly = true;
             }
-            assertTrue(description, raises_correctly);
+            recordResult(description, raises_correctly);
         }
 
         void summarize();
@@ -46,8 +46,10 @@ class Test
         unsigned int _num_fails { 0 };
         unsigned int _num_passes { 0 };
         std::vector<std::pair<std::string, bool>> _results { };
-        bool _verbose { false };
+        bool _verbose { true };
         size_t _description_width { 0 };
+
+        void recordResult(const std::string& description, bool pass);
 
         std::string bold(const std::string& text);
         std::string red(const std::string& text);

@@ -1,6 +1,6 @@
 #include "TestHarness.h"
+#include "Constants.h"
 
-#include <exception>
 #include <iostream>
 #include <algorithm>
 #include <iomanip>
@@ -13,12 +13,12 @@ Test::Test(const std::string& name)
     std::cerr << bold("\nRunning test: " + _name) << std::endl;
 };
 
-void Test::assertTrue(const std::string& description, bool condition)
+void Test::recordResult(const std::string& description, bool pass)
 {
-    _results.push_back({ description, condition } );
+    _results.push_back({ description, pass } );
     _description_width = std::max(_description_width, description.length());
 
-    if (condition)
+    if (pass)
     {
         _num_passes++;
     }
@@ -26,12 +26,16 @@ void Test::assertTrue(const std::string& description, bool condition)
     {
         _num_fails++;
     }
-
 }
 
-void Test::assertEquals(const std::string& description, double a, double b, double epsilon)
+void Test::assertTrue(const std::string& description, bool condition)
 {
-    assertTrue(description, std::abs(a - b) <= epsilon);
+    recordResult(description, condition);
+}
+
+void Test::assertEquals(const std::string& description, double actual, double expected, double abs_tol, double rel_tol)
+{
+    recordResult(description, std::abs(actual - expected) <= abs_tol || std::abs(actual - expected) / std::max(std::abs(expected), STELL_EPSILON) <= rel_tol);
 }
 
 void Test::summarize()

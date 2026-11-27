@@ -21,10 +21,10 @@ int main() {
     // it. This is what lets fixed-size Vector members be filled in after construction, e.g.
     // Joint::Info::q_init.
     Vector unsized;
-    test.assertTrue("Default-constructed vector is empty", unsized.getSize() == 0);
+    test.assertEquals("Default-constructed vector is empty", unsized.getSize(), 0);
 
     unsized = Vector { 4.0, 5.0 };
-    test.assertTrue("Unsized vector adopts assigned size", unsized.getSize() == 2);
+    test.assertEquals("Unsized vector adopts assigned size", unsized.getSize(), 2);
     test.assertTrue("Unsized vector adopts assigned values", unsized == Vector({ 4.0, 5.0 }));
 
     // Once it has a size, it is fixed again.
