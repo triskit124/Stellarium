@@ -26,7 +26,7 @@ int main() {
     Vector3 r_a2b = Vector3(1, 2, -3);
 
     Frame frame_a = Frame("Frame_A");
-    Frame frame_b = Frame("Frame_B", r_a2b, q_a2b);
+    Frame frame_b = Frame("Frame_B", SpatialTransform(q_a2b, r_a2b));
 
     test.assertTrue("Transform from A to B - trans portion", frame_a.getTransformTo(frame_b).getTranslation() == r_a2b);
     test.assertTrue("Transform from A to B - rot portion", frame_a.getTransformTo(frame_b).getRotation() == q_a2b);

@@ -2,6 +2,7 @@
 
 #include "Frame.h"
 #include "Matrix44.h"
+#include "SpatialTransform.h"
 #include "Vector3.h"
 #include <cstddef>
 
@@ -200,13 +201,13 @@ class Camera : public Frame
         * that _att alone still represents just the user-driven look rotation.
         * @return The orientation quaternion mapping world-space components to eye-space components.
         */
-        Quaternion getEyeOrientation() const { return _att * WORLD_UP_TO_EYE_BASIS; };
+        Quaternion getEyeOrientation() const { return getPose().getRotation() * WORLD_UP_TO_EYE_BASIS; };
 
         /**
         * @brief Recomputes _pos from _target, _distance, and the current orientation.
         * Call after anything changes orbit distance or look angles.
         */
-        void updatePositionFromOrbit() { _pos = _target - (getEyeOrientation().getInverse() * Vector3(0, 0, -1)) * _distance; };
+        void updatePositionFromOrbit() { setPosition( _target - (getEyeOrientation().getInverse() * Vector3(0, 0, -1)) * _distance); };
 
         Vector3 _target { 0.0, 0.0, 0.0 }; // point the camera orbits around, in world coordinates
         double _distance { 10.0 }; // distance from _target to _pos

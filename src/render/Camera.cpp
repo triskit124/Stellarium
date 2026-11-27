@@ -26,7 +26,7 @@ Matrix44 Camera::getProjectionMatrix()
 
 Matrix44 Camera::getViewMatrix()
 {
-    return SpatialTransform(getEyeOrientation(), _pos).getHomogeneousMatrix(); // eye_X_world: world points -> eye points
+    return SpatialTransform(getEyeOrientation(), getPose().getTranslation()).getHomogeneousMatrix(); // eye_X_world: world points -> eye points
 }
 
 void Camera::processKeyboardInput(Camera_Movement direction, double delta_time)
@@ -46,7 +46,7 @@ void Camera::processKeyboardInput(Camera_Movement direction, double delta_time)
 
     // Translate the camera and its orbit target together, so distance/orientation
     // (and therefore future orbit/zoom behavior) stay consistent.
-    _pos += delta;
+    setPosition(getPose().getTranslation() + delta);
     _target += delta;
 }
 
@@ -83,7 +83,7 @@ void Camera::pan(double x_offset, double y_offset)
 
     Vector3 delta = (right * -x_offset + up * y_offset) * scale;
     _target += delta;
-    _pos += delta;
+    setPosition(getPose().getTranslation() + delta);
 }
 
 void Camera::zoom(double y_offset)

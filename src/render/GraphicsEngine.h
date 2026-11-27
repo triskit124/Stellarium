@@ -149,6 +149,7 @@ class GraphicsEngine
             _camera->zoom(mouse_y);
         }
 
+        void startRendering() { this->_should_render.store(true); };
         void stopRendering() { this->_should_render.store(false); };
         bool shouldRender() { return this->_should_render.load(); };
 

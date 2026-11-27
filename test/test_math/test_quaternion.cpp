@@ -5,6 +5,7 @@
 #include "TestHarness.h"
 #include "Quaternion.h"
 #include "Vector3.h"
+#include "Vector4.h"
 
 using namespace Stellarium;
 

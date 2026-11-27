@@ -18,42 +18,13 @@
 #include <thread>
 #include <memory>
 #include <cassert>
+#include <utility>
 #include <vector>
 #include <chrono>
 
 
 namespace Stellarium
 {
-
-namespace {
-
-/**
-* @brief Appends every element of `chunk` onto `out`.
-*
-* The flat simulation state is assembled from variable-length per-joint blocks. Vector is fixed
-* size once it is non-empty, so the assembly happens in a std::vector and is converted once at the
-* end via toVector().
-*/
-void append(std::vector<double>& out, const Vector& chunk)
-{
-    for (size_t i = 0; i < chunk.getSize(); ++i)
-    {
-        out.push_back(chunk[i]);
-    }
-}
-
-Vector toVector(const std::vector<double>& values)
-{
-    Vector v(values.size());
-    for (size_t i = 0; i < values.size(); ++i)
-    {
-        v[i] = values[i];
-    }
-    return v;
-}
-
-} // end anonymous namespace
-
 
 StellariumSimulation::StellariumSimulation() {
     // Add a ficticious root body. This will serve as the inertial root for the simulation. It has
@@ -75,9 +46,7 @@ Body* StellariumSimulation::addBody(const std::string& name, const SpatialInerti
 {
     Joint::Info info = joint_info;
 
-    // A null predecessor means "attach to the world", not "second fixed base". Without this, the body
-    // would be created jointless and the dynamics passes -- which assume every body past the root
-    // has a joint -- would dereference a null Joint*.
+    // A null predecessor means attach to the world root
     if (info.predecessor == nullptr)
     {
         info.predecessor = getBase();
@@ -95,7 +64,8 @@ void StellariumSimulation::addIntegrator(const STELL_INTEGRATOR_TYPE& type, cons
         _integrator = std::make_unique<RK4>(
             [this]() { return _getState(); }, 
             [this]() { return _getStateDot(); }, 
-            [this](const Vector& v) { return _setState(v); }, 
+            [this](const Vector& v) { return _setState(v); },
+            [this](const Vector& v) { return _setStateDot(v); }, 
             dt
         );
     }
@@ -130,39 +100,7 @@ void StellariumSimulation::_step()
 ================================================================================================
 */
 
-Vector StellariumSimulation::_getState() const
-{
-    std::vector<double> q { };
-    std::vector<double> alpha { };
-    for (auto& body : _bodies)
-    {
-        if (Joint* joint = body->getJoint())
-        {
-            append(q, joint->getQ());
-            append(alpha, joint->getAlpha());
-        }
-    }
-
-    append(q, toVector(alpha));
-    return toVector(q);
-}
-
-Vector StellariumSimulation::_getStateDot() const
-{
-    std::vector<double> state_dot { };
-    for (auto& body : _bodies)
-    {
-        if (Joint* joint = body->getJoint())
-        {
-            append(state_dot, joint->getQDot());
-        }
-    }
-
-    append(state_dot, _computeForwardDynamics());
-    return toVector(state_dot);
-}
-
-void StellariumSimulation::_setState(const Vector& s)
+std::pair<size_t, size_t> StellariumSimulation::getStateSize() const
 {
     size_t num_q = 0;
     size_t num_alpha = 0;
@@ -174,6 +112,73 @@ void StellariumSimulation::_setState(const Vector& s)
             num_alpha += joint->getDegreesOfFreedom();
         }
     }
+    return std::make_pair(num_q, num_alpha);
+}
+
+Vector StellariumSimulation::_getState() const
+{
+    auto [num_q, num_alpha] = getStateSize();
+    Vector state = Vector(num_q + num_alpha);
+
+    size_t q_idx = 0;
+    size_t alpha_idx = num_q;
+
+    for (auto& body : _bodies)
+    {
+        if (Joint* joint = body->getJoint())
+        {
+            Vector joint_q = joint->getQ();
+            for (size_t i = 0; i < joint_q.getSize(); ++i)
+            {
+                state[q_idx] = joint_q[i];
+                q_idx++;
+            }
+
+            Vector joint_alpha = joint->getAlpha();
+            for (size_t i = 0; i < joint_alpha.getSize(); ++i)
+            {
+                state[alpha_idx] = joint_alpha[i];
+                alpha_idx++;
+            }
+        }
+    }
+    return state;
+}
+
+Vector StellariumSimulation::_getStateDot() const
+{
+    auto [num_q, num_alpha] = getStateSize();
+    Vector state_dot = Vector(num_q + num_alpha);
+
+    size_t q_dot_idx = 0;
+    size_t alpha_dot_idx = num_q;
+
+    for (auto& body : _bodies)
+    {
+        if (Joint* joint = body->getJoint())
+        {
+            Vector joint_q_dot = joint->getQDot();
+            for (size_t i = 0; i < joint_q_dot.getSize(); ++i)
+            {
+                state_dot[q_dot_idx] = joint_q_dot[i];
+                q_dot_idx++;
+            }
+        }
+    }
+
+    Vector alpha_dot = _computeForwardDynamics();
+    for (size_t i = 0; i < alpha_dot.getSize(); ++i)
+    {
+        state_dot[alpha_dot_idx] = alpha_dot[i];
+        alpha_dot_idx++;
+    }
+
+    return state_dot;
+}
+
+void StellariumSimulation::_setState(const Vector& s)
+{
+    auto [num_q, num_alpha] = getStateSize();
 
     if (s.getSize() != num_q + num_alpha)
     {
@@ -206,6 +211,38 @@ void StellariumSimulation::_setState(const Vector& s)
             alpha_idx++;
         }
         joint->setAlpha(alpha);
+    }
+}
+
+void StellariumSimulation::_setStateDot(const Vector& state_dot)
+{
+    auto [num_q, num_alpha] = getStateSize();
+
+    size_t alpha_dot_idx = num_q;
+
+    if (state_dot.getSize() != num_q + num_alpha)
+    {
+        throw std::invalid_argument("Cannot set alpha_dot: expected a vector of size " + std::to_string(num_q + num_alpha) + " but got " + std::to_string(state_dot.getSize()));
+    }
+
+    for (auto& body : _bodies)
+    {
+        Joint* joint = body->getJoint();
+        if (!joint)
+        {
+            continue;
+        }
+
+        // Only set alpha_dot, q_dot is not really of interest
+        // alpha_dot is for information only, so that users can
+        // query acceleration of bodies/frames if desired
+        Vector joint_alpha_dot = Vector(joint->getDegreesOfFreedom());
+        for (size_t i = 0; i < joint_alpha_dot.getSize(); ++i)
+        {
+            joint_alpha_dot[i] = state_dot[alpha_dot_idx];
+            alpha_dot_idx++;
+        }
+        joint->setAlphaDot(joint_alpha_dot);
     }
 }
 
@@ -300,7 +337,10 @@ Vector StellariumSimulation::_computeForwardDynamics() const
     // body forces
     a[base] = SpatialMotion(Vector3(), -getConstantGravity());
 
-    std::vector<double> alpha_dot { };
+    auto [num_q, num_alpha] = getStateSize();
+    Vector alpha_dot = Vector(num_alpha);
+    size_t alpha_dot_idx = 0;
+
     for (size_t i = 1; i < _bodies.size(); ++i)
     {
         Body* body = _bodies[i].get();
@@ -310,12 +350,17 @@ Vector StellariumSimulation::_computeForwardDynamics() const
 
         SpatialMotion a_prime = (i_X_p.at(body) * a.at(parent)) + c.at(body);
         Vector alpha_dot_i = D_inv.at(body) * (u.at(body) - U.at(body).getTranspose() * a_prime.getVector());
-        append(alpha_dot, alpha_dot_i);
+        
+        for (size_t i = 0; i < alpha_dot_i.getSize(); ++i)
+        {
+            alpha_dot[alpha_dot_idx] = alpha_dot_i[i];
+            alpha_dot_idx++;
+        }
 
         a[body] = a_prime + SpatialMotion(S * alpha_dot_i);
     }
 
-    return toVector(alpha_dot);
+    return alpha_dot;
 }
 
 void StellariumSimulation::updateFrames()
@@ -324,10 +369,12 @@ void StellariumSimulation::updateFrames()
     // writes the result out to each Body's Frames in the conventions the render layer reads.
     std::map<const Body*, SpatialTransform> i_X_0 { };
     std::map<const Body*, SpatialMotion> v { };
+    std::map<const Body*, SpatialMotion> a { };
 
     const Body* base = getBase();
     i_X_0[base] = SpatialTransform();
     v[base] = SpatialMotion();
+    a[base] = SpatialMotion(Vector3(), -getConstantGravity());
 
     for (size_t i = 1; i < _bodies.size(); ++i)
     {
@@ -338,13 +385,15 @@ void StellariumSimulation::updateFrames()
             throw std::runtime_error("Body '" + body->getName() + "' has no joint. Only the root body may be jointless.");
         }
         const Body* parent = joint->getInfo().predecessor;
+        Matrix S = joint->getJointFrameMotionSubspace();
 
         SpatialTransform i_X_p = joint->getInfo().successor_to_joint.getInverse() * joint->getJointTransform() * joint->getInfo().predecessor_to_joint;
 
         i_X_0[body] = i_X_p * i_X_0.at(parent);
         v[body] = i_X_p * v.at(parent) + joint->getJointVelocity();
+        a[body] = i_X_p * a.at(parent) + SpatialMotion(S * joint->getAlphaDot()) + joint->getJointVelocityDot() + v.at(body).cross(joint->getJointVelocity());
 
-        body->setPoseFromBase(i_X_0.at(body), v.at(body));
+        body->setPoseFromBase(i_X_0.at(body), v.at(body), a.at(body));
     }
 }
 
@@ -361,6 +410,8 @@ void StellariumSimulation::run(double t)
 
     if (_graphics)
     {
+        _graphics->startRendering();
+
         std::thread physics_thread([&]()
         {
             // Cap the physics thread's real-time rate so it can't win every mutex
@@ -368,7 +419,9 @@ void StellariumSimulation::run(double t)
             const auto target_period = std::chrono::duration<double>(_integrator->getDeltaT());
             auto next_tick = std::chrono::steady_clock::now();
 
-            while (time() < t_f && _graphics->shouldRender())
+            // Run the physics thread with graphics.
+            // time is propagated in floating point so after many steps it can land a hair below t_f and trigger one spurious extra step.
+            while (t_f - time() > 0.5 * _integrator->getDeltaT() && _graphics->shouldRender())
             {
                 auto tic = std::chrono::steady_clock::now();
 
@@ -400,7 +453,8 @@ void StellariumSimulation::run(double t)
     }
     else 
     {
-        while (time() < t_f)
+        // Run without graphics
+        while (t_f - time() > 0.5 * _integrator->getDeltaT())
         {
             _step();
         }

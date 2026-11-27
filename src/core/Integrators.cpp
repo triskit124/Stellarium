@@ -102,8 +102,12 @@ void RK4::integrate(double& t)
 
     _state_setter(_state);
 
-    // one last state dot call to normalize attitude quaternions and update derivatives
+    // one last state dot call to get final accels
     _state_dot = _state_dot_getter();
+
+    // push the final accels. for informational purposes only so that
+    // users can query acceleration values
+    _state_dot_setter(_state_dot);
 
 };
 

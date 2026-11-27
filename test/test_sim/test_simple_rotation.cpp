@@ -6,6 +6,7 @@
  * re-normalization that follows every integration step.
  */
 
+#include "Config.h"
 #include "AxisAngle.h"
 #include "InertiaMatrix.h"
 #include "Joint.h"
@@ -15,7 +16,6 @@
 #include "Vector3.h"
 
 #include <cmath>
-#include <iostream>
 
 
 using namespace Stellarium;
@@ -28,6 +28,10 @@ int main() {
     StellariumSimulation sim;
     sim.addIntegrator(STELL_INTEGRATOR_TYPE::rk4, 0.01);
 
+    // sim.addGraphics();
+    // const std::string axes_model_path = (std::filesystem::path(STELL_PROJECT_ROOT) / "assets/axes.obj").string();
+    // const std::string sphere_model_path = (std::filesystem::path(STELL_PROJECT_ROOT) / "assets/sphere.obj").string();
+
     Joint::Info free_joint;
     free_joint.type = Joint::Type::Free;
     free_joint.q_init = { 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
@@ -37,10 +41,20 @@ int main() {
     // angular rate is simply the integral of the applied torque.
     auto body = sim.addBody("body_1", SpatialInertia(1.0, Vector3(), InertiaMatrix()), free_joint);
 
+    test.assertEquals("Sim q size should be 7 (1 body, position + quaternion)", sim.getStateSize().first, 7);
+    test.assertEquals("Sim alpha size should be 6 (1 body, angular+linear velocity)", sim.getStateSize().second, 6);
+
+    // sim.loadModel(sphere_model_path, body->getBodyFrame());
+    // sim.loadModel(axes_model_path, body->getCenterOfMassFrame());
+
     body->addBodyFrameTorque(Vector3(1,0,0));
 
     sim.run(10.0);
+    test.assertTrue("Body position 1", body->getPosition() == Vector3());
+    test.assertTrue("Body linear velocity 1", body->getVelocity() == Vector3());
     test.assertTrue("Body angular velocity 1", body->getAngularVelocity() == Vector3(10, 0, 0));
+    test.assertTrue("Body acceleration 1", body->getAcceleration() == Vector3());
+    test.assertTrue("Body angular acceleration 1", body->getAngularAcceleration() == Vector3(1, 0, 0));
 
     // check rotation angle
     // Should be 50 radians about x-axis
@@ -56,7 +70,11 @@ int main() {
 
     sim.run(10.0);
 
+    test.assertTrue("Body position 2", body->getPosition() == Vector3());
+    test.assertTrue("Body linear velocity 2", body->getVelocity() == Vector3());
     test.assertTrue("Body angular velocity 2", body->getAngularVelocity() == Vector3(0, 0, 0));
+    test.assertTrue("Body acceleration 2", body->getAcceleration() == Vector3());
+    test.assertTrue("Body angular acceleration 2", body->getAngularAcceleration() == Vector3(-1, 0, 0));
 
     // check rotation angle
     // Should be 100 radians about x-axis
@@ -64,10 +82,12 @@ int main() {
     angle = 2*M_PI - fmod(100.0, 2*M_PI);
     aa = AxisAngle(body->getAttitude());
     Vector3 axis = aa.getAxis();
-    axis.setEpsilon(1e-8);
 
     test.assertTrue("Body rotation 2 - axis", axis == Vector3(-1, 0, 0));
     test.assertTrue("Body rotation 2 - angle", std::abs(aa.getAngle() - angle) <= 1e-5);
+
+    test.assertTrue("Center of mass frame is still positioned properly", body->getBodyFrame().getTransformTo(body->getCenterOfMassFrame()) == SpatialTransform());
+
 
     return test.getNumFails();
 }

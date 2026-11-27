@@ -15,7 +15,6 @@
 #include "Vector3.h"
 #include "Config.h"
 
-#include <cmath>
 #include <filesystem>
 #include <string>
 #include <vector>

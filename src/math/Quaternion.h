@@ -119,7 +119,7 @@ class Quaternion: public Vector4
         };
 
         bool operator==(double c) const {
-            return std::abs(getScalarTerm() - c) <= _epsilon && getVectorTerm().getNorm() <= _epsilon;
+            return std::abs(getScalarPart() - c) <= _epsilon && getVectorPart().getNorm() <= _epsilon;
         };
 
         // Hamilton product
@@ -156,7 +156,7 @@ class Quaternion: public Vector4
             Quaternion p = Quaternion(0.0, v[0], v[1], v[2], false);
             Quaternion pp = this->getConjugate() * p * *this;
 
-            return pp.getVectorTerm();
+            return pp.getVectorPart();
         };
 
         /*
@@ -167,8 +167,9 @@ class Quaternion: public Vector4
 
         /**
         * @brief Gets the rotation matrix representation of the quaternion.
-        * This is a passive rotation (direction cosine matrix): getRotationMatrix() * v == (*this) * v, mapping components in
-        * the original frame to components in the rotated frame. Matches Featherstone's rq() (RBDA, 2008, eq. 4.12).
+        * This is a passive rotation (direction cosine matrix) meaning it
+        * transforms a vector from the initial frame to the final frame assuming
+        * that the frame itself rotates while the vector remains stationary.
         * @return The rotation matrix representation of the quaternion.
         */
         RotationMatrix getRotationMatrix() const {
@@ -225,13 +226,13 @@ class Quaternion: public Vector4
         * @brief Returns the scalar portion (w) of the quaternion.
         * @return The scalar portion of the quaternion.
         */
-        double getScalarTerm() const { return (*this)[0]; };
+        double getScalarPart() const { return (*this)[0]; };
 
         /**
         * @brief Returns the vector portion (x, y, z) of the quaternion.
         * @return The vector portion of the quaternion.
         */
-        Vector3 getVectorTerm() const { return Vector3((*this)[1], (*this)[2], (*this)[3]); };
+        Vector3 getVectorPart() const { return Vector3((*this)[1], (*this)[2], (*this)[3]); };
 
         /**
         * @brief Returns a normalized copy of the quaternion

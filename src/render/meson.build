@@ -29,6 +29,7 @@ glad_opts = cmake.subproject_options()
 glad_opts.add_cmake_defines({
   'GLAD_INSTALL':                    'OFF',
   'CMAKE_POSITION_INDEPENDENT_CODE': 'ON',
+  'CMAKE_POLICY_VERSION_MINIMUM': '3.5',
 })
 glad_opts.append_compile_args('c', '-w')
 glad_sub = cmake.subproject('glad', options: glad_opts)
@@ -62,7 +63,7 @@ endif
 # Platform-specific OpenGL / windowing system libraries
 cc = meson.get_compiler('cpp')
 if host_machine.system() == 'darwin'
-  opengl_dep = dependency('appleframeworks', modules: ['OpenGL', 'Cocoa'])
+  opengl_dep = dependency('appleframeworks', modules: ['OpenGL', 'Cocoa', 'IOKit', 'CoreFoundation', 'QuartzCore'])
   stell_deps += [glfw_dep, glad_dep, opengl_dep, assimp_dep, stb_dep]
 else
   # Linux (X11)

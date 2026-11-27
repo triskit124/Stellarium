@@ -138,8 +138,6 @@ Model* GraphicsEngine::loadModel(const std::string& path, Frame& frame)
 
 void GraphicsEngine::run()
 {
-    _should_render.store(true);
-
     double time_counter = 0.0;
     int step_counter = 0;
 
@@ -426,7 +424,7 @@ void GraphicsEngine::drawGrid() const
     _grid_shader->setMat4("projection", _camera->getProjectionMatrix());
     _grid_shader->setMat4("view", _camera->getViewMatrix());
     _grid_shader->setMat4("model", _grid_frame.getPose().getInverse().getHomogeneousMatrix());
-    _grid_shader->setVec3("cameraPos", _camera->getPosition());
+    _grid_shader->setVec3("cameraPos", _camera->getPose().getTranslation());
     _grid_shader->setFloat("cellSize", 1.0f);
     _grid_shader->setInt("cellsPerMajor", 10);
     _grid_shader->setVec3("minorColor", Vector3(0.45, 0.45, 0.45));
